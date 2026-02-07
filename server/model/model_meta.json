@@ -1,0 +1,63 @@
+{
+  "img_size": 224,
+  "norm_mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "norm_std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "plant_thresholds": {
+    "pepper": {
+      "min_confidence": 0.45,
+      "min_margin": 0.12
+    },
+    "potato": {
+      "min_confidence": 0.45,
+      "min_margin": 0.12
+    },
+    "tomato_bacterial_spot": {
+      "min_confidence": 0.42,
+      "min_margin": 0.1
+    },
+    "tomato_early_blight": {
+      "min_confidence": 0.42,
+      "min_margin": 0.1
+    },
+    "tomato_healthy": {
+      "min_confidence": 0.42,
+      "min_margin": 0.1
+    },
+    "tomato_late_blight": {
+      "min_confidence": 0.42,
+      "min_margin": 0.1
+    },
+    "tomato_leaf_mold": {
+      "min_confidence": 0.42,
+      "min_margin": 0.1
+    },
+    "tomato_septoria_leaf_spot": {
+      "min_confidence": 0.42,
+      "min_margin": 0.1
+    },
+    "tomato_spider_mites_two_spotted_spider_mite": {
+      "min_confidence": 0.42,
+      "min_margin": 0.1
+    },
+    "tomato_target_spot": {
+      "min_confidence": 0.42,
+      "min_margin": 0.1
+    },
+    "tomato_tomato_mosaic_virus": {
+      "min_confidence": 0.42,
+      "min_margin": 0.1
+    },
+    "tomato_tomato_yellowleaf_curl_virus": {
+      "min_confidence": 0.42,
+      "min_margin": 0.1
+    }
+  }
+}

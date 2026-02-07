@@ -1,0 +1,292 @@
+{
+  "Apple___Apple_scab": {
+    "id": "apple_scab",
+    "name": "Elma kabuk hastaligi",
+    "severity": "medium",
+    "summary": "Yaprak ve meyvede zeytin yesili lekeler, nemli-serin kosullarda hizla yayilir.",
+    "actions": ["Enfekte yapraklari topla ve imha et.", "Ilkbaharda koruyucu uygulama planla."],
+    "organic": ["Hava akisina izin ver, seyreltme budamasi yap.", "Yaprak islakligini azalt."],
+    "chemical": ["Etikete uygun fungisit programi uygula.", "Yagis oncesi koruyucu bariyer kur."],
+    "prevention": ["Direncli cesit tercih et.", "Bahce hijyenini koru."]
+  },
+  "Apple___Black_rot": {
+    "id": "apple_black_rot",
+    "name": "Elma kara curuklugu",
+    "severity": "high",
+    "summary": "Meyve ve yaprakta koyu lekeler, zamanla curume ve mumyalanma yapar.",
+    "actions": ["Mumyalanmis meyveleri uzaklastir.", "Hasarli dallari buda."]
+  },
+  "Apple___Cedar_apple_rust": {
+    "id": "apple_rust",
+    "name": "Elma pas hastaligi",
+    "severity": "medium",
+    "summary": "Yaprakta turuncu-sari lekeler ve alt yuzde kabarciklar.",
+    "actions": ["Pasli dallari uzaklastir.", "Sezon basinda koruyucu program uygula."]
+  },
+  "Apple___healthy": {
+    "id": "apple_healthy",
+    "name": "Elma saglikli",
+    "severity": "low",
+    "summary": "Belirgin hastalik belirtisi gorulmuyor.",
+    "actions": ["Rutin kontrolu surdur.", "Sulama ve budamayi dengede tut."]
+  },
+  "Blueberry___healthy": {
+    "id": "blueberry_healthy",
+    "name": "Yaban mersini saglikli",
+    "severity": "low",
+    "summary": "Bitki genel gorunumu saglikli.",
+    "actions": ["pH seviyesini takip et.", "Dengeli besleme uygula."]
+  },
+  "Cherry_(including_sour)___Powdery_mildew": {
+    "id": "cherry_powdery_mildew",
+    "name": "Kiraz mildiyosu",
+    "severity": "medium",
+    "summary": "Yaprak yuzeyinde beyaz tozumsu tabaka ve gelisim geriligi.",
+    "actions": ["Hava akisina izin verecek budama yap.", "Yaprak islakligini azalt."]
+  },
+  "Cherry_(including_sour)___healthy": {
+    "id": "cherry_healthy",
+    "name": "Kiraz saglikli",
+    "severity": "low",
+    "summary": "Belirti yok.",
+    "actions": ["Rutin saha gozlemi surdur."]
+  },
+  "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": {
+    "id": "corn_gray_leaf_spot",
+    "name": "Misir gri yaprak lekesi",
+    "severity": "high",
+    "summary": "Dikdortgen gri lekeler, fotosentezi dusurur.",
+    "actions": ["Enfekte yapraklari azalt, hava akisina izin ver.", "Etikete uygun fungisit uygula."]
+  },
+  "Corn_(maize)___Common_rust_": {
+    "id": "corn_common_rust",
+    "name": "Misir pas",
+    "severity": "medium",
+    "summary": "Yaprakta pas rengi pustuuller gorulur.",
+    "actions": ["Erken donemde kontrol uygula.", "Dayanikli cesit kullan."]
+  },
+  "Corn_(maize)___Northern_Leaf_Blight": {
+    "id": "corn_northern_leaf_blight",
+    "name": "Misir yaprak yanikligi",
+    "severity": "high",
+    "summary": "Uzun, gri-kahverengi lezyonlar.",
+    "actions": ["Bitki arasi mesafeyi duzenle.", "Fungisit programini zamanla."]
+  },
+  "Corn_(maize)___healthy": {
+    "id": "corn_healthy",
+    "name": "Misir saglikli",
+    "severity": "low",
+    "summary": "Belirti yok.",
+    "actions": ["Besin ve sulama dengesini koru."]
+  },
+  "Grape___Black_rot": {
+    "id": "grape_black_rot",
+    "name": "Uzum kara curuk",
+    "severity": "high",
+    "summary": "Yaprakta kahverengi halka, meyvede kararma.",
+    "actions": ["Enfekte salkimlari temizle.", "Koruyucu uygulamaya gec."]
+  },
+  "Grape___Esca_(Black_Measles)": {
+    "id": "grape_esca",
+    "name": "Uzum esca",
+    "severity": "high",
+    "summary": "Yaprakta kaplan sirtina benzer renklenme.",
+    "actions": ["Hastalikli dallari buda.", "Enfekteli odunu uzaklastir."]
+  },
+  "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": {
+    "id": "grape_leaf_blight",
+    "name": "Uzum yaprak lekesi",
+    "severity": "medium",
+    "summary": "Yaprakta lekeler ve erken yaprak dokumu.",
+    "actions": ["Yaprak islakligini azalt.", "Bahce hijyenini guclendir."]
+  },
+  "Grape___healthy": {
+    "id": "grape_healthy",
+    "name": "Uzum saglikli",
+    "severity": "low",
+    "summary": "Belirti yok.",
+    "actions": ["Rutin kontrolu surdur."]
+  },
+  "Orange___Haunglongbing_(Citrus_greening)": {
+    "id": "citrus_greening",
+    "name": "Turuncgil yesillenme",
+    "severity": "high",
+    "summary": "Yaprakta damarlar arasi sararma ve meyvede sekil bozuklugu.",
+    "actions": ["Vektoru kontrol et.", "Enfekteli agaci izole et."]
+  },
+  "Peach___Bacterial_spot": {
+    "id": "peach_bacterial_spot",
+    "name": "Seftali bakteriyel leke",
+    "severity": "medium",
+    "summary": "Meyve ve yaprakta kucuk siyah lekeler.",
+    "actions": ["Enfekte yapraklari temizle.", "Bakir bazli koruyucu uygula."]
+  },
+  "Peach___healthy": {
+    "id": "peach_healthy",
+    "name": "Seftali saglikli",
+    "severity": "low",
+    "summary": "Belirti yok.",
+    "actions": ["Rutin izleme surdur."]
+  },
+  "Pepper,_bell___Bacterial_spot": {
+    "id": "pepper_bacterial_spot",
+    "name": "Biber bakteriyel leke",
+    "severity": "medium",
+    "summary": "Yaprakta siyah-kahverengi lekeler.",
+    "actions": ["Enfekte yapraklari imha et.", "Yaprak islakligini azalt."]
+  },
+  "Pepper,_bell___healthy": {
+    "id": "pepper_healthy",
+    "name": "Biber saglikli",
+    "severity": "low",
+    "summary": "Belirti yok.",
+    "actions": ["Sulama ve besin dengesini koru."]
+  },
+  "Pepper__bell___Bacterial_spot": {
+    "id": "pepper_bacterial_spot",
+    "name": "Biber bakteriyel leke",
+    "severity": "medium",
+    "summary": "Yaprakta siyah-kahverengi lekeler.",
+    "actions": ["Enfekte yapraklari imha et.", "Yaprak islakligini azalt."]
+  },
+  "Pepper__bell___healthy": {
+    "id": "pepper_healthy",
+    "name": "Biber saglikli",
+    "severity": "low",
+    "summary": "Belirti yok.",
+    "actions": ["Sulama ve besin dengesini koru."]
+  },
+  "Potato___Early_blight": {
+    "id": "potato_early_blight",
+    "name": "Patates erken yaniklik",
+    "severity": "high",
+    "summary": "Halka desenli koyu lekeler, yaprak dokumu.",
+    "actions": ["Enfekte yapraklari uzaklastir.", "Etikete uygun fungisit uygula."]
+  },
+  "Potato___Late_blight": {
+    "id": "potato_late_blight",
+    "name": "Patates gec yaniklik",
+    "severity": "high",
+    "summary": "Serin-nemli kosullarda hizli yayilir.",
+    "actions": ["Hizli izole et, yapraklari imha et.", "Yaprak islakligini azalt."]
+  },
+  "Potato___healthy": {
+    "id": "potato_healthy",
+    "name": "Patates saglikli",
+    "severity": "low",
+    "summary": "Belirti yok.",
+    "actions": ["Rutin kontrolu surdur."]
+  },
+  "Raspberry___healthy": {
+    "id": "raspberry_healthy",
+    "name": "Ahududu saglikli",
+    "severity": "low",
+    "summary": "Belirti yok.",
+    "actions": ["Dengeli sulama yap."]
+  },
+  "Soybean___healthy": {
+    "id": "soybean_healthy",
+    "name": "Soya saglikli",
+    "severity": "low",
+    "summary": "Belirti yok.",
+    "actions": ["Yabanci ot ve nem kontrolu yap."]
+  },
+  "Squash___Powdery_mildew": {
+    "id": "squash_powdery_mildew",
+    "name": "Kabak mildiyosu",
+    "severity": "medium",
+    "summary": "Yaprakta beyaz tozumsu doku.",
+    "actions": ["Yaprak islakligini azalt.", "Havalandirmayi artir."]
+  },
+  "Strawberry___Leaf_scorch": {
+    "id": "strawberry_leaf_scorch",
+    "name": "Cilek yaprak yanikligi",
+    "severity": "medium",
+    "summary": "Yaprak kenarlarinda kahverengi yaniklar.",
+    "actions": ["Hasta yapraklari temizle.", "Sik dikimden kacin."]
+  },
+  "Strawberry___healthy": {
+    "id": "strawberry_healthy",
+    "name": "Cilek saglikli",
+    "severity": "low",
+    "summary": "Belirti yok.",
+    "actions": ["Saha gozlemi surdur."]
+  },
+  "Tomato___Bacterial_spot": {
+    "id": "tomato_bacterial_spot",
+    "name": "Domates bakteriyel leke",
+    "severity": "medium",
+    "summary": "Kucuk koyu lekeler ve yaprak dokumu.",
+    "actions": ["Enfekte yapraklari temizle.", "Bakir bazli koruyucu uygula."]
+  },
+  "Tomato___Early_blight": {
+    "id": "tomato_early_blight",
+    "name": "Domates erken yaniklik",
+    "severity": "high",
+    "summary": "Halka desenli lezyonlar.",
+    "actions": ["Alt yapraklari temizle.", "Fungisit programini zamanla."]
+  },
+  "Tomato___Late_blight": {
+    "id": "tomato_late_blight",
+    "name": "Domates gec yaniklik",
+    "severity": "high",
+    "summary": "Serin-nemli ortamda hizli yayilir.",
+    "actions": ["Hizli izolasyon ve imha.", "Yaprak islakligini azalt."]
+  },
+  "Tomato___Leaf_Mold": {
+    "id": "tomato_leaf_mold",
+    "name": "Domates yaprak kofu",
+    "severity": "medium",
+    "summary": "Yaprak altinda kadife doku.",
+    "actions": ["Serada havalandirma artir.", "Yaprak islakligini azalt."]
+  },
+  "Tomato___Septoria_leaf_spot": {
+    "id": "tomato_septoria",
+    "name": "Domates septorya leke",
+    "severity": "medium",
+    "summary": "Kucuk acik merkezli lekeler.",
+    "actions": ["Enfekte yapraklari imha et.", "Yapraklari kuru tut."]
+  },
+  "Tomato___Spider_mites Two-spotted_spider_mite": {
+    "id": "tomato_spider_mite",
+    "name": "Domates kirmizi orumcek",
+    "severity": "high",
+    "summary": "Yaprakta sararma ve ince ag yapisi.",
+    "actions": ["Populasyonu azalt, dusuk nemden kacin.", "Hedefli acaricide uygula."]
+  },
+  "Tomato___Target_Spot": {
+    "id": "tomato_target_spot",
+    "name": "Domates hedef leke",
+    "severity": "medium",
+    "summary": "Hedef benzeri konsantrik lekeler.",
+    "actions": ["Yaprak islakligini azalt.", "Hastali yapraklari temizle."]
+  },
+  "Tomato___Tomato_Yellow_Leaf_Curl_Virus": {
+    "id": "tomato_yellow_leaf_curl",
+    "name": "Domates sari yaprak kivircikligi",
+    "severity": "high",
+    "summary": "Yaprakta kivrilma ve bodurlasma.",
+    "actions": ["Beyazsinek kontrolu yap.", "Enfekte bitkiyi izole et."]
+  },
+  "Tomato___Tomato_mosaic_virus": {
+    "id": "tomato_mosaic",
+    "name": "Domates mozaik virusu",
+    "severity": "medium",
+    "summary": "Mozaik desenli renk degisimi.",
+    "actions": ["Temiz fide kullan.", "Alet hijyenini sagla."]
+  },
+  "Tomato___healthy": {
+    "id": "tomato_healthy",
+    "name": "Domates saglikli",
+    "severity": "low",
+    "summary": "Belirti yok.",
+    "actions": ["Rutin kontrol ve dengeli besleme."]
+  },
+  "Tomato__Tomato_YellowLeaf__Curl_Virus": {
+    "id": "tomato_yellow_leaf_curl",
+    "name": "Domates sari yaprak kivircikligi",
+    "severity": "high",
+    "summary": "Yaprakta kivrilma ve bodurlasma.",
+    "actions": ["Beyazsinek kontrolu yap.", "Enfekte bitkiyi izole et."]
+  }
+}

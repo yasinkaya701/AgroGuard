@@ -1,0 +1,26 @@
+node_modules
+build
+.DS_Store
+.env
+.env.*
+.cache
+logs
+server/cache
+server/logs
+# Capacitor
+ios/App/App/public
+android/app/src/main/assets/public
+# CocoaPods
+ios/App/Pods
+ios/App/Podfile.lock
+# Gradle
+android/.gradle
+android/build
+android/app/build
+# Python
+.venv
+__pycache__
+ml/data
+ml/runs
+# Misc
+src/App.js.save
