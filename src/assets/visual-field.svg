@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-label="Tarla gorunumu">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a6d9ff"/>
+      <stop offset="1" stop-color="#dff4ff"/>
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8ec889"/>
+      <stop offset="1" stop-color="#5da169"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="520" fill="url(#sky)"/>
+  <circle cx="760" cy="120" r="42" fill="#ffd86d"/>
+  <rect y="280" width="900" height="240" fill="url(#ground)"/>
+  <path d="M0 360 C160 320, 300 390, 460 350 C610 315, 740 380, 900 340 L900 520 L0 520 Z" fill="#4d8f5f" opacity="0.7"/>
+  <path d="M0 420 C180 390, 380 450, 560 410 C700 380, 810 430, 900 405 L900 520 L0 520 Z" fill="#3d7750" opacity="0.9"/>
+  <rect x="120" y="220" width="120" height="90" rx="8" fill="#f3f1e2"/>
+  <polygon points="100,230 180,180 260,230" fill="#c96f41"/>
+  <rect x="390" y="210" width="12" height="120" fill="#7d4f2f"/>
+  <circle cx="396" cy="182" r="40" fill="#4f9e5d"/>
+  <circle cx="370" cy="198" r="28" fill="#4a9257"/>
+  <circle cx="423" cy="203" r="25" fill="#5aa965"/>
+</svg>

@@ -1,29 +1,18 @@
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import torch
 from PIL import Image
-from torchvision import models, transforms
+from torchvision import transforms
 
+ROOT_DIR = Path(__file__).resolve().parents[1]
+ML_DIR = ROOT_DIR / "ml"
+if str(ML_DIR) not in sys.path:
+    sys.path.insert(0, str(ML_DIR))
 
-def build_model(name: str, num_classes: int):
-    if name == "efficientnet_v2_s":
-        model = models.efficientnet_v2_s(weights=None)
-        in_features = model.classifier[1].in_features
-        model.classifier[1] = torch.nn.Linear(in_features, num_classes)
-        return model
-    if name == "convnext_tiny":
-        model = models.convnext_tiny(weights=None)
-        in_features = model.classifier[2].in_features
-        model.classifier[2] = torch.nn.Linear(in_features, num_classes)
-        return model
-    if name == "mobilenet_v3_small":
-        model = models.mobilenet_v3_small(weights=None)
-        in_features = model.classifier[3].in_features
-        model.classifier[3] = torch.nn.Linear(in_features, num_classes)
-        return model
-    raise ValueError(f"Unknown model: {name}")
+from model_factory import build_model
 
 
 def main():
@@ -37,7 +26,7 @@ def main():
     arch = ckpt["arch"]
     img_size = ckpt.get("img_size", 224)
 
-    model = build_model(arch, len(classes))
+    model = build_model(arch, len(classes), pretrained=False)
     model.load_state_dict(ckpt["model"])
     model.eval()
 

@@ -1,0 +1,162 @@
+{
+  "encoding": "onehot",
+  "num_classes": 10,
+  "classes": [
+    "Tomato_Bacterial_spot",
+    "Tomato_Early_blight",
+    "Tomato_Late_blight",
+    "Tomato_Leaf_Mold",
+    "Tomato_Septoria_leaf_spot",
+    "Tomato_Spider_mites_Two_spotted_spider_mite",
+    "Tomato__Target_Spot",
+    "Tomato__Tomato_YellowLeaf__Curl_Virus",
+    "Tomato__Tomato_mosaic_virus",
+    "Tomato_healthy"
+  ],
+  "class_to_idx": {
+    "Tomato_Bacterial_spot": 0,
+    "Tomato_Early_blight": 1,
+    "Tomato_Late_blight": 2,
+    "Tomato_Leaf_Mold": 3,
+    "Tomato_Septoria_leaf_spot": 4,
+    "Tomato_Spider_mites_Two_spotted_spider_mite": 5,
+    "Tomato__Target_Spot": 6,
+    "Tomato__Tomato_YellowLeaf__Curl_Virus": 7,
+    "Tomato__Tomato_mosaic_virus": 8,
+    "Tomato_healthy": 9
+  },
+  "idx_to_class": {
+    "0": "Tomato_Bacterial_spot",
+    "1": "Tomato_Early_blight",
+    "2": "Tomato_Late_blight",
+    "3": "Tomato_Leaf_Mold",
+    "4": "Tomato_Septoria_leaf_spot",
+    "5": "Tomato_Spider_mites_Two_spotted_spider_mite",
+    "6": "Tomato__Target_Spot",
+    "7": "Tomato__Tomato_YellowLeaf__Curl_Virus",
+    "8": "Tomato__Tomato_mosaic_virus",
+    "9": "Tomato_healthy"
+  },
+  "one_hot_vectors": {
+    "Tomato_Bacterial_spot": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Tomato_Early_blight": [
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Tomato_Late_blight": [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Tomato_Leaf_Mold": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Tomato_Septoria_leaf_spot": [
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Tomato_Spider_mites_Two_spotted_spider_mite": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "Tomato__Target_Spot": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "Tomato__Tomato_YellowLeaf__Curl_Virus": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "Tomato__Tomato_mosaic_virus": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0
+    ],
+    "Tomato_healthy": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ]
+  }
+}

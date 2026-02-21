@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-label="Tarim pazari">
+  <defs>
+    <linearGradient id="marketBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff7ec"/>
+      <stop offset="1" stop-color="#ffe8c7"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="520" fill="url(#marketBg)"/>
+  <rect x="150" y="170" width="600" height="250" rx="20" fill="#fffdf9"/>
+  <rect x="180" y="150" width="540" height="40" rx="10" fill="#e78050"/>
+  <rect x="200" y="245" width="150" height="120" rx="10" fill="#9ac7f0"/>
+  <rect x="375" y="245" width="150" height="120" rx="10" fill="#98d3a2"/>
+  <rect x="550" y="245" width="150" height="120" rx="10" fill="#f1c58a"/>
+  <circle cx="245" cy="300" r="24" fill="#ff6f59"/>
+  <circle cx="305" cy="300" r="24" fill="#ffd166"/>
+  <circle cx="420" cy="300" r="24" fill="#7cc576"/>
+  <circle cx="480" cy="300" r="24" fill="#4f9d69"/>
+  <ellipse cx="595" cy="300" rx="26" ry="20" fill="#b8794b"/>
+  <ellipse cx="655" cy="300" rx="26" ry="20" fill="#d69c6a"/>
+  <rect x="220" y="392" width="460" height="12" rx="6" fill="#e6d8bf"/>
+  <rect x="255" y="108" width="40" height="45" fill="#f7f2e4"/>
+  <rect x="605" y="108" width="40" height="45" fill="#f7f2e4"/>
+</svg>

@@ -68,3 +68,139 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+## Land Price API Configuration
+
+Backend `GET /api/land-price` endpoint can aggregate multiple external providers.
+
+Useful endpoints:
+- `GET /api/land-price`
+- `GET /api/land-price/sources`
+- `GET /api/land-price/providers-health`
+- `GET /api/land-price/compare`
+- `GET /api/land-price/history`
+- `GET /api/land-price/listings`
+- `POST /api/land-price/listings`
+- `POST /api/land-price/listings/import`
+- `DELETE /api/land-price/listings/:id`
+- `GET /api/news`
+  - Query: `limit`, `perFeed`, `force=1`
+- `GET /api/trade/summary`
+- `GET /api/trade/listings`
+- `POST /api/trade/listings`
+- `PATCH /api/trade/listings/:id`
+- `GET /api/trade/offers`
+- `POST /api/trade/offers`
+- `PATCH /api/trade/offers/:id`
+- `POST /api/trade/offers/:id/counter`
+- `POST /api/trade/offers/:id/accept`
+- `GET /api/trade/orders`
+- `PATCH /api/trade/orders/:id`
+- `GET /api/trade/orders/:id/contract`
+- `GET /api/trade/orders/:id/contract.pdf`
+- `GET /api/trade/orders/:id/shipping-status`
+- `POST /api/trade/orders/:id/shipping-sync`
+- `POST /api/trade/shipping/sync-all`
+- `GET /api/trade/shipping/providers`
+- `GET /api/trade/shipping/providers-health`
+- `GET /api/trade/shipping/providers-config`
+- `GET /api/trade/alerts`
+- `GET /api/soil`
+- `GET /api/soil/sources`
+
+- `LAND_PRICE_API_URL_1..5`
+  - URL template, placeholders: `{city}`, `{district}`, `{crop}`, `{lat}`, `{lon}`
+- `LAND_PRICE_API_<n>_PRICE_PATH`
+  - Dot path for price field (example: `data.price_tl_da`)
+- `LAND_PRICE_API_<n>_METHOD`
+  - `GET` (default) or `POST`
+- `LAND_PRICE_API_<n>_PRIORITY`
+  - Lower runs earlier (default: slot order).
+- `LAND_PRICE_API_<n>_WEIGHT`
+  - Weight used in multi-provider consensus.
+- `LAND_PRICE_API_<n>_HEADERS_JSON`
+  - Optional request headers as JSON string.
+- `LAND_PRICE_API_<n>_BODY_TEMPLATE`
+  - Optional body template for `POST` providers (`{city}`, `{district}`, `{crop}`, `{lat}`, `{lon}` placeholders).
+- `LAND_PRICE_API_<n>_MIN_PATH`
+  - Dot path for min value (optional)
+- `LAND_PRICE_API_<n>_MAX_PATH`
+  - Dot path for max value (optional)
+- `LAND_PRICE_API_<n>_UPDATED_AT_PATH`
+  - Dot path for update timestamp (optional)
+- `LAND_PRICE_API_PROVIDERS_JSON`
+  - Optional JSON array for extra providers.
+- `LAND_DISCOVERY_ENABLED`
+  - `true/false`. When enabled, backend also scans public search pages for TL price signals.
+- `LAND_DISCOVERY_TIMEOUT_MS`
+  - Timeout per discovery source request.
+- `LAND_DISCOVERY_MAX_SOURCES`
+  - Max search URLs to scan.
+- `LAND_DISCOVERY_ENGINES`
+  - Comma list: `duckduckgo,bing,google,yandex`
+- `LAND_PROVIDER_TIMEOUT_MS`
+  - Timeout for each configured provider request.
+
+Example:
+
+```bash
+LAND_PRICE_API_URL_1="https://example.com/land?city={city}&crop={crop}"
+LAND_PRICE_API_1_PRICE_PATH="data.price_tl_da"
+LAND_PRICE_API_1_MIN_PATH="data.min_tl_da"
+LAND_PRICE_API_1_MAX_PATH="data.max_tl_da"
+LAND_PRICE_API_1_UPDATED_AT_PATH="data.updatedAt"
+```
+
+Manual listing example:
+
+```bash
+curl -X POST http://127.0.0.1:5051/api/land-price/listings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "city":"Malatya",
+    "district":"Yesilyurt",
+    "crop":"domates",
+    "priceTlDa":185000,
+    "title":"Sahadan manuel ilan",
+    "url":"https://www.sahibinden.com/..."
+  }'
+```
+
+## Shipping Provider Adapter Configuration
+
+Shipping adapter supports provider specific API + parser override by env vars.
+
+Provider ids: `ptt`, `yurtici`, `mng`, `aras`, `ups`
+
+- `SHIPPING_PROVIDER_<ID>_API_URL`
+- `SHIPPING_PROVIDER_<ID>_API_KEY`
+- `SHIPPING_PROVIDER_<ID>_STATUS_PATH`
+- `SHIPPING_PROVIDER_<ID>_CODE_PARAM`
+- `SHIPPING_PROVIDER_<ID>_STATUS_PATHS`
+  - comma list for response mapping (example: `data.status,result.status`)
+- `SHIPPING_PROVIDER_<ID>_EVENT_PATHS`
+  - comma list for event mapping
+- `SHIPPING_PROVIDER_<ID>_CODE_PATHS`
+  - comma list for tracking code mapping
+
+Example:
+
+```bash
+SHIPPING_PROVIDER_YURTICI_API_URL="https://api.example.com/yurtici"
+SHIPPING_PROVIDER_YURTICI_API_KEY="secret-token"
+SHIPPING_PROVIDER_YURTICI_STATUS_PATH="/shipment/status"
+SHIPPING_PROVIDER_YURTICI_CODE_PARAM="cargoKey"
+SHIPPING_PROVIDER_YURTICI_STATUS_PATHS="data.shipmentStatus,result.status"
+SHIPPING_PROVIDER_YURTICI_EVENT_PATHS="data.lastEvent,message"
+SHIPPING_PROVIDER_YURTICI_CODE_PATHS="data.cargoKey,trackingCode"
+```
+
+## Soil Internet Sources
+
+`/api/soil` endpoint now enriches data with multiple internet sources when coordinates are available:
+- ISRIC SoilGrids (soil properties)
+- Open-Meteo Geocoding (city -> coord fallback)
+- Open-Meteo Forecast (soil moisture/temperature + ET signals)
+- MTA layer service (if configured)
+
+If `coords` is not provided, backend tries Open-Meteo geocoding by `city`.

@@ -43,6 +43,18 @@ export const cropLabelMap = {
   sekerpancari: "Seker pancari"
 };
 
+export const cropPriceTlKg = {
+  domates: 12.5,
+  patates: 8.2,
+  biber: 19.5,
+  bugday: 11.2,
+  arpa: 9.4,
+  misir: 8.7,
+  aycicegi: 17.3,
+  pamuk: 24.0,
+  sekerpancari: 2.2
+};
+
 export const defaultCosts = {
   tohum: 0,
   fide: 0,
@@ -52,4 +64,31 @@ export const defaultCosts = {
   iscilik: 0,
   yakit: 0,
   diger: 0
+};
+
+export const landDemoBenchmarks = {
+  malatya: {
+    zonePremium: {
+      ova: 1.08,
+      gecis: 1.0,
+      yamaç: 0.92
+    },
+    notes: "Kayisi odakli pazarda ova parselleri primli seyreder."
+  },
+  konya: {
+    zonePremium: {
+      ova: 1.06,
+      gecis: 1.0,
+      yamaç: 0.9
+    },
+    notes: "Sulama altyapisina yakin alanlar daha hizli degerlenir."
+  },
+  antalya: {
+    zonePremium: {
+      ova: 1.1,
+      gecis: 1.0,
+      yamaç: 0.9
+    },
+    notes: "Sebze-sera koridorunda ova segmenti yuksek talep gorur."
+  }
 };

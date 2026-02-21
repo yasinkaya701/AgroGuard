@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-label="Hava ve iklim gorseli">
+  <defs>
+    <linearGradient id="wbg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9fd8ff"/>
+      <stop offset="1" stop-color="#e8f7ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="520" fill="url(#wbg)"/>
+  <circle cx="190" cy="120" r="52" fill="#ffd26d"/>
+  <g fill="#ffffff" opacity="0.96">
+    <ellipse cx="370" cy="160" rx="95" ry="36"/>
+    <ellipse cx="430" cy="145" rx="68" ry="30"/>
+    <ellipse cx="320" cy="145" rx="62" ry="28"/>
+  </g>
+  <g fill="#ffffff" opacity="0.92">
+    <ellipse cx="690" cy="210" rx="88" ry="34"/>
+    <ellipse cx="742" cy="194" rx="56" ry="26"/>
+    <ellipse cx="642" cy="194" rx="54" ry="24"/>
+  </g>
+  <path d="M0 370 C170 330, 340 405, 510 360 C650 325, 770 382, 900 350 L900 520 L0 520 Z" fill="#84b485"/>
+  <path d="M0 420 C160 385, 340 450, 520 415 C700 380, 820 430, 900 405 L900 520 L0 520 Z" fill="#5f8f68"/>
+  <g stroke="#6ea3c7" stroke-width="6" stroke-linecap="round" opacity="0.8">
+    <line x1="600" y1="250" x2="590" y2="290"/>
+    <line x1="640" y1="252" x2="630" y2="292"/>
+    <line x1="680" y1="254" x2="670" y2="294"/>
+  </g>
+</svg>

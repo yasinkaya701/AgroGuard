@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-label="Yaprak detay">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f2fff5"/>
+      <stop offset="1" stop-color="#d8f4df"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5dbb72"/>
+      <stop offset="1" stop-color="#2f8a51"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="520" fill="url(#bg)"/>
+  <ellipse cx="470" cy="280" rx="260" ry="150" transform="rotate(-8 470 280)" fill="url(#leaf)"/>
+  <path d="M220 315 C360 300, 520 255, 700 180" stroke="#d5f0da" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M325 330 C360 298, 395 274, 440 248" stroke="#d5f0da" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M390 357 C430 321, 480 289, 530 265" stroke="#d5f0da" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M470 374 C515 334, 560 302, 610 280" stroke="#d5f0da" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <circle cx="360" cy="230" r="22" fill="#f7c96b" opacity="0.85"/>
+  <circle cx="510" cy="210" r="18" fill="#f0a66b" opacity="0.9"/>
+  <circle cx="585" cy="245" r="16" fill="#f7c96b" opacity="0.8"/>
+</svg>

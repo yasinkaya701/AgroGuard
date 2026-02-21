@@ -1,0 +1,131 @@
+{
+  "generatedAt": "2026-02-20T11:02:17.567Z",
+  "apiBase": "http://127.0.0.1:5051",
+  "summary": {
+    "readiness": 36,
+    "pass": 4,
+    "total": 11,
+    "apiPass": 0,
+    "apiTotal": 7,
+    "filePass": 4,
+    "fileTotal": 4,
+    "decision": "HOLD"
+  },
+  "runtime": {
+    "autoStartedServer": true,
+    "serverHealth": "unreachable"
+  },
+  "apiChecks": [
+    {
+      "id": "health",
+      "label": "Backend health",
+      "url": "http://127.0.0.1:5051/api/health",
+      "ok": false,
+      "status": 0,
+      "elapsedMs": 8000,
+      "payload": null,
+      "error": "curl: (7) Failed to connect to 127.0.0.1 port 5051 after 0 ms: Couldn't connect to server",
+      "detail": "curl: (7) Failed to connect to 127.0.0.1 port 5051 after 0 ms: Couldn't connect to server"
+    },
+    {
+      "id": "metrics",
+      "label": "Model metrics",
+      "url": "http://127.0.0.1:5051/api/metrics",
+      "ok": false,
+      "status": 0,
+      "elapsedMs": 8000,
+      "payload": null,
+      "error": "curl: (7) Failed to connect to 127.0.0.1 port 5051 after 0 ms: Couldn't connect to server",
+      "detail": "curl: (7) Failed to connect to 127.0.0.1 port 5051 after 0 ms: Couldn't connect to server"
+    },
+    {
+      "id": "plants",
+      "label": "Plant list",
+      "url": "http://127.0.0.1:5051/api/plants",
+      "ok": false,
+      "status": 0,
+      "elapsedMs": 8000,
+      "payload": null,
+      "error": "curl: (7) Failed to connect to 127.0.0.1 port 5051 after 0 ms: Couldn't connect to server",
+      "detail": "curl: (7) Failed to connect to 127.0.0.1 port 5051 after 0 ms: Couldn't connect to server"
+    },
+    {
+      "id": "weather",
+      "label": "Weather",
+      "url": "http://127.0.0.1:5051/api/weather?city=Malatya",
+      "ok": false,
+      "status": 0,
+      "elapsedMs": 8000,
+      "payload": null,
+      "error": "curl: (7) Failed to connect to 127.0.0.1 port 5051 after 0 ms: Couldn't connect to server",
+      "detail": "curl: (7) Failed to connect to 127.0.0.1 port 5051 after 0 ms: Couldn't connect to server"
+    },
+    {
+      "id": "soil",
+      "label": "Soil",
+      "url": "http://127.0.0.1:5051/api/soil?city=Malatya",
+      "ok": false,
+      "status": 0,
+      "elapsedMs": 8000,
+      "payload": null,
+      "error": "curl: (7) Failed to connect to 127.0.0.1 port 5051 after 0 ms: Couldn't connect to server",
+      "detail": "curl: (7) Failed to connect to 127.0.0.1 port 5051 after 0 ms: Couldn't connect to server"
+    },
+    {
+      "id": "trade",
+      "label": "Trade dashboard",
+      "url": "http://127.0.0.1:5051/api/trade/dashboard?city=Malatya&crop=domates",
+      "ok": false,
+      "status": 0,
+      "elapsedMs": 8000,
+      "payload": null,
+      "error": "curl: (7) Failed to connect to 127.0.0.1 port 5051 after 0 ms: Couldn't connect to server",
+      "detail": "curl: (7) Failed to connect to 127.0.0.1 port 5051 after 0 ms: Couldn't connect to server"
+    },
+    {
+      "id": "land",
+      "label": "Land price",
+      "url": "http://127.0.0.1:5051/api/land-price?city=Malatya&crop=domates",
+      "ok": false,
+      "status": 0,
+      "elapsedMs": 8000,
+      "payload": null,
+      "error": "curl: (7) Failed to connect to 127.0.0.1 port 5051 after 0 ms: Couldn't connect to server",
+      "detail": "curl: (7) Failed to connect to 127.0.0.1 port 5051 after 0 ms: Couldn't connect to server"
+    }
+  ],
+  "fileChecks": [
+    {
+      "id": "server-model-onnx",
+      "label": "ONNX model",
+      "file": "server/model/model.onnx",
+      "ok": true,
+      "sizeBytes": 1079266,
+      "detail": "1054 KB"
+    },
+    {
+      "id": "server-model-labels",
+      "label": "Model labels",
+      "file": "server/model/labels.json",
+      "ok": true,
+      "sizeBytes": 1109,
+      "detail": "1 KB"
+    },
+    {
+      "id": "server-model-meta",
+      "label": "Model meta",
+      "file": "server/model/model_meta.json",
+      "ok": true,
+      "sizeBytes": 1257,
+      "detail": "1 KB"
+    },
+    {
+      "id": "ml-best",
+      "label": "ML best checkpoint",
+      "file": "ml/artifacts/best.pt",
+      "ok": true,
+      "sizeBytes": 6232489,
+      "detail": "6086 KB"
+    }
+  ]
+}

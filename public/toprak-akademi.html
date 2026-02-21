@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Toprak Akademi</title>
+    <style>
+      :root {
+        --bg: #f4f7ef;
+        --card: #ffffff;
+        --ink: #142015;
+        --muted: #4c5e4f;
+        --brand: #2f7f4f;
+        --line: #d7e5d8;
+        --warn: #9a4a16;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        color: var(--ink);
+        background: radial-gradient(circle at 8% 8%, #dff1e4 0%, rgba(223,241,228,0) 42%), var(--bg);
+      }
+      .wrap { width: min(1100px, 94%); margin: 0 auto; padding: 18px 0 42px; }
+      .hero {
+        background: linear-gradient(140deg, #204f33, #2f7f4f 62%, #62a877);
+        border-radius: 20px;
+        padding: 22px;
+        color: #f6fff8;
+        box-shadow: 0 16px 32px rgba(20, 50, 30, 0.25);
+      }
+      .hero h1 { margin: 0 0 8px; font-size: clamp(24px, 4vw, 38px); }
+      .hero p { margin: 0; color: rgba(246,255,248,0.92); }
+      .grid { display: grid; gap: 14px; margin-top: 14px; }
+      .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+      }
+      h2 { margin: 0 0 10px; font-size: 20px; }
+      h3 { margin: 0 0 8px; font-size: 15px; }
+      p { margin: 0 0 8px; color: var(--muted); }
+      ul { margin: 0; padding-left: 16px; color: var(--muted); }
+      li { margin: 4px 0; }
+      .row { display: flex; gap: 8px; flex-wrap: wrap; }
+      .tag {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 3px 9px;
+        font-size: 12px;
+        color: #244933;
+        background: #f8fcf8;
+      }
+      .tool input, .tool select {
+        width: 100%;
+        min-height: 38px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        padding: 0 10px;
+      }
+      .tool button {
+        min-height: 38px;
+        border: 0;
+        border-radius: 10px;
+        padding: 0 12px;
+        background: var(--brand);
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .out {
+        border-radius: 10px;
+        border: 1px dashed #9fc9ad;
+        background: #f5fbf6;
+        padding: 10px;
+        color: #244933;
+        font-size: 14px;
+      }
+      .warn { color: var(--warn); font-weight: 700; }
+      .search {
+        margin-top: 12px;
+        width: 100%;
+        min-height: 44px;
+        border-radius: 12px;
+        border: 1px solid #86b79a;
+        padding: 0 12px;
+      }
+      .hide { display: none; }
+      @media (max-width: 900px) {
+        .grid.two, .grid.three { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="hero">
+        <h1>Toprak Akademi</h1>
+        <p>Toprak bilimi, analiz yorumu ve sahaya uygulanabilir yonetim adimlari tek sayfada.</p>
+        <input id="search" class="search" placeholder="Ara: pH, CEC, drenaj, tuzluluk, organik madde, kompost..." />
+      </section>
+
+      <section class="grid three" style="margin-top: 14px">
+        <article class="card searchable" data-text="ph asit baz alkali">
+          <h3>pH yorumu</h3>
+          <p>6.2 - 7.2 cogu tarla urunu icin guvenli banttir.</p>
+          <div class="row"><span class="tag">Asit < 6</span><span class="tag">Optimum 6.2-7.2</span><span class="tag">Alkali > 7.8</span></div>
+        </article>
+        <article class="card searchable" data-text="organik madde humus kompost">
+          <h3>Organik madde</h3>
+          <p>Toprak yapisini, su tutmayi ve mikrobiyal aktiviteyi tasir.</p>
+          <div class="row"><span class="tag">Dusuk < 2%</span><span class="tag">Orta 2-4%</span><span class="tag">Iyi > 4%</span></div>
+        </article>
+        <article class="card searchable" data-text="cec katyon degisim kapasitesi">
+          <h3>CEC</h3>
+          <p>Besin tutma kapasitesi. Dusuk CEC topraklarda bolerek gubreleme gerekir.</p>
+          <div class="row"><span class="tag">Kumlu: dusuk</span><span class="tag">Tinli: orta</span><span class="tag">Killi: yuksek</span></div>
+        </article>
+      </section>
+
+      <section class="grid two">
+        <article class="card searchable" data-text="doku kum silt kil texture">
+          <h2>Dokuya Gore Sulama Mantigi</h2>
+          <ul>
+            <li>Kumlu: az ama sik sulama, hizli drenaj.</li>
+            <li>Tinli: dengeli periyot, en esnek yapi.</li>
+            <li>Killi: seyrek ama derin sulama, taban suyu riskine dikkat.</li>
+            <li>Yuzeyde kaymak olusuyorsa mekanik kirma + organik madde arttir.</li>
+          </ul>
+        </article>
+        <article class="card searchable" data-text="tuzluluk ec sodik drenaj">
+          <h2>Tuzluluk ve Drenaj</h2>
+          <ul>
+            <li>EC yuksekse: yikama sulamasi + drenaj kanali kontrolu.</li>
+            <li>Sodik toprakta: jips + iyi kalite sulama suyu + derin yikama.</li>
+            <li>Yuzeyde beyaz kabuk: tuz birikimi alarmi.</li>
+            <li>Agir toprakta drenaj yetersizse kok bogulmasi olur.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="grid two">
+        <article class="card tool searchable" data-text="ph hesaplama yorum">
+          <h2>Hizli pH Danismani</h2>
+          <p>Olctugun pH degerini gir, yorumu ve aksiyonu al.</p>
+          <div class="grid" style="gap:8px">
+            <input id="phInput" type="number" step="0.1" min="3" max="10" placeholder="Orn: 6.7" />
+            <button id="phBtn" type="button">Yorumla</button>
+            <div id="phOut" class="out">pH girildiginde yorum burada gorunur.</div>
+          </div>
+        </article>
+        <article class="card tool searchable" data-text="doku sinifi kum kil silt">
+          <h2>Doku Sinifi Yardimcisi</h2>
+          <p>Kum + kil + silt oranindan pratik siniflandirma.</p>
+          <div class="grid" style="gap:8px">
+            <input id="sandInput" type="number" min="0" max="100" placeholder="Kum %" />
+            <input id="clayInput" type="number" min="0" max="100" placeholder="Kil %" />
+            <input id="siltInput" type="number" min="0" max="100" placeholder="Silt %" />
+            <button id="texBtn" type="button">Sinifla</button>
+            <div id="texOut" class="out">Oranlar girildiginde siniflandirma burada cikar.</div>
+          </div>
+        </article>
+      </section>
+
+      <section class="grid two">
+        <article class="card tool searchable" data-text="plan 90 gun toprak yonetim">
+          <h2>90 Gunluk Toprak Plani</h2>
+          <p>Durumuna gore sahada uygulanabilir adim listesi olustur.</p>
+          <div class="grid" style="gap:8px">
+            <select id="drainageSelect">
+              <option value="iyi">Drenaj: iyi</option>
+              <option value="orta">Drenaj: orta</option>
+              <option value="zayif">Drenaj: zayif</option>
+            </select>
+            <select id="organicSelect">
+              <option value="dusuk">Organik madde: dusuk</option>
+              <option value="orta">Organik madde: orta</option>
+              <option value="iyi">Organik madde: iyi</option>
+            </select>
+            <select id="riskSelect">
+              <option value="dusuk">Hastalik riski: dusuk</option>
+              <option value="orta">Hastalik riski: orta</option>
+              <option value="yuksek">Hastalik riski: yuksek</option>
+            </select>
+            <button id="planBtn" type="button">Plan Uret</button>
+            <div id="planOut" class="out">Plan burada olusur.</div>
+          </div>
+        </article>
+        <article class="card searchable" data-text="ornek analiz okuma rapor yorum">
+          <h2>Analiz Raporu Okuma Sirasi</h2>
+          <ul>
+            <li>1) pH ve EC ile basla.</li>
+            <li>2) Organik madde + CEC degerine bak.</li>
+            <li>3) Doku ve hacim agirligi ile su yonetimini kur.</li>
+            <li>4) N-P-K mikro besinleri bitki hedefiyle eslestir.</li>
+            <li>5) 30-60-90 gunluk aksiyon takvimi cikart.</li>
+          </ul>
+          <p class="warn">Not: Asiri azot + yuksek nem, hastalik baskisini hizla arttirir.</p>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      const q = (id) => document.getElementById(id);
+
+      q("search").addEventListener("input", (e) => {
+        const term = String(e.target.value || "").toLowerCase().trim();
+        document.querySelectorAll(".searchable").forEach((el) => {
+          const text = String(el.dataset.text || "").toLowerCase();
+          el.classList.toggle("hide", term && !text.includes(term));
+        });
+      });
+
+      q("phBtn").addEventListener("click", () => {
+        const ph = Number(q("phInput").value);
+        if (!Number.isFinite(ph)) {
+          q("phOut").textContent = "Gecerli pH gir.";
+          return;
+        }
+        if (ph < 5.5) {
+          q("phOut").textContent = "Asidik toprak: kirecleme ve organik maddeyi artirma plani yap.";
+          return;
+        }
+        if (ph <= 7.2) {
+          q("phOut").textContent = "Dengeye yakin: mevcut yonetimi koru, mevsimsel kontrol yap.";
+          return;
+        }
+        q("phOut").textContent = "Alkali toprak: organik madde, asidik duzeltici ve damla sulama tercih et.";
+      });
+
+      q("texBtn").addEventListener("click", () => {
+        const sand = Number(q("sandInput").value);
+        const clay = Number(q("clayInput").value);
+        const silt = Number(q("siltInput").value);
+        const sum = sand + clay + silt;
+        if (![sand, clay, silt].every(Number.isFinite) || Math.abs(sum - 100) > 3) {
+          q("texOut").textContent = "Kum + kil + silt toplamı yaklasik 100 olmali.";
+          return;
+        }
+        let cls = "Tinli";
+        let tip = "Dengeli sulama ve parca parca besleme uygundur.";
+        if (sand >= 60) {
+          cls = "Kumlu";
+          tip = "Az ama sik sulama, organik maddeyi yuksek tut.";
+        } else if (clay >= 40) {
+          cls = "Killi";
+          tip = "Sikistirmadan kacın, derin drenaj ve yuzey kabuk kirma uygula.";
+        }
+        q("texOut").textContent = `Sinif: ${cls}. Oneri: ${tip}`;
+      });
+
+      q("planBtn").addEventListener("click", () => {
+        const drainage = q("drainageSelect").value;
+        const organic = q("organicSelect").value;
+        const risk = q("riskSelect").value;
+        const plan = [];
+        plan.push("Gun 1-15: Numune dogrulama, parsel bazli pH/EC haritalama.");
+        if (drainage === "zayif") plan.push("Gun 1-30: Drenaj kanali ac, su biriken cepleri temizle.");
+        if (organic === "dusuk") plan.push("Gun 1-45: Kompost + yesil gubre programi baslat.");
+        if (risk !== "dusuk") plan.push("Gun 1-60: Sulama zamanini sabaha cek, yaprak islakligini azalt.");
+        plan.push("Gun 30-60: Besleme programini bolerek uygula (azot piklerinden kac).");
+        plan.push("Gun 60-90: Ikinci analiz + verim/risk karsilastirmasi ile plan revizyonu.");
+        q("planOut").innerHTML = plan.map((x) => `• ${x}`).join("<br>");
+      });
+    </script>
+  </body>
+</html>
