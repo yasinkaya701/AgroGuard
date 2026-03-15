@@ -191,6 +191,9 @@ const OPEN_METEO_GEO = "https://geocoding-api.open-meteo.com/v1/search";
 const SOILGRIDS_QUERY = "https://rest.isric.org/soilgrids/v2.0/properties/query";
 const OPEN_METEO_FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
 const OPEN_METEO_GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1/search";
+const NOMINATIM_SEARCH_URL = "https://nominatim.openstreetmap.org/search";
+const NOMINATIM_USER_AGENT =
+  process.env.NOMINATIM_USER_AGENT || "AgroGuard/1.0 (contact: gs7016903@gmail.com)";
 const MTA_SOIL_URL = (process.env.MTA_SOIL_URL || "").trim();
 const MTA_MINERAL_URL = (process.env.MTA_MINERAL_URL || "").trim();
 const MTA_TIMEOUT_MS = Number(process.env.MTA_TIMEOUT_MS || 7000);
@@ -246,21 +249,40 @@ const weatherCache = new Map();
 const forecastCache = new Map();
 const WEATHER_CACHE_TTL_MS = 10 * 60 * 1000;
 const FORECAST_CACHE_TTL_MS = 30 * 60 * 1000;
+const SOIL_GEO_TIMEOUT_MS = Number(process.env.SOIL_GEO_TIMEOUT_MS || 7000);
+const SOIL_SOURCE_TIMEOUT_MS = Number(process.env.SOIL_SOURCE_TIMEOUT_MS || 5000);
 
 const marketCache = new Map();
 const MARKET_CACHE_TTL_MS = 30 * 60 * 1000;
+const MARKET_FETCH_TIMEOUT_MS = Number(process.env.MARKET_FETCH_TIMEOUT_MS || 2200);
 const newsCache = new Map();
 const NEWS_CACHE_TTL_MS = Number(process.env.NEWS_CACHE_TTL_MS || 5 * 60 * 1000);
+const anomalyIntelCache = new Map();
+const ANOMALY_INTEL_CACHE_TTL_MS = Number(process.env.ANOMALY_INTEL_CACHE_TTL_MS || 30 * 60 * 1000);
 const integrationsHealthCache = new Map();
 const INTEGRATIONS_HEALTH_CACHE_TTL_MS = Number(process.env.INTEGRATIONS_HEALTH_CACHE_TTL_MS || 2 * 60 * 1000);
 const landPriceCache = new Map();
 const LAND_PRICE_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const HACKHATON_ROOT = (process.env.HACKHATON_ROOT || path.join(os.homedir(), "Hackhaton")).trim();
+const HACKHATON_OUTPUT_ROOT = path.join(HACKHATON_ROOT, "output");
+const HACKHATON_CACHE_TTL_MS = Number(process.env.HACKHATON_CACHE_TTL_MS || 2 * 60 * 1000);
+const hackhatonCache = new Map();
+const irrigationClimateCache = new Map();
+const longTermClimateCache = new Map();
+const LONGTERM_CLIMATE_CACHE_TTL_MS = Number(process.env.LONGTERM_CLIMATE_CACHE_TTL_MS || 6 * 60 * 60 * 1000);
+const GDELT_DOC_API_URL = "https://api.gdeltproject.org/api/v2/doc/doc";
+const CHRONICLING_AMERICA_SEARCH_URL = "https://chroniclingamerica.loc.gov/search/pages/results/";
 const landPriceHistory = new Map();
 const LAND_PRICE_HISTORY_LIMIT = Number(process.env.LAND_PRICE_HISTORY_LIMIT || 40);
 const LAND_DISCOVERY_ENABLED = process.env.LAND_DISCOVERY_ENABLED !== "false";
 const LAND_DISCOVERY_TIMEOUT_MS = Number(process.env.LAND_DISCOVERY_TIMEOUT_MS || 6500);
 const LAND_DISCOVERY_MAX_SOURCES = Number(process.env.LAND_DISCOVERY_MAX_SOURCES || 5);
+const LAND_DISCOVERY_FAST_TIMEOUT_MS = Number(process.env.LAND_DISCOVERY_FAST_TIMEOUT_MS || 1300);
+const LAND_DISCOVERY_FAST_MAX_SOURCES = Number(process.env.LAND_DISCOVERY_FAST_MAX_SOURCES || 2);
 const LAND_PROVIDER_TIMEOUT_MS = Number(process.env.LAND_PROVIDER_TIMEOUT_MS || 7000);
+const LAND_PRICE_REMOTE_BUDGET_MS = Number(process.env.LAND_PRICE_REMOTE_BUDGET_MS || 1800);
+const LAND_PRICE_INTERNET_BUDGET_MS = Number(process.env.LAND_PRICE_INTERNET_BUDGET_MS || 1800);
+const LAND_PRICE_FAST_MODE_DEFAULT = process.env.LAND_PRICE_FAST_MODE !== "false";
 const LAND_LISTINGS_DEFAULT_MAX = Number(process.env.LAND_LISTINGS_DEFAULT_MAX || 12000);
 const LAND_LISTINGS_MAX_LIMIT = Number(process.env.LAND_LISTINGS_MAX_LIMIT || 50000);
 const LAND_DATASET_MIN_TARGET = Number(process.env.LAND_DATASET_MIN_TARGET || 10000);
@@ -280,6 +302,7 @@ const CACHE_FILE = path.join(__dirname, "cache", "infer_cache.json");
 const CACHE_PERSIST = process.env.CACHE_PERSIST === "true";
 const LAND_LISTINGS_FILE = path.join(__dirname, "data", "land_listings.json");
 const LAND_CUSTOM_MODEL_FILE = path.join(__dirname, "data", "land_price_custom_model.json");
+const SUPERAPP_RUNTIME_FILE = path.join(__dirname, "data", "superapp_runtime.json");
 let landManualListings = [];
 let landCustomModel = null;
 const TRADE_MARKET_FILE = path.join(__dirname, "data", "trade_market.json");
@@ -289,6 +312,186 @@ let tradeOrders = [];
 let tradeMessages = [];
 let tradeRatings = [];
 let tradeAlerts = [];
+let superAppRuntimeState = null;
+
+const SUPERAPP_MODULE_CATALOG = [
+  { id: "smart_farm", title: "AI Vision" },
+  { id: "climate_risk", title: "Iklim risk" },
+  { id: "soil_fertilizer", title: "Toprak + gubre" },
+  { id: "smart_irrigation", title: "Akilli sulama" },
+  { id: "field_logbook", title: "Tarla gunlugu" },
+  { id: "market_price", title: "Pazar/fiyat" },
+  { id: "fintech", title: "Finans destekleri" },
+  { id: "ecommerce", title: "E-ticaret" },
+  { id: "ai_chatbot", title: "AI danisman" },
+  { id: "yield_profit", title: "Verim/karlilik" },
+  { id: "satellite_drone", title: "Uydu + drone" },
+  { id: "community_training", title: "Topluluk/egitim" },
+  { id: "logistics_storage", title: "Lojistik/depolama" },
+  { id: "carbon_sustainability", title: "Karbon/surdurulebilirlik" }
+];
+
+const IRRIGATION_METHOD_LIBRARY = {
+  damla: { key: "damla", label: "Damla", efficiency: 0.9, window: "06:00-08:00" },
+  yagmurlama: { key: "yagmurlama", label: "Yagmurlama", efficiency: 0.75, window: "05:30-07:30" },
+  salma: { key: "salma", label: "Salma", efficiency: 0.6, window: "04:30-06:30" }
+};
+
+const IRRIGATION_WATER_SOURCE_LIBRARY = {
+  baraj_kanal: {
+    key: "baraj_kanal",
+    label: "Baraj / kanal",
+    aliases: ["baraj", "kanal", "surface", "yuzey"],
+    defaultNightSharePct: 65,
+    notes: ["Merkezi dagitim ve mevsimsel kisit riski daha yuksek."]
+  },
+  kuyu: {
+    key: "kuyu",
+    label: "Kuyu / pompaj",
+    aliases: ["kuyu", "yeralti", "pompaj", "groundwater"],
+    defaultNightSharePct: 78,
+    notes: ["Enerji maliyeti ve pompa saati baskisi ana kisit."]
+  },
+  karma: {
+    key: "karma",
+    label: "Karma kaynak",
+    aliases: ["karma", "mixed", "hibrit"],
+    defaultNightSharePct: 72,
+    notes: ["Kaynaklar arasi gecis esneklik saglar ama planlama gerektirir."]
+  }
+};
+
+const IRRIGATION_CROP_LIBRARY = {
+  domates: {
+    key: "domates",
+    label: "Domates",
+    aliases: ["domates", "tomato"],
+    defaultPlantingMonthDay: "04-15",
+    seasonLengthDays: 170,
+    stageLengths: { initial: 30, development: 40, mid: 60, late: 40 },
+    kc: { initial: 0.6, mid: 1.15, end: 0.8 },
+    rootDepthM: 0.9,
+    depletionFraction: 0.4,
+    notes: ["FAO crop profile: rooting depth 0.7-1.5 m", "FAO example depletion fraction p ~0.40"]
+  },
+  misir: {
+    key: "misir",
+    label: "Misir",
+    aliases: ["misir", "corn", "maize"],
+    defaultPlantingMonthDay: "05-01",
+    seasonLengthDays: 150,
+    stageLengths: { initial: 25, development: 30, mid: 55, late: 40 },
+    kc: { initial: 0.35, mid: 1.2, end: 0.6 },
+    rootDepthM: 1.0,
+    depletionFraction: 0.55,
+    notes: ["FAO crop profile: rooting depth 0.6-2.0 m", "FAO depletion fraction p ~0.55"]
+  },
+  aycicegi: {
+    key: "aycicegi",
+    label: "Aycicegi",
+    aliases: ["aycicegi", "sunflower"],
+    defaultPlantingMonthDay: "05-01",
+    seasonLengthDays: 140,
+    stageLengths: { initial: 20, development: 30, mid: 50, late: 40 },
+    kc: { initial: 0.4, mid: 1.15, end: 0.35 },
+    rootDepthM: 1.2,
+    depletionFraction: 0.45,
+    notes: ["Hackhaton crop calendar stage lengths", "Sunflower root depth is treated as deep-rooted field crop"]
+  },
+  bag_uzum: {
+    key: "bag_uzum",
+    label: "Bag / Uzum",
+    aliases: ["bag_uzum", "uzum", "grape", "vineyard"],
+    defaultPlantingMonthDay: "04-01",
+    seasonLengthDays: 210,
+    stageLengths: { initial: 30, development: 50, mid: 90, late: 40 },
+    kc: { initial: 0.3, mid: 0.85, end: 0.45 },
+    rootDepthM: 1.1,
+    depletionFraction: 0.5,
+    notes: ["Hackhaton crop calendar stage lengths", "Perennial vineyard schedule uses seasonal Kc envelope"]
+  },
+  bugday_kislik: {
+    key: "bugday_kislik",
+    label: "Bugday (kislik)",
+    aliases: ["bugday_kislik", "bugday", "wheat", "winter_wheat"],
+    defaultPlantingMonthDay: "11-01",
+    seasonLengthDays: 240,
+    stageLengths: { initial: 30, development: 60, mid: 90, late: 60 },
+    kc: { initial: 0.4, mid: 1.15, end: 0.25 },
+    rootDepthM: 1.0,
+    depletionFraction: 0.55,
+    notes: ["Hackhaton crop calendar stage lengths", "FAO wheat profile typically uses p around 0.55"]
+  }
+};
+
+const IRRIGATION_RESEARCH_REFS = [
+  {
+    id: "fao56-single-kc",
+    title: "FAO-56: single crop coefficient approach",
+    url: "https://www.fao.org/4/X0490E/x0490e0b.htm",
+    note: "ETc = Kc x ET0"
+  },
+  {
+    id: "fao56-scheduling",
+    title: "FAO-56: irrigation scheduling and soil water balance",
+    url: "https://www.fao.org/4/X0490E/x0490e0e.htm",
+    note: "TAW, RAW and root-zone depletion"
+  },
+  {
+    id: "cropwat",
+    title: "FAO CROPWAT",
+    url: "https://www.fao.org/land-water/databases-and-software/cropwat/en/",
+    note: "Daily soil water balance used for irrigation planning"
+  },
+  {
+    id: "open-meteo-et0",
+    title: "Open-Meteo docs",
+    url: "https://open-meteo.com/en/docs",
+    note: "Daily et0_fao_evapotranspiration forecast variable"
+  }
+];
+
+const IRRIGATION_REFERENCE_SCENARIOS = {
+  dry: {
+    key: "dry",
+    label: "Kuru yil",
+    et0Field: "et0P75",
+    precipField: "precipP25",
+    note: "Yuksek evaporasyon ve zayif yagis senaryosu"
+  },
+  normal: {
+    key: "normal",
+    label: "Normal yil",
+    et0Field: "et0Mean",
+    precipField: "precipMedian",
+    note: "Cok yilli median yagis ve ortalama ET0"
+  },
+  wet: {
+    key: "wet",
+    label: "Nemli yil",
+    et0Field: "et0P25",
+    precipField: "precipP75",
+    note: "Dusuk ET0 ve yuksek yagis senaryosu"
+  }
+};
+
+function buildDefaultSuperAppRuntime() {
+  const modules = {};
+  SUPERAPP_MODULE_CATALOG.forEach((item) => {
+    modules[item.id] = {
+      id: item.id,
+      title: item.title,
+      status: "ready",
+      runCount: 0,
+      lastRunAt: null,
+      lastResult: null
+    };
+  });
+  return {
+    updatedAt: new Date().toISOString(),
+    modules
+  };
+}
 
 function loadCacheFromDisk() {
   if (!CACHE_PERSIST) return;
@@ -378,6 +581,66 @@ function saveLandCustomModelToDisk() {
   } catch (err) {
     // ignore
   }
+}
+
+function loadSuperAppRuntimeFromDisk() {
+  try {
+    if (!fs.existsSync(SUPERAPP_RUNTIME_FILE)) {
+      superAppRuntimeState = buildDefaultSuperAppRuntime();
+      return;
+    }
+    const raw = fs.readFileSync(SUPERAPP_RUNTIME_FILE, "utf-8");
+    const parsed = JSON.parse(raw);
+    const base = buildDefaultSuperAppRuntime();
+    if (parsed && parsed.modules && typeof parsed.modules === "object") {
+      Object.keys(base.modules).forEach((id) => {
+        if (parsed.modules[id] && typeof parsed.modules[id] === "object") {
+          base.modules[id] = { ...base.modules[id], ...parsed.modules[id], id };
+        }
+      });
+    }
+    base.updatedAt = parsed?.updatedAt || new Date().toISOString();
+    superAppRuntimeState = base;
+  } catch (_) {
+    superAppRuntimeState = buildDefaultSuperAppRuntime();
+  }
+}
+
+function saveSuperAppRuntimeToDisk() {
+  try {
+    if (!superAppRuntimeState) superAppRuntimeState = buildDefaultSuperAppRuntime();
+    fs.mkdirSync(path.dirname(SUPERAPP_RUNTIME_FILE), { recursive: true });
+    fs.writeFileSync(SUPERAPP_RUNTIME_FILE, JSON.stringify(superAppRuntimeState, null, 2));
+  } catch (_) {
+    // ignore
+  }
+}
+
+function runSuperAppModuleSimulation(moduleId, payload = {}) {
+  const nowIso = new Date().toISOString();
+  const city = String(payload.city || "Malatya");
+  const responses = {
+    smart_farm: { healthIndex: 78, anomaly: "dusuk", zone: "parsel-3", note: "AI Vision calisti" },
+    climate_risk: { frostRisk: false, hailRisk: "dusuk", rainMm5d: 11, city },
+    soil_fertilizer: { npkGap: { n: "orta", p: "dusuk", k: "normal" }, plan: "N agirlikli gubreleme" },
+    smart_irrigation: { moisture: 0.24, recommendation: "36 saat sonra damla sulama", autoWindow: "06:00-07:10" },
+    field_logbook: { entriesToday: 3, photos: 5, latest: "Yaprak kontrolu kaydedildi" },
+    market_price: { medianTlKg: 18.7, spreadPct: 4.2, listingCount: 42 },
+    fintech: { grantWindowOpen: true, activeCredits: 2, insuranceQuote: "hazir" },
+    ecommerce: { suppliers: 17, bestBasketDeltaPct: -6.3, qrCheck: "ok" },
+    ai_chatbot: { answerQuality: "iyi", responseMs: 940, topic: "ekim zamani" },
+    yield_profit: { grossTl: 780000, netTl: 218000, roiPct: 39 },
+    satellite_drone: { ndviMean: 0.63, weakAreaPct: 9.5, parcel: "A-12" },
+    community_training: { forumPosts: 14, liveSessions: 2, qaOpen: 6 },
+    logistics_storage: { coldStorageFillPct: 71, matchCount: 4, etaHours: 6 },
+    carbon_sustainability: { waterReportReady: true, carbonKgCo2e: 4210, certificateStep: "hazirlik" }
+  };
+  return {
+    ok: true,
+    moduleId,
+    ranAt: nowIso,
+    output: responses[moduleId] || { message: "Module simulation completed" }
+  };
 }
 
 function loadTradeMarketFromDisk() {
@@ -530,6 +793,35 @@ async function fetchTextWithRetry(url, options = {}, retries = 1, timeoutMs = 70
   throw lastErr || new Error("fetch_text_failed");
 }
 
+function runWithTimeoutFallback(taskOrPromise, timeoutMs = 3000, fallbackValue = null) {
+  const budgetMs = Math.max(200, Number(timeoutMs || 0));
+  const taskPromise =
+    typeof taskOrPromise === "function"
+      ? Promise.resolve().then(() => taskOrPromise())
+      : Promise.resolve(taskOrPromise);
+  return new Promise((resolve) => {
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve(fallbackValue);
+    }, budgetMs);
+    taskPromise
+      .then((value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch(() => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(fallbackValue);
+      });
+  });
+}
+
 function getAnyCacheEntry(map, key) {
   const cached = map.get(key);
   if (!cached) return null;
@@ -583,6 +875,30 @@ function buildDemoWeather(city, coords = null, reason = null) {
   };
 }
 
+function buildUnavailableWeather(city, coords = null, reason = null, extra = {}) {
+  return {
+    city,
+    coords,
+    temp: null,
+    tempMin: null,
+    tempMax: null,
+    humidity: null,
+    windKmh: null,
+    windGustKmh: null,
+    precipitationMm: null,
+    cloudCoverPct: null,
+    condition: null,
+    frostRisk: false,
+    localTime: null,
+    timeZone: "Europe/Istanbul",
+    updatedAt: new Date().toISOString(),
+    source: "unavailable",
+    live: false,
+    warning: reason || "canli_veri_alinamadi",
+    ...extra
+  };
+}
+
 function buildDemoForecast(city, coords = null, reason = null) {
   const preset = getCityWeatherPreset(city);
   const labels = ["Bugun", "Yarin", "2 gun", "3 gun", "4 gun"];
@@ -610,6 +926,51 @@ function buildDemoForecast(city, coords = null, reason = null) {
     timeZone: "Europe/Istanbul",
     source: "demo",
     warning: reason || "canli_tahmin_alinamadi"
+  };
+}
+
+function buildUnavailableForecast(city, coords = null, reason = null, extra = {}) {
+  return {
+    city,
+    coords,
+    days: [],
+    hourly: [],
+    timeZone: "Europe/Istanbul",
+    source: "unavailable",
+    live: false,
+    warning: reason || "canli_tahmin_alinamadi",
+    ...extra
+  };
+}
+
+function buildUnavailableSoil(city, coords = null, reason = null, extra = {}) {
+  return {
+    city,
+    coords,
+    source: "unavailable",
+    live: false,
+    scopeLevel: "city",
+    soilType: null,
+    ph: null,
+    organic: null,
+    clay: null,
+    sand: null,
+    silt: null,
+    nitrogen: null,
+    cec: null,
+    bulkDensity: null,
+    recommended: [],
+    risky: [],
+    diseaseRisk: [],
+    internetSources: [],
+    internetSignals: null,
+    plantSuitability: [],
+    managementPlan: null,
+    soilHealth: null,
+    soilIndices: null,
+    note: reason || "canli_toprak_verisi_alinamadi",
+    warning: reason || "canli_toprak_verisi_alinamadi",
+    ...extra
   };
 }
 
@@ -2075,6 +2436,174 @@ function buildRetryPlan(ctx = {}) {
     .slice(0, 6);
 }
 
+function resolveHealthyIssueConflict(sortedItems = [], ctx = {}) {
+  if (!Array.isArray(sortedItems) || sortedItems.length < 2) {
+    return {
+      applied: false,
+      reason: "insufficient_predictions",
+      sorted: Array.isArray(sortedItems) ? sortedItems : []
+    };
+  }
+  const top = sortedItems[0];
+  const topLabel = String(top?.label || "").toLowerCase();
+  const topIsHealthy = topLabel.includes("healthy");
+  if (!topIsHealthy) {
+    return {
+      applied: false,
+      reason: "top_not_healthy",
+      sorted: sortedItems
+    };
+  }
+
+  const plant = ctx?.plant ? String(ctx.plant) : null;
+  const source = String(ctx?.source || "");
+  const issueCandidates = sortedItems
+    .slice(1, 6)
+    .filter((item) => !String(item?.label || "").toLowerCase().includes("healthy"))
+    .filter((item) => {
+      if (!plant) return true;
+      const itemPlant = labelToPlantId(item?.label || "");
+      return !itemPlant || itemPlant === plant;
+    });
+  if (!issueCandidates.length) {
+    return {
+      applied: false,
+      reason: "no_issue_candidate",
+      sorted: sortedItems
+    };
+  }
+
+  const bestIssue = issueCandidates.reduce((best, row) =>
+    Number(row?.val || 0) > Number(best?.val || 0) ? row : best
+  );
+  const issueMass = issueCandidates.reduce((acc, row) => acc + Number(row?.val || 0), 0);
+  const topVal = Number(top?.val || 0);
+  const issueVal = Number(bestIssue?.val || 0);
+  const margin = Math.max(0, topVal - issueVal);
+
+  const sourceIsFallback = source.includes("fallback");
+  const issueMassMinBase = Number(process.env.MODEL_HEALTHY_ISSUE_MASS_REVIEW || 0.36);
+  const issueAltMinBase = Number(process.env.MODEL_HEALTHY_ISSUE_ALT_REVIEW || 0.2);
+  const issueMarginMaxBase = Number(process.env.MODEL_HEALTHY_ISSUE_MARGIN_REVIEW || 0.1);
+  const issueMassMin = Math.max(0.2, issueMassMinBase - (sourceIsFallback ? 0.05 : 0));
+  const issueAltMin = Math.max(0.12, issueAltMinBase - (sourceIsFallback ? 0.03 : 0));
+  const issueMarginMax = Math.min(0.24, issueMarginMaxBase + (sourceIsFallback ? 0.04 : 0));
+
+  const shouldOverride =
+    issueVal >= issueAltMin && issueMass >= issueMassMin && margin <= issueMarginMax;
+
+  if (!shouldOverride) {
+    return {
+      applied: false,
+      reason: "threshold_not_met",
+      issueMass: Number(issueMass.toFixed(4)),
+      issueTop: Number(issueVal.toFixed(4)),
+      margin: Number(margin.toFixed(4)),
+      sorted: sortedItems
+    };
+  }
+
+  const marginPressure = clamp01(1 - margin / Math.max(issueMarginMax, 0.01));
+  const massPressure = clamp01(issueMass / Math.max(issueMassMin, 0.001));
+  const lift = Math.min(0.07, Math.max(0.015, 0.012 + marginPressure * 0.03 + massPressure * 0.01));
+  const adjusted = sortedItems.map((row) => {
+    if (row.label === top.label) return { ...row, val: Math.max(1e-6, Number(row.val || 0) - lift) };
+    if (row.label === bestIssue.label) return { ...row, val: Number(row.val || 0) + lift };
+    return row;
+  });
+  const normalized = normalizePredictionScores(adjusted).sort((a, b) => b.val - a.val);
+  const swapped = String(normalized?.[0]?.label || "") === String(bestIssue?.label || "");
+
+  return {
+    applied: swapped,
+    reason: swapped ? "healthy_issue_override" : "insufficient_swap_gain",
+    originalTopLabel: top.label,
+    overrideLabel: bestIssue.label,
+    issueMass: Number(issueMass.toFixed(4)),
+    issueTop: Number(issueVal.toFixed(4)),
+    margin: Number(margin.toFixed(4)),
+    thresholds: {
+      issueMassMin: Number(issueMassMin.toFixed(4)),
+      issueAltMin: Number(issueAltMin.toFixed(4)),
+      issueMarginMax: Number(issueMarginMax.toFixed(4))
+    },
+    sorted: normalized
+  };
+}
+
+function buildConfidenceProfile(ctx = {}) {
+  const top1 = clamp01(Number(ctx.top1 || 0));
+  const top2 = clamp01(Number(ctx.top2 || 0));
+  const margin = clamp01(Number(ctx.margin || 0));
+  const entropy = clamp01(Number(ctx.entropy || 0));
+  const uncertainty = clamp01((Number(ctx.uncertaintyScore || 0) || 0) / 100);
+  const reliability = clamp01((Number(ctx.reliabilityScore || 0) || 0) / 100);
+  const quality = clamp01(
+    ctx.qualityScore === null || ctx.qualityScore === undefined ? 0.62 : Number(ctx.qualityScore)
+  );
+  const plantScore = clamp01(
+    ctx.plantScore === null || ctx.plantScore === undefined ? 0.62 : Number(ctx.plantScore)
+  );
+  const separationNorm = clamp01((margin - 0.03) / 0.28);
+  const topNorm = clamp01((top1 - 0.28) / 0.56);
+  const entropyNorm = clamp01(1 - entropy);
+  const uncertaintyNorm = clamp01(1 - uncertainty);
+
+  let score =
+    topNorm * 24 +
+    separationNorm * 20 +
+    entropyNorm * 12 +
+    reliability * 22 +
+    uncertaintyNorm * 12 +
+    quality * 5 +
+    plantScore * 5;
+
+  if (ctx.ambiguityHigh) score -= 8;
+  if (ctx.classConflict) score -= 9;
+  if (ctx.plantMismatch) score -= 8;
+  if (ctx.source && String(ctx.source).includes("fallback")) score -= 10;
+  score = Math.max(0, Math.min(100, Math.round(score)));
+
+  const reasons = [];
+  const blockers = [];
+  if (topNorm >= 0.72) reasons.push("Top1 olasiligi yuksek.");
+  if (separationNorm >= 0.65) reasons.push("Sinif ayrimi net.");
+  if (entropyNorm >= 0.62) reasons.push("Tahmin dagilimi odakli.");
+  if (reliability >= 0.75) reasons.push(`Guvenilirlik guclu (${Math.round(reliability * 100)}/100).`);
+  if (!reasons.length) reasons.push("Model sonucu orta seviye belirginlikte.");
+
+  if (ctx.lowConfidence) blockers.push("Top1/margin esigi asilmadi.");
+  if (ctx.uncertaintyHigh) blockers.push(`Belirsizlik skoru yuksek (${Number(ctx.uncertaintyScore || 0)}/100).`);
+  if (ctx.ambiguityHigh) blockers.push("Yakin alternatif siniflar var.");
+  if (ctx.classConflict) blockers.push("Healthy/issue sinif dengesi catismasi var.");
+  if (ctx.plantMismatch) blockers.push("Secilen bitki ile tespit uyumsuz.");
+  if (ctx.source && String(ctx.source).includes("fallback")) blockers.push("Fallback kaynakli sonuc.");
+
+  const band = score >= 75 ? "strong" : score >= 55 ? "medium" : "weak";
+  return {
+    score,
+    band,
+    reasons: reasons.slice(0, 4),
+    blockers: blockers.slice(0, 5),
+    summary:
+      band === "strong"
+        ? "Model ayirimi guclu."
+        : band === "medium"
+          ? "Model ayirimi orta seviye."
+          : "Model ayirimi zayif, ek dogrulama gerekli.",
+    factors: {
+      top1: Number(top1.toFixed(4)),
+      top2: Number(top2.toFixed(4)),
+      margin: Number(margin.toFixed(4)),
+      entropy: Number(entropy.toFixed(4)),
+      reliability: Number((reliability * 100).toFixed(1)),
+      uncertainty: Number((uncertainty * 100).toFixed(1)),
+      quality: Number((quality * 100).toFixed(1)),
+      plantScore: Number((plantScore * 100).toFixed(1))
+    }
+  };
+}
+
 function inferSeverity(label, status = null) {
   if (status === "issue") return "medium";
   if (status === "review") return "medium";
@@ -2738,13 +3267,13 @@ function parseSoilGrids(json) {
     const depths = layer.depths || [];
     depthProfile[name] = {};
     depths.forEach((d) => {
-      const depthName = d?.name;
+      const depthName = d?.label || d?.name;
       const raw = d?.values?.mean;
       if (!trackedDepths.includes(depthName) || typeof raw !== "number") return;
       depthProfile[name][depthName] = Number((raw / dFactor).toFixed(2));
     });
     const values = depths
-      .filter((d) => pickDepths.includes(d?.name))
+      .filter((d) => pickDepths.includes(d?.label || d?.name))
       .map((d) => d?.values?.mean)
       .filter((v) => typeof v === "number");
     if (!values.length) return;
@@ -2757,11 +3286,14 @@ function parseSoilGrids(json) {
   return result;
 }
 
-async function fetchSoilGrids(lat, lon) {
-  const key = `${Number(lat).toFixed(3)},${Number(lon).toFixed(3)}`;
-  const cached = soilCache.get(key);
-  if (cached && Date.now() - cached.ts < SOIL_CACHE_TTL_MS) return cached.value;
+function hasSoilGridSignal(data = null) {
+  if (!data || typeof data !== "object") return false;
+  return ["phh2o", "soc", "clay", "sand", "silt", "nitrogen", "cec", "bdod"].some((key) =>
+    Number.isFinite(Number(data[key]))
+  );
+}
 
+async function fetchSoilGridsPoint(lat, lon) {
   const properties = [
     "phh2o",
     "soc",
@@ -2786,9 +3318,71 @@ async function fetchSoilGrids(lat, lon) {
     7000
   ).catch(() => null);
   if (!json) return null;
-  const parsed = parseSoilGrids(json);
-  soilCache.set(key, { ts: Date.now(), value: parsed });
-  return parsed;
+  return parseSoilGrids(json);
+}
+
+function buildSoilProbePoints(lat, lon) {
+  const radii = [0, 0.006, 0.012, 0.02];
+  const offsets = [];
+  radii.forEach((radius) => {
+    if (radius === 0) {
+      offsets.push([0, 0]);
+      return;
+    }
+    offsets.push(
+      [radius, 0],
+      [-radius, 0],
+      [0, radius],
+      [0, -radius],
+      [radius, radius],
+      [radius, -radius],
+      [-radius, radius],
+      [-radius, -radius]
+    );
+  });
+  const seen = new Set();
+  return offsets
+    .map(([dLat, dLon]) => ({
+      lat: Number((Number(lat) + dLat).toFixed(6)),
+      lon: Number((Number(lon) + dLon).toFixed(6))
+    }))
+    .filter((point) => {
+      const key = `${point.lat.toFixed(4)},${point.lon.toFixed(4)}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+async function fetchSoilGrids(lat, lon) {
+  const key = `${Number(lat).toFixed(3)},${Number(lon).toFixed(3)}`;
+  const cached = soilCache.get(key);
+  if (cached && Date.now() - cached.ts < SOIL_CACHE_TTL_MS) return cached.value;
+
+  const probePoints = buildSoilProbePoints(lat, lon);
+  let best = null;
+  for (const point of probePoints) {
+    const parsed = await fetchSoilGridsPoint(point.lat, point.lon);
+    if (!parsed) continue;
+    const sampleDistanceKm = haversineKm({ lat, lon }, point) || 0;
+    const enriched = {
+      ...parsed,
+      samplePoint: {
+        lat: point.lat,
+        lon: point.lon,
+        distanceKm: Number(sampleDistanceKm.toFixed(2))
+      }
+    };
+    if (hasSoilGridSignal(parsed)) {
+      soilCache.set(key, { ts: Date.now(), value: enriched });
+      return enriched;
+    }
+    if (!best) best = enriched;
+  }
+  if (best) {
+    soilCache.set(key, { ts: Date.now(), value: best });
+  }
+  return best;
 }
 
 async function fetchOpenMeteoGeocode(city) {
@@ -2814,6 +3408,14 @@ function avgOf(values = []) {
   const nums = values.map((x) => Number(x)).filter((x) => Number.isFinite(x));
   if (!nums.length) return null;
   return nums.reduce((a, b) => a + b, 0) / nums.length;
+}
+
+function stdOf(values = []) {
+  const nums = values.map((x) => Number(x)).filter((x) => Number.isFinite(x));
+  if (nums.length < 2) return null;
+  const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+  const variance = nums.reduce((sum, v) => sum + (v - mean) ** 2, 0) / nums.length;
+  return Math.sqrt(variance);
 }
 
 function summarizeOpenMeteoSoil(json) {
@@ -3081,7 +3683,6710 @@ function buildLocationSearchQuery(city = "", district = "", neighborhood = "") {
     .join(", ");
 }
 
+function extractAddressField(address = {}, keys = []) {
+  if (!address || typeof address !== "object") return "";
+  for (const key of keys) {
+    const value = String(address[key] || "").trim();
+    if (value) return value;
+  }
+  return "";
+}
+
+function scoreNominatimResult(result, city = "", district = "", neighborhood = "") {
+  const searchHay =
+    cityKey(result?.display_name || "") +
+    " " +
+    cityKey(result?.name || "") +
+    " " +
+    cityKey(JSON.stringify(result?.address || {}));
+  let score = Number(result?.importance || 0) * 100;
+  if (city && searchHay.includes(cityKey(city))) score += 40;
+  if (district && searchHay.includes(cityKey(district))) score += 55;
+  if (neighborhood && searchHay.includes(cityKey(neighborhood))) score += 70;
+  const placeRank = Number(result?.place_rank || 0);
+  if (placeRank >= 20 && neighborhood) score += 8;
+  if (placeRank >= 10 && district) score += 6;
+  return score;
+}
+
+async function fetchNominatimGeocode(city, district = "", neighborhood = "") {
+  const neighborhoodVariants = Array.from(
+    new Set(
+      [
+        neighborhood,
+        neighborhood && !/mah/i.test(String(neighborhood || ""))
+          ? `${String(neighborhood).trim()} Mahallesi`
+          : null
+      ]
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
+    )
+  );
+  const segments = [
+    ...neighborhoodVariants.map((item) => [item, district, city]),
+    [district, city],
+    [city]
+  ];
+  const queryCandidates = Array.from(
+    new Set(
+      segments.flatMap((parts) => {
+        const cleanParts = parts
+          .map((item) => String(item || "").trim())
+          .filter(Boolean);
+        if (!cleanParts.length) return [];
+        const titleParts = cleanParts.map((item) => toTurkishTitleCase(item));
+        const asciiParts = titleParts.map((item) => toTurkishAscii(item));
+        return [
+          [...cleanParts, "Turkey"].join(", "),
+          [...titleParts, "Turkey"].join(", "),
+          [...asciiParts, "Turkey"].join(", "),
+          [...cleanParts, "Türkiye"].join(", "),
+          [...titleParts, "Türkiye"].join(", ")
+        ]
+          .map((item) => String(item || "").trim())
+          .filter(Boolean);
+      })
+    )
+  );
+  for (const query of queryCandidates) {
+    const key = `nominatim:${cityKey(query)}`;
+    const cached = geoCache.get(key);
+    if (cached && Date.now() - cached.ts < GEO_CACHE_TTL_MS) return cached.value;
+    try {
+      const url = new URL(NOMINATIM_SEARCH_URL);
+      url.searchParams.set("q", query);
+      url.searchParams.set("format", "jsonv2");
+      url.searchParams.set("limit", "5");
+      url.searchParams.set("addressdetails", "1");
+      url.searchParams.set("countrycodes", "tr");
+      url.searchParams.set("accept-language", "tr");
+      const data = await fetchJsonWithRetry(
+        url.toString(),
+        {
+          headers: {
+            accept: "application/json",
+            "accept-language": "tr",
+            "user-agent": NOMINATIM_USER_AGENT
+          }
+        },
+        1,
+        4500
+      );
+      const rows = Array.isArray(data) ? data : [];
+      if (!rows.length) continue;
+      const best = rows
+        .slice()
+        .sort((a, b) => scoreNominatimResult(b, city, district, neighborhood) - scoreNominatimResult(a, city, district, neighborhood))[0];
+      const lat = Number(best?.lat);
+      const lon = Number(best?.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
+      const address = best?.address || {};
+      const resolvedNeighborhood =
+        extractAddressField(address, ["quarter", "neighbourhood", "suburb", "hamlet", "village"]) ||
+        neighborhood ||
+        null;
+      const resolvedDistrict =
+        extractAddressField(address, ["town", "city_district", "district", "county", "municipality"]) ||
+        district ||
+        null;
+      const resolvedCity =
+        extractAddressField(address, ["province", "city", "state", "town"]) ||
+        city ||
+        null;
+      const payload = {
+        name: resolvedCity || city || best?.name || null,
+        lat,
+        lon,
+        city: resolvedCity ? toTurkishTitleCase(resolvedCity) : city || null,
+        district: resolvedDistrict ? toTurkishTitleCase(resolvedDistrict) : district || null,
+        neighborhood: resolvedNeighborhood ? toTurkishTitleCase(resolvedNeighborhood.replace(/\s+mahallesi$/i, "")) : neighborhood || null,
+        geoSource: "nominatim-geocode",
+        displayName: String(best?.display_name || "").trim() || null
+      };
+      geoCache.set(key, { ts: Date.now(), value: payload });
+      return payload;
+    } catch (_) {
+      // try next candidate
+    }
+  }
+  return null;
+}
+
+function hackhatonPathExists(targetPath = "") {
+  try {
+    return Boolean(targetPath) && fs.existsSync(targetPath);
+  } catch (_) {
+    return false;
+  }
+}
+
+function hackhatonStatSafe(targetPath = "") {
+  try {
+    return fs.statSync(targetPath);
+  } catch (_) {
+    return null;
+  }
+}
+
+function hackhatonReadJsonSafe(targetPath = "") {
+  try {
+    const raw = fs.readFileSync(targetPath, "utf-8");
+    try {
+      return JSON.parse(raw);
+    } catch (_) {
+      let inString = false;
+      let escaped = false;
+      let normalized = "";
+      for (let i = 0; i < raw.length; i += 1) {
+        const ch = raw[i];
+        if (inString) {
+          normalized += ch;
+          if (escaped) {
+            escaped = false;
+          } else if (ch === "\\") {
+            escaped = true;
+          } else if (ch === '"') {
+            inString = false;
+          }
+          continue;
+        }
+        if (ch === '"') {
+          inString = true;
+          normalized += ch;
+          continue;
+        }
+        if (raw.startsWith("NaN", i)) {
+          normalized += "null";
+          i += 2;
+          continue;
+        }
+        if (raw.startsWith("-Infinity", i)) {
+          normalized += "null";
+          i += 8;
+          continue;
+        }
+        if (raw.startsWith("Infinity", i)) {
+          normalized += "null";
+          i += 7;
+          continue;
+        }
+        normalized += ch;
+      }
+      return JSON.parse(normalized);
+    }
+  } catch (_) {
+    return null;
+  }
+}
+
+function hackhatonReadTextSafe(targetPath = "", maxLen = 1200) {
+  try {
+    return String(fs.readFileSync(targetPath, "utf-8") || "").slice(0, maxLen);
+  } catch (_) {
+    return "";
+  }
+}
+
+function hackhatonReadFullTextSafe(targetPath = "") {
+  try {
+    return String(fs.readFileSync(targetPath, "utf-8") || "");
+  } catch (_) {
+    return "";
+  }
+}
+
+function hackhatonParseCsvLine(line = "") {
+  const values = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (ch === "," && !inQuotes) {
+      values.push(current);
+      current = "";
+      continue;
+    }
+    current += ch;
+  }
+  values.push(current);
+  return values.map((item) => String(item || "").trim());
+}
+
+function hackhatonReadCsvRowsSafe(targetPath = "", maxRows = 5000) {
+  try {
+    const text = String(fs.readFileSync(targetPath, "utf-8") || "");
+    const lines = text
+      .split(/\r?\n/)
+      .map((line) => line.replace(/\r/g, ""))
+      .filter((line) => line.trim().length);
+    if (!lines.length) return [];
+    const headers = hackhatonParseCsvLine(lines[0]).map((item) => String(item || "").replace(/^\uFEFF/, "").trim());
+    return lines.slice(1, maxRows + 1).map((line) => {
+      const cells = hackhatonParseCsvLine(line);
+      const row = {};
+      headers.forEach((header, idx) => {
+        row[header] = cells[idx] != null ? cells[idx] : "";
+      });
+      return row;
+    });
+  } catch (_) {
+    return [];
+  }
+}
+
+function normalizeHackhatonRelativePath(value = "") {
+  return String(value || "")
+    .replace(/\\/g, "/")
+    .split("/")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .filter((part) => part !== "." && part !== "..")
+    .join("/");
+}
+
+function toHackhatonOutputRelative(absPath = "") {
+  if (!absPath) return null;
+  const relative = path.relative(HACKHATON_OUTPUT_ROOT, absPath);
+  if (!relative || relative.startsWith("..")) return null;
+  return relative.split(path.sep).join("/");
+}
+
+function toHackhatonRootRelative(absPath = "") {
+  if (!absPath) return null;
+  const relative = path.relative(HACKHATON_ROOT, absPath);
+  if (!relative || relative.startsWith("..")) return null;
+  return relative.split(path.sep).join("/");
+}
+
+function resolveHackhatonOutputFile(relativePath = "") {
+  const safeRelative = normalizeHackhatonRelativePath(relativePath);
+  if (!safeRelative) return null;
+  const absolute = path.resolve(HACKHATON_OUTPUT_ROOT, safeRelative);
+  const relativeCheck = path.relative(HACKHATON_OUTPUT_ROOT, absolute);
+  if (!relativeCheck || relativeCheck.startsWith("..") || path.isAbsolute(relativeCheck)) return null;
+  const stat = hackhatonStatSafe(absolute);
+  if (!stat || !stat.isFile()) return null;
+  return absolute;
+}
+
+function resolveHackhatonRootFile(relativePath = "") {
+  const safeRelative = normalizeHackhatonRelativePath(relativePath);
+  if (!safeRelative) return null;
+  const absolute = path.resolve(HACKHATON_ROOT, safeRelative);
+  const relativeCheck = path.relative(HACKHATON_ROOT, absolute);
+  if (!relativeCheck || relativeCheck.startsWith("..") || path.isAbsolute(relativeCheck)) return null;
+  const stat = hackhatonStatSafe(absolute);
+  if (!stat || !stat.isFile()) return null;
+  return absolute;
+}
+
+function hackhatonAssetRef(absPath = "") {
+  const relativePath = toHackhatonOutputRelative(absPath);
+  if (!relativePath) return null;
+  return {
+    file: relativePath,
+    url: `/api/hackhaton/file?file=${encodeURIComponent(relativePath)}`
+  };
+}
+
+function hackhatonRootAssetRef(absPath = "") {
+  const relativePath = toHackhatonRootRelative(absPath);
+  if (!relativePath) return null;
+  return {
+    file: relativePath,
+    url: `/api/hackhaton/root-file?file=${encodeURIComponent(relativePath)}`
+  };
+}
+
+function hackhatonListDirs(rootPath = "") {
+  try {
+    return fs
+      .readdirSync(rootPath, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => {
+        const absPath = path.join(rootPath, entry.name);
+        const stat = hackhatonStatSafe(absPath);
+        return {
+          name: entry.name,
+          path: absPath,
+          mtimeMs: stat?.mtimeMs || 0
+        };
+      })
+      .sort((a, b) => b.mtimeMs - a.mtimeMs);
+  } catch (_) {
+    return [];
+  }
+}
+
+function findLatestHackhatonRun({ prefixes = [], requiredFile = "model_suite_summary.json" } = {}) {
+  if (!hackhatonPathExists(HACKHATON_OUTPUT_ROOT)) return null;
+  const normalizedPrefixes = prefixes.map((item) => String(item || "").trim()).filter(Boolean);
+  const dirs = hackhatonListDirs(HACKHATON_OUTPUT_ROOT);
+  return (
+    dirs.find((entry) => {
+      if (normalizedPrefixes.length && !normalizedPrefixes.some((prefix) => entry.name.startsWith(prefix))) {
+        return false;
+      }
+      return requiredFile ? hackhatonPathExists(path.join(entry.path, requiredFile)) : true;
+    }) || null
+  );
+}
+
+function hackhatonFindFileInDir(rootPath = "", predicate = () => false) {
+  try {
+    return (
+      fs
+        .readdirSync(rootPath, { withFileTypes: true })
+        .filter((entry) => entry.isFile())
+        .map((entry) => path.join(rootPath, entry.name))
+        .find((filePath) => predicate(path.basename(filePath), filePath)) || null
+    );
+  } catch (_) {
+    return null;
+  }
+}
+
+function hackhatonFindChart(runPath = "", modelKey = "", variable = "") {
+  const chartsDir = path.join(runPath, modelKey, "charts");
+  if (!hackhatonPathExists(chartsDir)) return null;
+  const varKey = String(variable || "").toLowerCase();
+  const preferred = hackhatonFindFileInDir(chartsDir, (name) => {
+    const n = String(name || "").toLowerCase();
+    return (
+      n.endsWith(".png") &&
+      n.includes(varKey) &&
+      !n.includes("regime_probs") &&
+      !n.includes("diagnostics") &&
+      !n.includes("components")
+    );
+  });
+  if (preferred) return preferred;
+  return hackhatonFindFileInDir(chartsDir, (name) => String(name || "").toLowerCase().includes(varKey));
+}
+
+function hackhatonFindReportJson(runPath = "", modelKey = "", variable = "") {
+  const reportsDir = path.join(runPath, modelKey, "reports");
+  if (!hackhatonPathExists(reportsDir)) return null;
+  const varKey = String(variable || "").toLowerCase();
+  const filePath = hackhatonFindFileInDir(
+    reportsDir,
+    (name) => String(name || "").toLowerCase().endsWith(".json") && String(name || "").toLowerCase().includes(varKey)
+  );
+  if (!filePath) return null;
+  return hackhatonReadJsonSafe(filePath);
+}
+
+function hackhatonModelLabel(key = "") {
+  const normalized = String(key || "").trim();
+  const map = {
+    quant: "Quant",
+    prophet: "Prophet",
+    strong: "Strong Ensemble",
+    analog: "Analog",
+    prophet_ultra: "Prophet Ultra",
+    literature: "Literature",
+    stable_consensus: "Stable Consensus"
+  };
+  return map[normalized] || normalized || "-";
+}
+
+function hackhatonVariableLabel(key = "") {
+  const normalized = String(key || "").trim();
+  const map = {
+    temp: "Sicaklik",
+    humidity: "Nem",
+    precip: "Yagis",
+    pressure: "Basinc"
+  };
+  return map[normalized] || normalized || "-";
+}
+
+function hackhatonScoreText(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "-";
+  return numeric.toFixed(2);
+}
+
+function hackhatonExcerpt(text = "", maxLen = 260) {
+  return String(text || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLen);
+}
+
+function hackhatonDecodeHtml(text = "") {
+  return String(text || "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function hackhatonStripHtml(html = "") {
+  return hackhatonDecodeHtml(
+    String(html || "")
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+  )
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function hackhatonExtractPresentationSlides(htmlPath = "", maxSlides = 24) {
+  const html = hackhatonReadFullTextSafe(htmlPath);
+  if (!html) return [];
+  const baseDir = path.dirname(htmlPath);
+  const sections = html.match(/<section[\s\S]*?<\/section>/gi) || [];
+  return sections.slice(0, maxSlides).map((section, idx) => {
+    const titleMatch = section.match(/<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/i);
+    const imgMatches = Array.from(section.matchAll(/<img[^>]*src=["']([^"']+)["']/gi));
+    const imgSrc = imgMatches[0]?.[1] || "";
+    const cleanTitle = hackhatonStripHtml(titleMatch?.[1] || `Slayt ${idx + 1}`);
+    const absoluteImg = imgSrc ? path.resolve(baseDir, imgSrc) : null;
+    return {
+      id: `slide-${idx + 1}`,
+      order: idx + 1,
+      title: cleanTitle || `Slayt ${idx + 1}`,
+      excerpt: hackhatonExcerpt(hackhatonStripHtml(section), 220),
+      image: absoluteImg ? hackhatonAssetRef(absoluteImg) : null
+    };
+  });
+}
+
+function getHackhatonCacheEntry(key = "") {
+  const entry = hackhatonCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > HACKHATON_CACHE_TTL_MS) {
+    hackhatonCache.delete(key);
+    return null;
+  }
+  return entry.value;
+}
+
+function setHackhatonCacheEntry(key = "", value = null) {
+  hackhatonCache.set(key, { ts: Date.now(), value });
+  return value;
+}
+
+function buildHackhatonScope(city = "", district = "", neighborhood = "") {
+  return {
+    city: city || null,
+    district: district || null,
+    neighborhood: neighborhood || null,
+    locationLabel: buildLocationSearchQuery(city, district, neighborhood) || city || "Turkiye"
+  };
+}
+
+function findFirstExistingHackhatonPath(paths = []) {
+  return paths.find((item) => item && hackhatonPathExists(item)) || null;
+}
+
+function resolveClimateAnomalyBundle() {
+  const preferredRun = findFirstExistingHackhatonPath([
+    path.join(HACKHATON_OUTPUT_ROOT, "yeni_model_newdata_20260307_035819"),
+    path.join(HACKHATON_OUTPUT_ROOT, "yeni_model_newdata_20260307_034620"),
+    findLatestHackhatonRun({ prefixes: ["yeni_model_newdata_"], requiredFile: "quant_index_history_only.csv" })?.path
+  ]);
+  const continuousRoot = findFirstExistingHackhatonPath([
+    path.join(HACKHATON_OUTPUT_ROOT, "extreme_events", "news", "continuous"),
+    path.join(HACKHATON_OUTPUT_ROOT, "hackhaton_final_package_2026-03-06_quant", "output", "extreme_events", "news", "continuous")
+  ]);
+  return {
+    historyCsv: findFirstExistingHackhatonPath([
+      path.join(preferredRun || "", "anomalies", "all_variables_anomalies_history_only.csv")
+    ]),
+    enrichedCsv: findFirstExistingHackhatonPath([
+      path.join(HACKHATON_OUTPUT_ROOT, "extreme_events", "news", "tum_asiri_olaylar_haber_enriched.csv"),
+      path.join(HACKHATON_OUTPUT_ROOT, "extreme_events", "news_expanded_v3_relaxed", "tum_asiri_olaylar_haber_enriched.csv")
+    ]),
+    continuousCsv: continuousRoot ? path.join(continuousRoot, "surekli_anomali_haber_aylik.csv") : null,
+    continuousOverviewPng: continuousRoot ? path.join(continuousRoot, "surekli_anomali_haber_overview.png") : null,
+    continuousRoot,
+    quantRun: preferredRun,
+    quantChartsDir: preferredRun ? path.join(preferredRun, "charts_real_qc_anom_1912_2023") : null
+  };
+}
+
+function normalizeClimateAnomalyRecord(row = {}, mode = "history") {
+  const rawDate =
+    String(row.center_time || row.start_time || row.ds || row.context_ds || "")
+      .trim()
+      .slice(0, 10);
+  if (!rawDate) return null;
+  const date = new Date(`${rawDate}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return null;
+  const variable = cityKey(row.variable || "");
+  if (!["temp", "humidity", "precip", "pressure"].includes(variable)) return null;
+  const actual = toFiniteNumber(row.actual || row.max_value || row.value);
+  const expected = toFiniteNumber(row.expected);
+  const residual = toFiniteNumber(row.residual);
+  const zscore = toFiniteNumber(row.zscore || row.context_zscore);
+  const robustZ = toFiniteNumber(row.robust_zscore || row.context_robust_zscore);
+  const severityScore =
+    toFiniteNumber(row.peak_severity_score) ||
+    Math.max(
+      Math.abs(Number(robustZ || 0)),
+      Math.abs(Number(zscore || 0)),
+      Math.abs(Number(residual || 0))
+    );
+  return {
+    id: String(row.event_id || `${variable}-${rawDate}-${mode}`),
+    date: rawDate,
+    year: date.getUTCFullYear(),
+    variable,
+    variableLabel: hackhatonVariableLabel(variable),
+    sourceMode: mode,
+    actual,
+    expected,
+    residual,
+    zscore,
+    robustZScore: robustZ,
+    severityScore: Number(Number(severityScore || 0).toFixed(3)),
+    severityLevel: String(row.severity_level || row.anomaly_type_tr || "anomali").trim(),
+    anomalyType: String(row.anomaly_type_tr || row.context_anomaly_type_tr || row.severity_level || "anomali").trim(),
+    causePrimary: String(row.cause_primary || row.context_cause_primary || row.quant_cause_primary || "").trim(),
+    causeDetails: String(row.cause_details_tr || row.context_cause_details_tr || "").trim(),
+    localPatternHint: String(row.local_climate_hint || row.context_local_pattern_hint || "").trim(),
+    globalEventMatch: String(row.global_event_match || row.context_global_event_match || "").trim(),
+    localEventMatch: String(row.local_event_match || row.context_local_event_match || "").trim(),
+    confidence: String(row.cause_confidence || row.context_cause_confidence || row.internet_confidence || "").trim(),
+    newsTitle: String(row.top_headline || row.news_headline_match || "").trim(),
+    newsSource: String(row.top_headline_source || row.news_source_match || "").trim(),
+    newsUrl: String(row.top_headline_url || row.news_url_match || "").trim(),
+    newsHazard: String(row.top_headline_hazard || row.news_hazard_match || "").trim(),
+    newsMatchScore: toFiniteNumber(row.top_headline_match_score || row.news_match_score) || 0,
+    newsMatchCount: Number(row.news_match_count || row.source_count || 0),
+    internetSummary: String(row.internet_cause_summary || "").trim()
+  };
+}
+
+function loadClimateAnomalyHistory(bundle = null) {
+  const filePath = bundle?.historyCsv;
+  if (!filePath) return [];
+  return hackhatonReadCsvRowsSafe(filePath, 30000)
+    .map((row) => normalizeClimateAnomalyRecord(row, "history"))
+    .filter(Boolean)
+    .sort((a, b) => {
+      const da = new Date(`${a.date}T00:00:00Z`).getTime();
+      const db = new Date(`${b.date}T00:00:00Z`).getTime();
+      return da - db;
+    });
+}
+
+function loadClimateEventNewsRows(bundle = null) {
+  const filePath = bundle?.enrichedCsv;
+  if (!filePath) return [];
+  return hackhatonReadCsvRowsSafe(filePath, 15000)
+    .map((row) => normalizeClimateAnomalyRecord(row, "event-news"))
+    .filter(Boolean)
+    .sort((a, b) => Number(b.newsMatchScore || 0) - Number(a.newsMatchScore || 0));
+}
+
+function loadClimateContinuousRows(bundle = null) {
+  const filePath = bundle?.continuousCsv;
+  if (!filePath) return [];
+  return hackhatonReadCsvRowsSafe(filePath, 12000)
+    .map((row) => {
+      const month = String(row.month || "").trim().slice(0, 10);
+      const variable = cityKey(row.variable || "");
+      if (!month || !variable) return null;
+      return {
+        month,
+        variable,
+        variableLabel: hackhatonVariableLabel(variable),
+        monthlyEventCount: Number(row.monthly_event_count || 0),
+        monthlyMaxSeverity: Number(Number(row.monthly_max_severity || 0).toFixed(2)),
+        newsCount: Number(row.news_count || 0),
+        newsMaxScore: Number(Number(row.news_max_score || 0).toFixed(2)),
+        severityNorm: Number(Number(row.severity_norm || 0).toFixed(3)),
+        severityEma: Number(Number(row.severity_ema || 0).toFixed(3))
+      };
+    })
+    .filter(Boolean);
+}
+
+function pickClimateAnomalyCharts(bundle = null, variable = "temp") {
+  const quantChartsDir = bundle?.quantChartsDir || "";
+  const varKey = cityKey(variable || "temp");
+  const currentChart = quantChartsDir
+    ? findFirstExistingHackhatonPath([
+        path.join(quantChartsDir, `${varKey}_monthly_real_qc_1912-01-01_to_2023-12-31.png`)
+      ])
+    : null;
+  const currentCsv = quantChartsDir
+    ? findFirstExistingHackhatonPath([
+        path.join(quantChartsDir, `${varKey}_monthly_real_qc_1912-01-01_to_2023-12-31.csv`)
+      ])
+    : null;
+  const quantProjection = findFirstExistingHackhatonPath([
+    varKey === "temp" ? path.join(HACKHATON_OUTPUT_ROOT, "en_iyi_grafikler_2026-03-05", "05_sicaklik_quant_2035.png") : "",
+    varKey === "humidity" ? path.join(HACKHATON_OUTPUT_ROOT, "en_iyi_grafikler_2026-03-05", "06_nem_quant_2035.png") : "",
+    varKey === "precip" ? path.join(HACKHATON_OUTPUT_ROOT, "analog_pattern_package", "charts", "precip_monthly_analog_to_2035.png") : "",
+    varKey === "pressure" ? path.join(HACKHATON_OUTPUT_ROOT, "analog_pattern_package", "charts", "pressure_yearly_analog_to_2035.png") : ""
+  ]);
+  const continuousVarChart = bundle?.continuousRoot
+    ? findFirstExistingHackhatonPath([
+        path.join(bundle.continuousRoot, `surekli_anomali_haber_${varKey}.png`)
+      ])
+    : null;
+  return [
+    currentChart
+      ? {
+          id: `${varKey}-history-chart`,
+          title: `${hackhatonVariableLabel(varKey)} tarihsel seri`,
+          subtitle: "1912-2023 QC seri",
+          asset: hackhatonAssetRef(currentChart),
+          csv: currentCsv ? hackhatonAssetRef(currentCsv) : null
+        }
+      : null,
+    continuousVarChart
+      ? {
+          id: `${varKey}-news-chart`,
+          title: `${hackhatonVariableLabel(varKey)} surekli anomali + haber`,
+          subtitle: "Aylik siddet ve haber eslesme",
+          asset: hackhatonAssetRef(continuousVarChart)
+        }
+      : null,
+    quantProjection
+      ? {
+          id: `${varKey}-projection-chart`,
+          title: `${hackhatonVariableLabel(varKey)} quant/projeksiyon`,
+          subtitle: "Hackhaton paketinden ileri gorunum",
+          asset: hackhatonAssetRef(quantProjection)
+        }
+      : null
+  ].filter(Boolean);
+}
+
+function buildClimateAnomalyKeywordSet(record = null) {
+  const variable = cityKey(record?.variable || "");
+  const baseMap = {
+    temp: {
+      archive: "heat wave",
+      query: ["heat wave", "temperature", "cold wave", "weather", "agriculture"]
+    },
+    humidity: {
+      archive: "humidity",
+      query: ["humidity", "fog", "moisture", "weather", "agriculture"]
+    },
+    precip: {
+      archive: "flood",
+      query: ["flood", "heavy rain", "storm", "weather", "agriculture"]
+    },
+    pressure: {
+      archive: "storm",
+      query: ["storm", "pressure", "barometer", "weather", "agriculture"]
+    }
+  };
+  const base = baseMap[variable] || baseMap.temp;
+  const dynamic = [record?.causePrimary, record?.anomalyType, record?.localPatternHint]
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+  return {
+    archive: base.archive,
+    query: [...new Set([...dynamic, ...base.query])]
+  };
+}
+
+function severityTierFromScore(score = 0) {
+  const numeric = Number(score || 0);
+  if (numeric >= 8) return "kritik";
+  if (numeric >= 4) return "yuksek";
+  if (numeric >= 2) return "orta";
+  return "izleme";
+}
+
+function describeClimateStress(record = null) {
+  const variable = cityKey(record?.variable || "");
+  const residual = Number(record?.residual || 0);
+  const positive = residual >= 0;
+  const map = {
+    temp: positive
+      ? { id: "heat_stress", title: "Isi stresi", effect: "Transpirasyon ve yaprak yanigi baskisi artar.", signal: "Sicaklik norm ustu" }
+      : { id: "cold_stress", title: "Soguk stresi", effect: "Gelisim yavaslar, doku hasari ve don hassasiyeti artar.", signal: "Sicaklik norm alti" },
+    humidity: positive
+      ? { id: "fungal_humidity", title: "Asiri nem baskisi", effect: "Mantar hastaliklari ve yaprak islakligi riski artar.", signal: "Nem norm ustu" }
+      : { id: "dry_air", title: "Kuru hava stresi", effect: "Terleme ve su kaybi hizlanir.", signal: "Nem norm alti" },
+    precip: positive
+      ? { id: "excess_rain", title: "Asiri yagis baskisi", effect: "Kok bogulmasi, erozyon ve tarlaya giris kaybi yaratir.", signal: "Yagis norm ustu" }
+      : { id: "rain_deficit", title: "Yagis acigi", effect: "Toprak su acigi ve verim kaybi riski artar.", signal: "Yagis norm alti" },
+    pressure: positive
+      ? { id: "high_pressure_block", title: "Yuksek basinc rejimi", effect: "Duragan ve kuru hava penceresi uzayabilir.", signal: "Basinc norm ustu" }
+      : { id: "low_pressure_instability", title: "Dusuk basinc dalgasi", effect: "Firtina, ani yagis ve ruzgar degisimi artabilir.", signal: "Basinc norm alti" }
+  };
+  return map[variable] || { id: "mixed", title: "Karisik stres", effect: "Birden fazla iklim sinyali birlikte oynuyor.", signal: "Karma anomali" };
+}
+
+function buildClimateAgrobotPlaybook({ record = null, cropKey = "domates" } = {}) {
+  if (!record) return null;
+  const crop = getIrrigationCropConfig(cropKey);
+  const focusDate = String(record.date || "").slice(0, 10);
+  const now = focusDate ? new Date(`${focusDate}T00:00:00Z`) : new Date();
+  const plantingDate = getDefaultIrrigationPlantingDate(crop.key, now);
+  const plantingTs = new Date(`${plantingDate}T00:00:00Z`);
+  const dayAfterPlant = Number.isFinite(plantingTs.getTime())
+    ? Math.floor((now - plantingTs) / 86400000) + 1
+    : null;
+  const stage = getIrrigationStage(dayAfterPlant, crop);
+  const stress = describeClimateStress(record);
+  const severityTier = severityTierFromScore(record.severityScore);
+  const isInSeason = Boolean(stage?.inSeason);
+  const actionMap = {
+    heat_stress: {
+      immediate: ["Sulama vardiyasini sabah erken pencereye cek.", "Yapraktan uygulamalari sicak saatten cikar.", "Gunes yanigi riski olan bloklari oncele."],
+      week: ["Parcali sulama planla.", "Toprak ust katman nemini gunluk izle.", "Hasat varsa serin saatlere kaydir."],
+      checks: ["ET0 / ETc", "Yaprak sicakligi", "Solar zarar"]
+    },
+    cold_stress: {
+      immediate: ["Don hassas bloklar icin gece protokolunu hazirla.", "Serbest su birakan uygulamalari kritik geceye tasima.", "Fide ve hassas kisimlarda koruma tedbiri ac."],
+      week: ["Soguk sonrasi doku hasarini tara.", "Fenoloji kaymasini kayda al.", "Asiri sulama ile soguk riskini buyutme."],
+      checks: ["Min sicaklik", "Don saati", "Yaprak nekrozu"]
+    },
+    fungal_humidity: {
+      immediate: ["Yaprak islakligini uzatan uygulamalari azalt.", "Canopy hava akisini ac.", "Mantar belirtileri icin scouting frekansini arttir."],
+      week: ["Koruyucu programi gozden gecir.", "Su birikimi olan noktayi bosalt.", "Riskli bloklari etiketle."],
+      checks: ["Yaprak islakligi", "Nem", "Leke / mildiyo"]
+    },
+    dry_air: {
+      immediate: ["Kuru ve ruzgarli pencerede sulama onde olsun.", "Hassas bloklarda gun ortasi saha isini azalt.", "Bitki turgorunu gozle teyit et."],
+      week: ["Debi uniformitesini kontrol et.", "Yuzey buharlasma kaybini azalt.", "Yapraktan uygulamayi serin saate kaydir."],
+      checks: ["VPD", "Yaprak kivrilmasi", "Toprak yuzeyi"]
+    },
+    excess_rain: {
+      immediate: ["Tarlaya giris ve agir ekipman planini durdur.", "Drenaj cikislarini ac.", "Kok bogulmasi riski olan bloklari oncele."],
+      week: ["Yagis sonrasi hastalik taramasini hizlandir.", "Hasat kalitesini partiler bazinda ayir.", "Sikisma olusmayan ilk pencerede yeniden planla."],
+      checks: ["Su birikimi", "Yatma", "Erozyon"]
+    },
+    rain_deficit: {
+      immediate: ["Sulama takvimini gercek nemle siklastir.", "Kritik fenoloji bloklarini onceliklendir.", "Su tuketen yan uygulamalari kis."],
+      week: ["Parcali sulamaya gec.", "Riskli bloklari etiketle.", "Kuru sicak ruzgar pencerelerini izle."],
+      checks: ["RAW doluluk", "Kok bolgesi nemi", "Bitki turgoru"]
+    },
+    high_pressure_block: {
+      immediate: ["Uzayan kuru pencereyi operasyon lehine kullan.", "Havalandirma ve toz kontrolunu ac.", "Kuruma etkisini hassas bloklarda izle."],
+      week: ["Tuzluluk ve kabuklasma riskine bak.", "Sabah pencerelerini operasyon slotu yap.", "Sulama ile sogutmayi ayri degerlendir."],
+      checks: ["Basinc trendi", "Gunduz sicakligi", "Yuzey kuruma"]
+    },
+    low_pressure_instability: {
+      immediate: ["Firtina ve ani yagis icin saha ekibini uyar.", "Ilaclama ve hasadi pencereye gore kaydir.", "Acik ekipman ve depo alanini koru."],
+      week: ["Hastalik ve yatma takibini siklastir.", "Parsel lojistigini riskli saatlerden cikar.", "Acil durum listesini guncelle."],
+      checks: ["Basinc dususu", "Ruzgar gust", "Konvektif yagis"]
+    },
+    mixed: {
+      immediate: ["Kritik bloklarda saha turu yap.", "Canli hava ve toprak verisini birlikte kontrol et.", "24 saatlik pencereye gore planini yenile."],
+      week: ["Sulama, ilaclama ve hasadi ayni tabloda toparla.", "Riskli parselleri notla.", "Bir sonraki pencere icin aksiyon listesi hazirla."],
+      checks: ["Saha notu", "Canli hava", "Toprak nemi"]
+    }
+  };
+  const pack = actionMap[stress.id] || actionMap.mixed;
+  const stageNote = isInSeason ? `${crop.label} icin ${stage.label} evresi` : `${crop.label} icin sezon disi / planlama evresi`;
+  return {
+    crop: {
+      key: crop.key,
+      label: crop.label,
+      plantingDate,
+      stage: stage.label,
+      inSeason: isInSeason
+    },
+    stress: {
+      id: stress.id,
+      title: stress.title,
+      signal: stress.signal,
+      effect: stress.effect,
+      severityTier
+    },
+    summary: `${stageNote}; ${stress.title.toLowerCase()} baskisi ${severityTier} seviyede.`,
+    immediateActions: pack.immediate,
+    weekActions: pack.week,
+    fieldChecks: pack.checks,
+    agronomicNote: record.causePrimary || record.localPatternHint || record.globalEventMatch || stress.effect
+  };
+}
+
+function buildClimateImpactMatrix({ record = null, cropKey = "domates" } = {}) {
+  if (!record) return [];
+  const crop = getIrrigationCropConfig(cropKey);
+  const stress = describeClimateStress(record);
+  const severityTier = severityTierFromScore(record.severityScore);
+  const profileMap = {
+    heat_stress: {
+      irrigation: ["kritik", "Su cekisi artar; ET0 ve kok bolgesi nemi gunluk izlenmeli."],
+      disease: ["orta", "Isi stresi bitkiyi zayiflatir; leke ve yaniklik scouting'i siklasmali."],
+      spraying: ["yuksek", "Oglen uygulamalarini kes; serin saat penceresi kullan."],
+      field_access: ["dusuk", "Tarlaya giris acik ama saha ekibi sicak stresine karsi planlanmali."],
+      harvest: ["orta", "Hasat varsa sabah ve aksam lotlarina kaydir."]
+    },
+    cold_stress: {
+      irrigation: ["dusuk", "Asiri sulama soguk hasarini buyutebilir; kontrollu git."],
+      disease: ["orta", "Soguk doku zedelenmesi sonrasi ikincil enfeksiyon riski izlenmeli."],
+      spraying: ["orta", "Don gecesi ve hemen sonrasinda uygulama stresi artabilir."],
+      field_access: ["orta", "Sabah erken don ve buzlanma varsa ekipman gecikmeli girmeli."],
+      harvest: ["orta", "Kalite kaybi ve fenoloji kaymasi lot takibini gerektirir."]
+    },
+    fungal_humidity: {
+      irrigation: ["dusuk", "Fazla su vermek yerine canopy nemini azaltmaya odaklan."],
+      disease: ["kritik", "Mantar hastaligi baskisi artar; scouting ve koruyucu program onde."],
+      spraying: ["yuksek", "Yaprak islakligi ve ruzgar durumuna gore pencere sec."],
+      field_access: ["orta", "Islak saha operasyonda sikişma ve bulaşma riski yaratir."],
+      harvest: ["orta", "Nemli lotlari ayir; kalite sinifi dusmesin."]
+    },
+    dry_air: {
+      irrigation: ["yuksek", "Terleme baskisi artar; debi ve uniformite tekrar kontrol edilmeli."],
+      disease: ["dusuk", "Mantar baskisi zayiflar ama akar/zararli baskisi artabilir."],
+      spraying: ["orta", "Ucuculuk ve fitotoksite icin serin pencere kullan."],
+      field_access: ["dusuk", "Saha acik; toz ve pulverizasyon kontrolu yeterli."],
+      harvest: ["orta", "Turgor dususu kaliteyi etkileyebilir."]
+    },
+    excess_rain: {
+      irrigation: ["orta", "Planli eventleri frenle; kok bogulmasi ve drenaj oncelikli."],
+      disease: ["kritik", "Yuksek yaprak islakligi ve sicrama enfeksiyonu riski var."],
+      spraying: ["kritik", "Pencere daralir; yagis arasi kisa slotlar degerli."],
+      field_access: ["kritik", "Ekipman girisi ve tasima lojistigi en buyuk risk."],
+      harvest: ["yuksek", "Hasat kalitesi, ezilme ve depo riski artar."]
+    },
+    rain_deficit: {
+      irrigation: ["kritik", "Su acigi birikir; kritik fenoloji bloklari onceliklendirilmeli."],
+      disease: ["dusuk", "Mantar baskisi zayiflar, ancak stres kaynakli fizyolojik sorun artabilir."],
+      spraying: ["orta", "Serin saat pencereleri korunmali."],
+      field_access: ["dusuk", "Saha operasyonu acik; ana sorun su planlamasi."],
+      harvest: ["orta", "Irilik ve doluluk kaybi olabilir."]
+    },
+    high_pressure_block: {
+      irrigation: ["yuksek", "Kuru pencere uzarsa sulama operasyonu ana eksene doner."],
+      disease: ["dusuk", "Yaprak islakligi genelde dusuk; mantar baskisi gorece zayif."],
+      spraying: ["dusuk", "Stabil pencere operasyon icin avantaj olabilir."],
+      field_access: ["dusuk", "Saha genelde acik ve lojistik elverisli."],
+      harvest: ["orta", "Gunduz isi birikimi kaliteyi etkileyebilir."]
+    },
+    low_pressure_instability: {
+      irrigation: ["orta", "Ani yagislar ve ruzgar sebebiyle sulama slotlari sik degisir."],
+      disease: ["yuksek", "Nem + yagis kombinasyonu hastalik baskisini yukseltebilir."],
+      spraying: ["kritik", "Ruzgar ve konvektif yagis nedeniyle uygulama penceresi kirilgan."],
+      field_access: ["yuksek", "Tarlaya giris ve sevkiyat saat bazli planlanmali."],
+      harvest: ["yuksek", "Yagma, ruzgar ve yatma etkisi hasadi zorlar."]
+    },
+    mixed: {
+      irrigation: ["orta", "Canli hava ve toprakla birlikte guncel karar ver."],
+      disease: ["orta", "Birden fazla risk ayni anda oynuyor."],
+      spraying: ["orta", "Pencereyi her gun yeniden kontrol et."],
+      field_access: ["orta", "Operasyon takvimi esnek olmali."],
+      harvest: ["orta", "Lot bazli kalite kontrolu onde."]
+    }
+  };
+  const domainLabels = {
+    irrigation: "Sulama",
+    disease: "Hastalik",
+    spraying: "Ilaclama",
+    field_access: "Tarla erisimi",
+    harvest: "Hasat"
+  };
+  const selected = profileMap[stress.id] || profileMap.mixed;
+  return Object.entries(selected).map(([key, value]) => ({
+    id: key,
+    label: domainLabels[key] || key,
+    level: value[0],
+    headline: `${crop.label} icin ${stress.title.toLowerCase()} etkisi`,
+    detail: value[1],
+    severityTier
+  }));
+}
+
+function buildClimateMonthProfile(rows = [], variable = "temp") {
+  const months = Array.from({ length: 12 }, (_, idx) => ({
+    month: idx + 1,
+    label: `${String(idx + 1).padStart(2, "0")}`,
+    anomalyCount: 0,
+    newsHits: 0,
+    maxSeverity: 0,
+    avgSeverity: 0
+  }));
+  const buckets = new Map(months.map((item) => [item.month, { ...item, scores: [] }]));
+  rows
+    .filter((item) => item.variable === variable)
+    .forEach((item) => {
+      const month = Number(String(item.date || "").slice(5, 7));
+      const bucket = buckets.get(month);
+      if (!bucket) return;
+      bucket.anomalyCount += 1;
+      if (item.newsTitle || Number(item.newsMatchScore || 0) > 0) bucket.newsHits += 1;
+      bucket.maxSeverity = Math.max(bucket.maxSeverity, Number(item.severityScore || 0));
+      if (Number.isFinite(Number(item.severityScore))) bucket.scores.push(Number(item.severityScore));
+    });
+  return Array.from(buckets.values()).map((item) => ({
+    month: item.month,
+    label: item.label,
+    anomalyCount: item.anomalyCount,
+    newsHits: item.newsHits,
+    maxSeverity: Number(item.maxSeverity.toFixed(2)),
+    avgSeverity: item.scores.length ? Number((avgOf(item.scores) || 0).toFixed(2)) : 0
+  }));
+}
+
+function buildClimateAnalogEvents(rows = [], selected = null, maxItems = 6) {
+  if (!selected?.date || !selected?.variable) return [];
+  const selectedDate = new Date(`${selected.date}T00:00:00Z`);
+  if (Number.isNaN(selectedDate.getTime())) return [];
+  const selectedMonth = selectedDate.getUTCMonth() + 1;
+  const selectedSignal = Math.sign(Number(selected.residual || selected.zscore || selected.robustZScore || 0));
+  const monthDistance = (a, b) => {
+    const diff = Math.abs(a - b);
+    return Math.min(diff, 12 - diff);
+  };
+  return rows
+    .filter((item) => item.variable === selected.variable && item.date !== selected.date)
+    .map((item) => {
+      const itemDate = new Date(`${item.date}T00:00:00Z`);
+      const itemMonth = itemDate.getUTCMonth() + 1;
+      const signal = Math.sign(Number(item.residual || item.zscore || item.robustZScore || 0));
+      const sameDirection = signal !== 0 && selectedSignal !== 0 ? signal === selectedSignal : null;
+      return {
+        ...item,
+        dayDistance: Math.abs(itemDate.getTime() - selectedDate.getTime()) / 86400000,
+        monthDistance: monthDistance(selectedMonth, itemMonth),
+        sameDirection
+      };
+    })
+    .filter((item) => item.monthDistance <= 1 || item.dayDistance <= 45)
+    .sort((a, b) => {
+      if (a.monthDistance !== b.monthDistance) return a.monthDistance - b.monthDistance;
+      if (a.sameDirection !== b.sameDirection) return a.sameDirection ? -1 : 1;
+      if (Number(b.newsMatchScore || 0) !== Number(a.newsMatchScore || 0)) return Number(b.newsMatchScore || 0) - Number(a.newsMatchScore || 0);
+      return Number(b.severityScore || 0) - Number(a.severityScore || 0);
+    })
+    .slice(0, maxItems)
+    .map((item) => ({
+      id: item.id,
+      date: item.date,
+      year: item.year,
+      anomalyType: item.anomalyType,
+      severityScore: item.severityScore,
+      causePrimary: item.causePrimary || item.localPatternHint || item.globalEventMatch || item.anomalyType,
+      localPatternHint: item.localPatternHint,
+      globalEventMatch: item.globalEventMatch,
+      sameDirection: item.sameDirection,
+      newsTitle: item.newsTitle || "",
+      monthDistance: item.monthDistance
+    }));
+}
+
+function buildClimateContextWindow(rows = [], selected = null, windowDays = 60, maxItems = 16) {
+  if (!selected?.date) return [];
+  const selectedDate = new Date(`${selected.date}T00:00:00Z`);
+  if (Number.isNaN(selectedDate.getTime())) return [];
+  return rows
+    .map((item) => {
+      const itemDate = new Date(`${item.date}T00:00:00Z`);
+      return {
+        ...item,
+        dayOffset: Math.round((itemDate.getTime() - selectedDate.getTime()) / 86400000)
+      };
+    })
+    .filter((item) => Math.abs(item.dayOffset) <= windowDays)
+    .sort((a, b) => {
+      if (a.dayOffset !== b.dayOffset) return a.dayOffset - b.dayOffset;
+      return Number(b.severityScore || 0) - Number(a.severityScore || 0);
+    })
+    .slice(0, maxItems)
+    .map((item) => ({
+      id: item.id,
+      date: item.date,
+      variable: item.variable,
+      variableLabel: item.variableLabel,
+      anomalyType: item.anomalyType,
+      severityScore: item.severityScore,
+      dayOffset: item.dayOffset,
+      causePrimary: item.causePrimary || item.anomalyType
+    }));
+}
+
+function buildClimateCompoundEvents(rows = [], selected = null, windowDays = 10, maxItems = 8) {
+  if (!selected?.date) return [];
+  const selectedTs = new Date(`${selected.date}T00:00:00Z`).getTime();
+  if (!Number.isFinite(selectedTs)) return [];
+  const filtered = rows
+    .map((item) => {
+      const ts = new Date(`${item.date}T00:00:00Z`).getTime();
+      if (!Number.isFinite(ts)) return null;
+      const dayOffset = Math.round((ts - selectedTs) / 86400000);
+      if (Math.abs(dayOffset) > windowDays) return null;
+      return { ...item, ts, dayOffset };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.ts - b.ts);
+  const clusters = [];
+  filtered.forEach((item) => {
+    const current = clusters[clusters.length - 1];
+    if (!current || Math.abs(item.ts - current.lastTs) > 2 * 86400000) {
+      clusters.push({
+        items: [item],
+        firstTs: item.ts,
+        lastTs: item.ts
+      });
+      return;
+    }
+    current.items.push(item);
+    current.lastTs = item.ts;
+  });
+  return clusters
+    .map((bucket) => ({
+      id: `compound-${bucket.items[0]?.date || "window"}`,
+      date:
+        bucket.items
+          .slice()
+          .sort((a, b) => Math.abs(a.dayOffset) - Math.abs(b.dayOffset))[0]?.date || bucket.items[0]?.date || "",
+      dayOffset:
+        bucket.items
+          .slice()
+          .sort((a, b) => Math.abs(a.dayOffset) - Math.abs(b.dayOffset))[0]?.dayOffset ?? 0,
+      startDate: bucket.items[0]?.date || "",
+      endDate: bucket.items[bucket.items.length - 1]?.date || "",
+      variableCount: new Set(bucket.items.map((item) => item.variable)).size,
+      variables: [...new Set(bucket.items.map((item) => item.variable))].map((item) => hackhatonVariableLabel(item)),
+      maxSeverity: Number(Math.max(...bucket.items.map((item) => Number(item.severityScore || 0))).toFixed(2)),
+      newsHits: bucket.items.filter((item) => item.newsTitle || Number(item.newsMatchScore || 0) > 0).length,
+      headline:
+        bucket.items
+          .slice()
+          .sort((a, b) => Number(b.severityScore || 0) - Number(a.severityScore || 0))
+          .slice(0, 3)
+          .map((item) => `${item.variableLabel}: ${item.anomalyType}`)
+          .join(" • ") || "Bilesik olay penceresi"
+    }))
+    .sort((a, b) => {
+      if (b.variableCount !== a.variableCount) return b.variableCount - a.variableCount;
+      if (Math.abs(a.dayOffset) !== Math.abs(b.dayOffset)) return Math.abs(a.dayOffset) - Math.abs(b.dayOffset);
+      return Number(b.maxSeverity || 0) - Number(a.maxSeverity || 0);
+    })
+    .slice(0, maxItems);
+}
+
+function buildClimateCouplingMatrix(rows = [], selectedVariable = "temp") {
+  const normalizedVariable = cityKey(selectedVariable || "temp");
+  const baseRows = rows
+    .filter((item) => item.variable === normalizedVariable)
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  if (!baseRows.length) return [];
+  const otherVariables = ["temp", "humidity", "precip", "pressure"].filter((item) => item !== normalizedVariable);
+  return otherVariables
+    .map((otherVariable) => {
+      const otherRows = rows
+        .filter((item) => item.variable === otherVariable)
+        .sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      if (!otherRows.length) {
+        return {
+          id: `coupling-${normalizedVariable}-${otherVariable}`,
+          variable: otherVariable,
+          variableLabel: hackhatonVariableLabel(otherVariable),
+          matchRatePct: 0,
+          meanLagDays: null,
+          meanSeverity: null,
+          strongestDate: null,
+          strongestSeverity: null
+        };
+      }
+      const matches = [];
+      baseRows.forEach((baseRow) => {
+        const baseTs = new Date(`${baseRow.date}T00:00:00Z`).getTime();
+        const nearest = otherRows.reduce((best, candidate) => {
+          const candidateTs = new Date(`${candidate.date}T00:00:00Z`).getTime();
+          const lagDays = Math.round((candidateTs - baseTs) / 86400000);
+          if (Math.abs(lagDays) > 7) return best;
+          if (!best || Math.abs(lagDays) < Math.abs(best.lagDays)) {
+            return { lagDays, row: candidate };
+          }
+          if (Math.abs(lagDays) === Math.abs(best.lagDays) && Number(candidate.severityScore || 0) > Number(best.row.severityScore || 0)) {
+            return { lagDays, row: candidate };
+          }
+          return best;
+        }, null);
+        if (nearest) matches.push(nearest);
+      });
+      const strongest = matches
+        .slice()
+        .sort((a, b) => Number(b.row?.severityScore || 0) - Number(a.row?.severityScore || 0))[0] || null;
+      return {
+        id: `coupling-${normalizedVariable}-${otherVariable}`,
+        variable: otherVariable,
+        variableLabel: hackhatonVariableLabel(otherVariable),
+        matchRatePct: Number(((matches.length / Math.max(1, baseRows.length)) * 100).toFixed(1)),
+        meanLagDays: matches.length ? Number((avgOf(matches.map((item) => item.lagDays)) || 0).toFixed(1)) : null,
+        meanSeverity: matches.length ? Number((avgOf(matches.map((item) => Number(item.row?.severityScore || 0))) || 0).toFixed(2)) : null,
+        strongestDate: strongest?.row?.date || null,
+        strongestSeverity: strongest ? Number(Number(strongest.row?.severityScore || 0).toFixed(2)) : null
+      };
+    })
+    .sort((a, b) => Number(b.matchRatePct || 0) - Number(a.matchRatePct || 0));
+}
+
+function buildClimateDecadeProfile(rows = [], variable = "temp", selected = null) {
+  const buckets = new Map();
+  rows
+    .filter((item) => item.variable === variable)
+    .forEach((item) => {
+      const year = Number(item.year || String(item.date || "").slice(0, 4));
+      if (!Number.isFinite(year)) return;
+      const decadeStart = Math.floor(year / 10) * 10;
+      const bucket = buckets.get(decadeStart) || {
+        id: `decade-${decadeStart}`,
+        decadeStart,
+        decadeEnd: decadeStart + 9,
+        label: `${decadeStart}'ler`,
+        anomalyCount: 0,
+        newsHits: 0,
+        meanSeverityValues: [],
+        maxSeverity: 0,
+        peakDate: null
+      };
+      bucket.anomalyCount += 1;
+      if (item.newsTitle || Number(item.newsMatchScore || 0) > 0) bucket.newsHits += 1;
+      const severity = Number(item.severityScore || 0);
+      if (Number.isFinite(severity)) {
+        bucket.meanSeverityValues.push(severity);
+        if (severity >= bucket.maxSeverity) {
+          bucket.maxSeverity = severity;
+          bucket.peakDate = item.date;
+        }
+      }
+      buckets.set(decadeStart, bucket);
+    });
+  const selectedYear = Number(selected?.year || String(selected?.date || "").slice(0, 4));
+  return Array.from(buckets.values())
+    .sort((a, b) => a.decadeStart - b.decadeStart)
+    .map((bucket) => ({
+      id: bucket.id,
+      label: bucket.label,
+      decadeStart: bucket.decadeStart,
+      decadeEnd: bucket.decadeEnd,
+      anomalyCount: bucket.anomalyCount,
+      newsHits: bucket.newsHits,
+      meanSeverity: bucket.meanSeverityValues.length ? Number((avgOf(bucket.meanSeverityValues) || 0).toFixed(2)) : 0,
+      maxSeverity: Number(Number(bucket.maxSeverity || 0).toFixed(2)),
+      peakDate: bucket.peakDate,
+      isSelectedDecade:
+        Number.isFinite(selectedYear) && selectedYear >= bucket.decadeStart && selectedYear <= bucket.decadeEnd
+    }));
+}
+
+function buildClimateSourceBoard({
+  variablePool = [],
+  localMatches = [],
+  liveNews = [],
+  archiveNews = [],
+  selected = null
+} = {}) {
+  const selectedYear = Number(selected?.year || String(selected?.date || "").slice(0, 4));
+  const years = variablePool
+    .map((item) => Number(item.year || String(item.date || "").slice(0, 4)))
+    .filter((item) => Number.isFinite(item));
+  const minYear = years.length ? Math.min(...years) : null;
+  const maxYear = years.length ? Math.max(...years) : null;
+  const localRows = variablePool.filter((item) => item.sourceMode === "event-news");
+  const historyRows = variablePool.filter((item) => item.sourceMode === "history");
+  const rangeText = minYear && maxYear ? `${minYear}-${maxYear}` : "-";
+  return [
+    {
+      id: "source-history",
+      label: "Hackhaton history",
+      status: historyRows.length ? "aktif" : "yok",
+      count: historyRows.length,
+      coverage: rangeText,
+      note: "Temel tarihsel anomali serisi"
+    },
+    {
+      id: "source-local",
+      label: "Hackhaton olay eslesmesi",
+      status: localRows.length ? "aktif" : "sinirli",
+      count: localMatches.length,
+      coverage: localRows.length ? `${localRows.length} zenginlestirilmis olay` : "Yerel eslesme sinirli",
+      note: "Anomali ile olay/haber baglamini birlestirir"
+    },
+    {
+      id: "source-gdelt",
+      label: "GDELT",
+      status: liveNews.length ? "aktif" : "sinirli",
+      count: liveNews.length,
+      coverage: selectedYear >= 2015 ? "2015+" : "Bu tarih icin dogrudan kapsam zayif",
+      note: liveNews.length ? "Modern haber ve web baglami" : "Secili tarih modern acik haber taramasina tam uymuyor"
+    },
+    {
+      id: "source-loc",
+      label: "Chronicling America",
+      status: archiveNews.length ? "aktif" : "sinirli",
+      count: archiveNews.length,
+      coverage: selectedYear >= 1900 && selectedYear <= 1963 ? "1900-1963" : "Secili tarih LOC araligi disinda",
+      note: archiveNews.length ? "Gazete arsivi baglami bulundu" : "Gazete arsivinde dogrudan eslesme cikmadi"
+    }
+  ];
+}
+
+function buildClimateTriggerBoard({
+  selected = null,
+  couplingMatrix = [],
+  monthProfile = [],
+  compoundEvents = [],
+  playbook = null,
+  impactMatrix = []
+} = {}) {
+  if (!selected) return [];
+  const selectedMonth = Number(String(selected.date || "").slice(5, 7));
+  const seasonal = monthProfile.find((item) => item.month === selectedMonth) || null;
+  const strongestCoupling = couplingMatrix[0] || null;
+  const criticalImpact = impactMatrix.find((item) => ["kritik", "yuksek"].includes(String(item.level || "").toLowerCase())) || null;
+  const compound = compoundEvents.find((item) => Number(item.variableCount || 0) >= 2) || null;
+  const fieldChecks = Array.isArray(playbook?.fieldChecks) ? playbook.fieldChecks.filter(Boolean) : [];
+  return [
+    {
+      id: "trigger-core",
+      title: `${selected.variableLabel || "Anomali"} esigi`,
+      priority: Number(selected.severityScore || 0) >= 6 ? "high" : "medium",
+      condition: `${selected.anomalyType || "Anomali"} tekrarlandiginda sahayi 24 saat icinde yeniden tara`,
+      detail: `${selected.date} olayinda skor ${Number(selected.severityScore || 0).toFixed(2)} ve sapma ${selected.actual ?? "-"} / ${selected.expected ?? "-"}.`
+    },
+    strongestCoupling
+      ? {
+          id: "trigger-coupling",
+          title: `${strongestCoupling.variableLabel} ile eslik izle`,
+          priority: Number(strongestCoupling.matchRatePct || 0) >= 18 ? "high" : "watch",
+          condition:
+            strongestCoupling.meanLagDays == null
+              ? "Eszamanli sinyal"
+              : strongestCoupling.meanLagDays < -1
+                ? `${Math.abs(strongestCoupling.meanLagDays)} gun once bu degiskeni izle`
+                : strongestCoupling.meanLagDays > 1
+                  ? `${strongestCoupling.meanLagDays} gun sonra ikinci dalga bekle`
+                  : "Ayni pencere icinde birlikte izle",
+          detail: `Tarihsel eslik orani %${strongestCoupling.matchRatePct}; ortalama skor ${strongestCoupling.meanSeverity ?? "-"}.`
+        }
+      : null,
+    seasonal
+      ? {
+          id: "trigger-seasonal",
+          title: `Mevsimsellik: ${seasonal.label}. ay`,
+          priority: seasonal.maxSeverity >= 6 || seasonal.anomalyCount >= 10 ? "medium" : "watch",
+          condition: `${seasonal.anomalyCount} kayit / ${seasonal.newsHits} haber vurusuyla tekrar eden pencere`,
+          detail: `Aylik ortalama siddet ${seasonal.avgSeverity}; maksimum ${seasonal.maxSeverity}.`
+        }
+      : null,
+    compound
+      ? {
+          id: "trigger-compound",
+          title: "Bilesik olay alarmi",
+          priority: Number(compound.variableCount || 0) >= 3 ? "high" : "medium",
+          condition: `${compound.startDate}${compound.endDate && compound.endDate !== compound.startDate ? ` -> ${compound.endDate}` : ""} arasinda ${compound.variableCount} degisken oynuyor`,
+          detail: compound.headline
+        }
+      : null,
+    criticalImpact
+      ? {
+          id: "trigger-impact",
+          title: `${criticalImpact.label} etkisi`,
+          priority: criticalImpact.level === "kritik" ? "high" : "medium",
+          condition: `${criticalImpact.label.toLowerCase()} tarafinda operasyonu siklastir`,
+          detail: criticalImpact.detail
+        }
+      : null,
+    fieldChecks.length
+      ? {
+          id: "trigger-checks",
+          title: "Saha check listesi",
+          priority: "planning",
+          condition: "Her turda ayni sinyalleri not et",
+          detail: fieldChecks.slice(0, 3).join(" • ")
+        }
+      : null
+  ].filter(Boolean).slice(0, 5);
+}
+
+function buildClimateActionQueue({
+  selected = null,
+  playbook = null,
+  impactMatrix = [],
+  localMatches = [],
+  liveNews = [],
+  archiveNews = [],
+  compoundEvents = []
+} = {}) {
+  if (!selected) return [];
+  const tasks = [];
+  (playbook?.immediateActions || []).slice(0, 3).forEach((item, idx) => {
+    tasks.push({
+      id: `queue-now-${idx}`,
+      horizon: "24 saat",
+      priority: idx === 0 ? "high" : "medium",
+      title: item,
+      detail: playbook?.stress?.title || playbook?.summary || "Secili anomali icin dogrudan saha aksiyonu."
+    });
+  });
+  (playbook?.weekActions || []).slice(0, 2).forEach((item, idx) => {
+    tasks.push({
+      id: `queue-week-${idx}`,
+      horizon: "7 gun",
+      priority: "planning",
+      title: item,
+      detail: playbook?.crop?.label ? `${playbook.crop.label} icin haftalik aksiyon.` : "Haftalik planlama aksiyonu."
+    });
+  });
+  impactMatrix
+    .filter((item) => ["kritik", "yuksek"].includes(String(item.level || "").toLowerCase()))
+    .slice(0, 3)
+    .forEach((item, idx) => {
+      tasks.push({
+        id: `queue-impact-${idx}`,
+        horizon: "48 saat",
+        priority: item.level === "kritik" ? "high" : "medium",
+        title: `${item.label} tarafini kapat`,
+        detail: item.detail
+      });
+    });
+  const topCompound = compoundEvents.find((item) => Number(item.variableCount || 0) >= 2) || null;
+  if (topCompound) {
+    tasks.push({
+      id: "queue-compound",
+      horizon: "24-72 saat",
+      priority: Number(topCompound.variableCount || 0) >= 3 ? "high" : "medium",
+      title: "Bilesik olay penceresine gore parcelleme yap",
+      detail: `${topCompound.date} penceresinde ${topCompound.variableCount} degisken ayni anda oynuyor: ${topCompound.variables.join(", ")}.`
+    });
+  }
+  const evidence = localMatches[0] || liveNews[0] || archiveNews[0] || null;
+  if (evidence) {
+    tasks.push({
+      id: "queue-evidence",
+      horizon: "Bugun",
+      priority: "watch",
+      title: "Olay baglamini saha notuna isle",
+      detail: evidence.title || evidence.description || evidence.summary || "Secili olay icin baglam kaydi olustur."
+    });
+  }
+  const priorityRank = { high: 0, medium: 1, planning: 2, watch: 3 };
+  return tasks
+    .sort((a, b) => (priorityRank[a.priority] ?? 99) - (priorityRank[b.priority] ?? 99))
+    .slice(0, 8);
+}
+
+function buildClimateRegimeSignals({ selected = null, analogs = [], localMatches = [] } = {}) {
+  const patterns = [
+    { id: "enso", label: "ENSO / El Nino", match: /enso|el nino|la nina/i },
+    { id: "nao", label: "NAO", match: /\bnao\b/i },
+    { id: "med", label: "Akdeniz siklonu", match: /akdeniz|siklon/i },
+    { id: "blocking", label: "Blokaj / basinc rejimi", match: /blok|blocking|basinc/i },
+    { id: "drought", label: "Kuraklik", match: /kurak|yagis acigi|dry/i },
+    { id: "flood", label: "Sel / asiri yagis", match: /sel|flood|asiri yagis|heavy rain/i },
+    { id: "storm", label: "Firtina / instabilite", match: /firtina|storm|konvektif|instabil/i },
+    { id: "heat", label: "Isi dalgasi", match: /isi|heat|sicak/i },
+    { id: "cold", label: "Soguk / don", match: /soguk|don|cold|frost/i }
+  ];
+  const texts = [
+    selected?.causePrimary,
+    selected?.causeDetails,
+    selected?.localPatternHint,
+    selected?.globalEventMatch,
+    selected?.internetSummary,
+    ...analogs.flatMap((item) => [item.causePrimary, item.localPatternHint, item.globalEventMatch]),
+    ...localMatches.flatMap((item) => [item.title, item.summary, item.hazard])
+  ].map((item) => String(item || "").trim()).filter(Boolean);
+  return patterns
+    .map((pattern) => {
+      const hits = texts.filter((text) => pattern.match.test(text));
+      return {
+        id: pattern.id,
+        label: pattern.label,
+        count: hits.length,
+        sample: hits[0] ? hackhatonExcerpt(hits[0], 96) : ""
+      };
+    })
+    .filter((item) => item.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
+}
+
+function buildClimateAnomalyStoryline({ selected = null, analogs = [], localMatches = [], liveNews = [], archiveNews = [] } = {}) {
+  if (!selected) return null;
+  const selectedLabel = `${selected.date} ${selected.variableLabel?.toLowerCase() || "anomali"}`;
+  const analog = analogs[0] || null;
+  const local = localMatches[0] || null;
+  const external = liveNews[0] || archiveNews[0] || null;
+  return {
+    headline: `${selectedLabel} penceresinde ${String(selected.anomalyType || "anormallik").toLowerCase()}`,
+    summary:
+      selected.causeDetails ||
+      selected.causePrimary ||
+      selected.localPatternHint ||
+      selected.globalEventMatch ||
+      "Nedensel aciklama sinirli; istatistiksel sapma guclu.",
+    bullets: [
+      analog
+        ? `${analog.year} analogu: ${analog.anomalyType} (${hackhatonScoreText(analog.severityScore)})`
+        : "Guclu analog yil bulunamadi.",
+      local
+        ? `Yerel eslesme: ${hackhatonExcerpt(local.title || local.summary || "", 88)}`
+        : "Yerel olay eslesmesi zayif.",
+      external
+        ? `Harici baglam: ${hackhatonExcerpt(external.title || external.description || "", 88)}`
+        : "Harici haber baglami su an sinirli."
+    ]
+  };
+}
+
+function buildGdeltDateToken(dateText = "", endOfDay = false) {
+  const date = new Date(`${String(dateText).slice(0, 10)}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return null;
+  if (endOfDay) date.setUTCHours(23, 59, 59, 0);
+  const yyyy = String(date.getUTCFullYear()).padStart(4, "0");
+  const mm = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(date.getUTCDate()).padStart(2, "0");
+  const hh = String(date.getUTCHours()).padStart(2, "0");
+  const mi = String(date.getUTCMinutes()).padStart(2, "0");
+  const ss = String(date.getUTCSeconds()).padStart(2, "0");
+  return `${yyyy}${mm}${dd}${hh}${mi}${ss}`;
+}
+
+async function fetchGdeltContextNews({ record = null, city = "", limit = 5 } = {}) {
+  const year = Number(String(record?.date || "").slice(0, 4));
+  if (!Number.isFinite(year) || year < 2015) return [];
+  const start = buildGdeltDateToken(record.date);
+  const end = buildGdeltDateToken(record.date, true);
+  if (!start || !end) return [];
+  const keywords = buildClimateAnomalyKeywordSet(record);
+  const query = `${keywords.query.slice(0, 4).join(" OR ")}${city ? ` AND ${city}` : ""}`;
+  const url =
+    `${GDELT_DOC_API_URL}?query=${encodeURIComponent(query)}` +
+    `&mode=ArtList&maxrecords=${Math.max(3, Math.min(8, Number(limit) || 5))}` +
+    `&format=json&sort=DateDesc&startdatetime=${start}&enddatetime=${end}`;
+  try {
+    const json = await fetchJsonWithRetry(url, { headers: { accept: "application/json" } }, 0, 7000);
+    const articles = Array.isArray(json?.articles) ? json.articles : [];
+    return articles.slice(0, limit).map((item, idx) => ({
+      id: `gdelt-${idx}`,
+      title: String(item.title || item.seendate || "GDELT haber").trim(),
+      link: String(item.url || "").trim(),
+      source: String(item.domain || item.sourceCountry || "GDELT").trim(),
+      description: hackhatonExcerpt(item.socialimage || item.seendate || "", 120),
+      score: toFiniteNumber(item.seendate) || null,
+      provider: "gdelt",
+      date: String(item.seendate || "").slice(0, 8)
+    })).filter((item) => item.link);
+  } catch (_) {
+    return [];
+  }
+}
+
+async function fetchChroniclingAmericaContext({ record = null, limit = 5 } = {}) {
+  const year = Number(String(record?.date || "").slice(0, 4));
+  if (!Number.isFinite(year) || year < 1900 || year > 1963) return [];
+  const keyword = buildClimateAnomalyKeywordSet(record).archive;
+  const url =
+    `${CHRONICLING_AMERICA_SEARCH_URL}?andtext=${encodeURIComponent(keyword)}` +
+    `&dateFilterType=yearRange&date1=${year}&date2=${year}&rows=${Math.max(3, Math.min(8, Number(limit) || 5))}&searchType=basic&format=json`;
+  try {
+    const json = await fetchJsonWithRetry(url, { headers: { accept: "application/json" } }, 0, 7000);
+    const items = Array.isArray(json?.items) ? json.items : [];
+    return items.slice(0, limit).map((item, idx) => ({
+      id: `loc-${idx}`,
+      title: String(item.title || item.headline || item.id || "Arsiv gazete kaydi").trim(),
+      link: String(item.url || item.id || "").trim(),
+      source: String(item.title || "Chronicling America").trim(),
+      description: hackhatonExcerpt(item.snippet || item.city || item.state || keyword, 140),
+      provider: "chronicling-america",
+      date: String(item.date || "").trim()
+    })).filter((item) => item.link);
+  } catch (_) {
+    return [];
+  }
+}
+
+async function buildClimateAnomalyIntelPayload({
+  city = "",
+  district = "",
+  neighborhood = "",
+  variable = "all",
+  date = "",
+  crop = "domates",
+  limit = 10
+} = {}) {
+  const scope = buildHackhatonScope(city, district, neighborhood);
+  const varKey = cityKey(variable || "all") || "all";
+  const safeDate = String(date || "").trim().slice(0, 10);
+  const safeLimit = Math.max(4, Math.min(16, Number(limit) || 10));
+  const normalizedCrop = normalizeIrrigationCropKey(crop || "domates");
+  const cacheKey = `anomaly-intel:${scope.locationLabel}:${varKey}:${safeDate}:${safeLimit}:${normalizedCrop}`;
+  const cached = anomalyIntelCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < ANOMALY_INTEL_CACHE_TTL_MS) {
+    return cached.value;
+  }
+
+  const bundle = resolveClimateAnomalyBundle();
+  const historyRows = loadClimateAnomalyHistory(bundle);
+  const eventRows = loadClimateEventNewsRows(bundle);
+  const continuousRows = loadClimateContinuousRows(bundle);
+  if (!historyRows.length && !eventRows.length) {
+    const payload = {
+      updatedAt: new Date().toISOString(),
+      available: false,
+      error: "climate_anomaly_bundle_missing",
+      scope
+    };
+    anomalyIntelCache.set(cacheKey, { ts: Date.now(), value: payload });
+    return payload;
+  }
+
+  const mergedRows = [...historyRows, ...eventRows];
+  const variablePool = varKey === "all" ? mergedRows : mergedRows.filter((item) => item.variable === varKey);
+  const targetTs = safeDate ? new Date(`${safeDate}T00:00:00Z`).getTime() : null;
+  const rankedRows = variablePool
+    .slice()
+    .sort((a, b) => {
+      if (targetTs != null) {
+        const da = Math.abs(new Date(`${a.date}T00:00:00Z`).getTime() - targetTs);
+        const db = Math.abs(new Date(`${b.date}T00:00:00Z`).getTime() - targetTs);
+        if (da !== db) return da - db;
+      }
+      if (Number(b.newsMatchScore || 0) !== Number(a.newsMatchScore || 0)) {
+        return Number(b.newsMatchScore || 0) - Number(a.newsMatchScore || 0);
+      }
+      return Number(b.severityScore || 0) - Number(a.severityScore || 0);
+    });
+  const selected = rankedRows[0] || mergedRows[0] || null;
+  const selectedVariable = selected?.variable || (varKey === "all" ? "temp" : varKey);
+  const topAnomalies = (varKey === "all" ? mergedRows : variablePool)
+    .slice()
+    .sort((a, b) => Number(b.severityScore || 0) - Number(a.severityScore || 0))
+    .slice(0, safeLimit);
+  const selectedTs = selected ? new Date(`${selected.date}T00:00:00Z`).getTime() : null;
+  const localMatches = eventRows
+    .filter((item) => item.variable === selectedVariable)
+    .filter((item) => {
+      if (selectedTs == null) return true;
+      return Math.abs(new Date(`${item.date}T00:00:00Z`).getTime() - selectedTs) <= 45 * 86400000;
+    })
+    .sort((a, b) => {
+      if (Number(b.newsMatchScore || 0) !== Number(a.newsMatchScore || 0)) {
+        return Number(b.newsMatchScore || 0) - Number(a.newsMatchScore || 0);
+      }
+      return Number(b.severityScore || 0) - Number(a.severityScore || 0);
+    })
+    .slice(0, 6)
+    .map((item) => ({
+      id: item.id,
+      date: item.date,
+      title: item.newsTitle || item.causePrimary || item.anomalyType,
+      source: item.newsSource || "Hackhaton eslesme",
+      link: item.newsUrl || "",
+      hazard: item.newsHazard || item.variableLabel,
+      score: item.newsMatchScore || item.severityScore,
+      summary: item.internetSummary || item.causeDetails || item.globalEventMatch || item.localEventMatch || item.localPatternHint
+    }));
+  const [liveNews, archiveNews] = await Promise.all([
+    fetchGdeltContextNews({ record: selected, city, limit: 5 }),
+    fetchChroniclingAmericaContext({ record: selected, limit: 5 })
+  ]);
+  const analogEvents = buildClimateAnalogEvents(variablePool, selected, 6);
+  const timeline = continuousRows
+    .filter((item) => item.variable === selectedVariable)
+    .slice(-180);
+  const contextWindow = buildClimateContextWindow(mergedRows, selected, 60, 18);
+  const monthProfile = buildClimateMonthProfile(mergedRows, selectedVariable);
+  const regimeSignals = buildClimateRegimeSignals({ selected, analogs: analogEvents, localMatches });
+  const compoundEvents = buildClimateCompoundEvents(mergedRows, selected, 10, 8);
+  const couplingMatrix = buildClimateCouplingMatrix(mergedRows, selectedVariable);
+  const agrobotPlaybook = buildClimateAgrobotPlaybook({ record: selected, cropKey: normalizedCrop });
+  const agrobotImpactMatrix = buildClimateImpactMatrix({ record: selected, cropKey: normalizedCrop });
+  const decadeProfile = buildClimateDecadeProfile(mergedRows, selectedVariable, selected);
+  const sourceBoard = buildClimateSourceBoard({
+    variablePool,
+    localMatches,
+    liveNews,
+    archiveNews,
+    selected
+  });
+  const triggerBoard = buildClimateTriggerBoard({
+    selected,
+    couplingMatrix,
+    monthProfile,
+    compoundEvents,
+    playbook: agrobotPlaybook,
+    impactMatrix: agrobotImpactMatrix
+  });
+  const actionQueue = buildClimateActionQueue({
+    selected,
+    playbook: agrobotPlaybook,
+    impactMatrix: agrobotImpactMatrix,
+    localMatches,
+    liveNews,
+    archiveNews,
+    compoundEvents
+  });
+  const storyline = buildClimateAnomalyStoryline({
+    selected,
+    analogs: analogEvents,
+    localMatches,
+    liveNews,
+    archiveNews
+  });
+  const variableStats = ["temp", "humidity", "precip", "pressure"].map((key) => {
+    const rows = mergedRows.filter((item) => item.variable === key);
+    const top = rows.slice().sort((a, b) => Number(b.severityScore || 0) - Number(a.severityScore || 0))[0] || null;
+    const newsHits = rows.filter((item) => item.newsTitle).length;
+    return {
+      key,
+      label: hackhatonVariableLabel(key),
+      anomalyCount: rows.length,
+      newsHits,
+      topDate: top?.date || null,
+      topSeverity: top ? Number(Number(top.severityScore || 0).toFixed(2)) : null
+    };
+  });
+  const payload = {
+    updatedAt: new Date().toISOString(),
+    available: true,
+    live: true,
+    scope: {
+      ...scope,
+      dataMode: "hackhaton-history-plus-live-news",
+      note: "Arsiv anomali serisi bolgesel Hackhaton iklim verisidir; haber eslesmeleri ucretsiz acik kaynaklardan cekilir."
+    },
+    selectedVariable,
+    selectedDate: selected?.date || safeDate || null,
+    selectedAnomaly: selected,
+    agrobotPlaybook,
+    agrobotImpactMatrix,
+    variables: variableStats,
+    topAnomalies,
+    analogEvents,
+    contextWindow,
+    monthProfile,
+    regimeSignals,
+    compoundEvents,
+    couplingMatrix,
+    decadeProfile,
+    sourceBoard,
+    triggerBoard,
+    actionQueue,
+    storyline,
+    timeline,
+    charts: [
+      bundle?.continuousOverviewPng
+        ? {
+            id: "continuous-overview",
+            title: "Surekli anomali genel gorunumu",
+            subtitle: "Aylik siddet ve haber eslesme",
+            asset: hackhatonAssetRef(bundle.continuousOverviewPng)
+          }
+        : null,
+      ...pickClimateAnomalyCharts(bundle, selectedVariable)
+    ].filter(Boolean),
+    localMatches,
+    liveNews,
+    archiveNews,
+    evidenceSummary: {
+      historyRows: variablePool.length,
+      topWindowRows: topAnomalies.length,
+      chartCount: [
+        bundle?.continuousOverviewPng,
+        ...pickClimateAnomalyCharts(bundle, selectedVariable).map((item) => item?.asset)
+      ].filter(Boolean).length,
+      localMatchCount: localMatches.length,
+      liveNewsCount: liveNews.length,
+      archiveNewsCount: archiveNews.length,
+      analogCount: analogEvents.length,
+      contextCount: contextWindow.length,
+      compoundCount: compoundEvents.length,
+      decadeCount: decadeProfile.length,
+      triggerCount: triggerBoard.length,
+      queueCount: actionQueue.length,
+      confidence:
+        localMatches.length >= 3 || liveNews.length >= 2
+          ? "guclu"
+          : topAnomalies.length >= 4
+            ? "orta"
+            : "sinirli"
+    },
+    sources: [
+      { id: "hackhaton-history", title: "Hackhaton anomaly history", url: bundle?.historyCsv ? `/api/hackhaton/file?file=${encodeURIComponent(toHackhatonOutputRelative(bundle.historyCsv) || "")}` : null },
+      { id: "hackhaton-news", title: "Hackhaton enriched anomaly/news", url: bundle?.enrichedCsv ? `/api/hackhaton/file?file=${encodeURIComponent(toHackhatonOutputRelative(bundle.enrichedCsv) || "")}` : null },
+      { id: "gdelt", title: "GDELT DOC 2 API", url: "https://www.gdeltproject.org/" },
+      { id: "loc", title: "Library of Congress Chronicling America", url: "https://chroniclingamerica.loc.gov/" }
+    ].filter((item) => item.url)
+  };
+  anomalyIntelCache.set(cacheKey, { ts: Date.now(), value: payload });
+  return payload;
+}
+
+function normalizeAgrobotChatText(input = "") {
+  return normalizeTrText(String(input || "")).replace(/\s+/g, " ").trim();
+}
+
+function mapAgrobotCropKey({ crop = "", plant = "" } = {}) {
+  const raw = normalizeAgrobotChatText(crop || plant);
+  if (!raw) return "domates";
+  const map = {
+    tomato: "domates",
+    domates: "domates",
+    biber: "domates",
+    pepper: "domates",
+    corn: "misir",
+    maize: "misir",
+    misir: "misir",
+    grape: "bag_uzum",
+    uzum: "bag_uzum",
+    bag: "bag_uzum",
+    wheat: "bugday_kislik",
+    bugday: "bugday_kislik",
+    sunflower: "aycicegi",
+    aycicegi: "aycicegi"
+  };
+  return normalizeIrrigationCropKey(map[raw] || raw || "domates");
+}
+
+function detectAgrobotTopics(message = "") {
+  const text = normalizeAgrobotChatText(message);
+  const topics = {
+    disease: /hast|zararli|teshis|yaprak|leke|ilac|fung|mantar|saglikli/.test(text),
+    irrigation: /sula|sulama|et0|etc|evapo|transpir|su ver|su butce|nem acigi|baraj|kuyu|vardiya/.test(text),
+    soil: /toprak|ph|kil|kum|organik|gubre|npk|ec |tuzluluk|verimlilik/.test(text),
+    anomaly: /anom|risk|neden|niye|don|sicak|yagis|basinc|kurak|olay|esik|tetik/.test(text),
+    market: /pazar|hal|fiyat|mazot|motorin|akaryakit|sat|satis|alim|teklif|piyasa/.test(text),
+    weather: /hava|sicak|ruzgar|nem|yagis|don|tahmin|iklim/.test(text),
+    summary: /bugun|ozet|plan|ne yap|once ne|simdi ne/.test(text)
+  };
+  if (!Object.values(topics).some(Boolean)) topics.summary = true;
+  return {
+    ...topics,
+    primary:
+      topics.disease ? "disease" :
+      topics.irrigation ? "irrigation" :
+      topics.soil ? "soil" :
+      topics.market ? "market" :
+      topics.anomaly ? "anomaly" :
+      topics.weather ? "weather" :
+      "summary"
+  };
+}
+
+function buildAgrobotChatSuggestions({ cropLabel = "", topics = {}, hasDiagnosis = false } = {}) {
+  const base = [
+    "Bugun ne yapmaliyim?",
+    "Sulama takvimini ozetle",
+    "ET0 riskini anlat",
+    "Baraj baskisiyla sulama plani ver",
+    "Anomaliyi acikla",
+    "Toprak risklerini soyle",
+    "Mazot ve pazar durumunu ozetle"
+  ];
+  if (hasDiagnosis) {
+    base.unshift("Bu hastalik sonucu ne anlama geliyor?");
+  }
+  if (cropLabel) {
+    base.unshift(`${cropLabel} icin haftalik plan ver`);
+  }
+  if (topics.market) {
+    base.unshift("Satmak icin uygun urun ne?");
+  }
+  return Array.from(new Set(base)).slice(0, 5);
+}
+
+function buildAgrobotChatHighlights({
+  diagnosisPack = null,
+  anomalyIntel = null,
+  irrigation = null,
+  soilReport = null,
+  marketLive = null
+} = {}) {
+  const cards = [];
+  const diagnosisName = diagnosisPack?.diagnosis?.name || "";
+  if (diagnosisName) {
+    cards.push({
+      id: "diagnosis",
+      label: "Teshis",
+      value: diagnosisName,
+      tone: diagnosisPack?.diagnosis?.status === "risk" ? "danger" : diagnosisPack?.diagnosis?.status === "review" ? "warning" : "ok"
+    });
+  }
+  if (anomalyIntel?.selectedAnomaly?.variableLabel) {
+    cards.push({
+      id: "anomaly",
+      label: "Anomali",
+      value: `${anomalyIntel.selectedAnomaly.variableLabel} • ${anomalyIntel.selectedDate || "-"}`,
+      tone: "danger"
+    });
+  }
+  if (irrigation?.summary) {
+    cards.push({
+      id: "irrigation",
+      label: "Sulama",
+      value: irrigation.summary.nextIrrigationDate || irrigation.summary.currentStage || "-",
+      tone: irrigation?.alertBundle?.level === "high" ? "danger" : irrigation?.alertBundle?.level === "elevated" ? "warning" : irrigation.summary.nextIrrigationDate ? "ok" : "info"
+    });
+  }
+  if (irrigation?.hourlyEvapoCommand?.summary?.shiftGainPct != null) {
+    cards.push({
+      id: "et0",
+      label: "ET0",
+      value: `%${irrigation.hourlyEvapoCommand.summary.shiftGainPct} vardiya kazanci`,
+      tone: irrigation.hourlyEvapoCommand.summary.shiftGainPct >= 4 ? "warning" : "info"
+    });
+  }
+  if (soilReport?.soilType || soilReport?.ph) {
+    cards.push({
+      id: "soil",
+      label: "Toprak",
+      value: `${soilReport.soilType || "profil"} • pH ${soilReport.ph || "-"}`,
+      tone: "info"
+    });
+  }
+  const fuelItem = Array.isArray(marketLive?.fuel?.items) ? marketLive.fuel.items[0] : null;
+  if (fuelItem?.price) {
+    cards.push({
+      id: "fuel",
+      label: "Mazot",
+      value: `${fuelItem.price} ${fuelItem.unit || ""}`.trim(),
+      tone: "warning"
+    });
+  }
+  return cards.slice(0, 5);
+}
+
+function buildAgrobotActionables({ irrigation = null, anomalyIntel = null, marketLive = null } = {}) {
+  const items = [];
+  const irrigationTasks = Array.isArray(irrigation?.taskDrafts) ? irrigation.taskDrafts : [];
+  irrigationTasks.slice(0, 3).forEach((task) => {
+    items.push({
+      id: `irrigation-${task.id}`,
+      lane: task.lane || "24s",
+      title: task.title,
+      detail: task.detail,
+      severity: task.severity || "watch",
+      source: "sulama"
+    });
+  });
+  const anomalyActions = Array.isArray(anomalyIntel?.actionQueue) ? anomalyIntel.actionQueue : [];
+  anomalyActions.slice(0, 2).forEach((task) => {
+    items.push({
+      id: `anomaly-${task.id}`,
+      lane: "72s",
+      title: task.title,
+      detail: task.detail,
+      severity: task.priority || "watch",
+      source: "anomali"
+    });
+  });
+  const marketFuel = Array.isArray(marketLive?.fuel?.items)
+    ? marketLive.fuel.items.find((item) => /mazot|motorin/i.test(String(item.label || item.product || "")))
+    : null;
+  if (marketFuel?.price) {
+    items.push({
+      id: "market-fuel",
+      lane: "hafta",
+      title: "Mazot maliyetini plana ekle",
+      detail: `${marketFuel.label || "Mazot"} ${marketFuel.price} ${marketFuel.unit || ""}`.trim(),
+      severity: "watch",
+      source: "pazar"
+    });
+  }
+  return items.slice(0, 5);
+}
+
+function buildAgrobotDiseaseSection({ diagnosisPack = null, actionPlan = null } = {}) {
+  const diagnosis = diagnosisPack?.diagnosis || null;
+  if (!diagnosis?.name) return null;
+  const bullets = [
+    `Teshis: ${diagnosis.name} (${diagnosis.status || "bilinmiyor"})`,
+    diagnosisPack?.confidenceProfile?.summary || null,
+    ...(Array.isArray(actionPlan?.today) ? actionPlan.today.slice(0, 2) : []),
+    ...(Array.isArray(diagnosisPack?.warnings) ? diagnosisPack.warnings.slice(0, 2) : [])
+  ].filter(Boolean);
+  return {
+    id: "disease",
+    title: "Teshis yorumu",
+    bullets
+  };
+}
+
+function buildAgrobotIrrigationSection({ irrigation = null } = {}) {
+  if (!irrigation?.available) return null;
+  const topPriority = Array.isArray(irrigation?.priorityBoard) ? irrigation.priorityBoard[0] : null;
+  const topTask = Array.isArray(irrigation?.taskDrafts) ? irrigation.taskDrafts[0] : null;
+  const topHook = Array.isArray(irrigation?.et0ResearchPack?.decisionHooks) ? irrigation.et0ResearchPack.decisionHooks[0] : null;
+  const bullets = [
+    irrigation?.alertBundle?.headline ? `${irrigation.alertBundle.headline} ${irrigation.alertBundle.actions?.[0] || ""}`.trim() : null,
+    irrigation?.actionPlan?.headline ? `${irrigation.actionPlan.headline} ${irrigation.actionPlan.detail || ""}`.trim() : null,
+    irrigation?.summary?.nextIrrigationDate
+      ? `Siradaki event: ${irrigation.summary.nextIrrigationDate} • ${irrigation.summary.nextIrrigationGrossMm || 0} mm • ${irrigation.summary.nextIrrigationGrossM3 || 0} m3`
+      : `Kampanya: ${irrigation.summary?.campaignStatus || "-"}`,
+    irrigation?.hourlyEvapoCommand?.bestWindows?.[0]
+      ? `En iyi pencere: ${irrigation.hourlyEvapoCommand.bestWindows[0].label || irrigation.hourlyEvapoCommand.bestWindows[0].windowLabel || irrigation.hourlyEvapoCommand.bestWindows[0].window || "-"}`
+      : null,
+    irrigation?.waterSupplyAdvisor?.mode
+      ? `Su kaynagi modu: ${irrigation.waterSupplyAdvisor.mode} • haftalik tavan ${irrigation.waterSupplyAdvisor.weeklyCapM3 || 0} m3`
+      : null,
+    topHook ? `${topHook.title}: ${topHook.detail}` : null,
+    topPriority ? `${topPriority.title}: ${topPriority.detail}` : null,
+    topTask ? `${topTask.title}: ${topTask.detail}` : null
+  ].filter(Boolean);
+  return {
+    id: "irrigation",
+    title: "Sulama karari",
+    bullets: bullets.slice(0, 6)
+  };
+}
+
+function buildAgrobotSoilSection({ soilReport = null } = {}) {
+  if (!soilReport) return null;
+  const bullets = [
+    `Toprak: ${soilReport.soilType || "profil yok"} • pH ${soilReport.ph || "-"} • organik ${soilReport.organic || "-"}`,
+    Array.isArray(soilReport.recommended) && soilReport.recommended.length
+      ? `Onerilen urunler: ${soilReport.recommended.slice(0, 3).join(", ")}`
+      : null,
+    Array.isArray(soilReport.diseaseRisk) && soilReport.diseaseRisk.length
+      ? `Toprak kaynakli risk: ${soilReport.diseaseRisk.slice(0, 2).join(", ")}`
+      : null
+  ].filter(Boolean);
+  return {
+    id: "soil",
+    title: "Toprak yorumu",
+    bullets
+  };
+}
+
+function buildAgrobotAnomalySection({ anomalyIntel = null } = {}) {
+  if (!anomalyIntel?.selectedAnomaly) return null;
+  const selected = anomalyIntel.selectedAnomaly;
+  const bullets = [
+    `${selected.date} tarihinde ${selected.variableLabel || "iklim"} tarafinda ${selected.anomalyType || "anomali"} goruldu.`,
+    selected.causeDetails || selected.causePrimary || selected.localPatternHint || null,
+    anomalyIntel?.triggerBoard?.[0]
+      ? `${anomalyIntel.triggerBoard[0].title}: ${anomalyIntel.triggerBoard[0].condition}`
+      : null,
+    anomalyIntel?.actionQueue?.[0]
+      ? `${anomalyIntel.actionQueue[0].title}: ${anomalyIntel.actionQueue[0].detail}`
+      : null
+  ].filter(Boolean);
+  return {
+    id: "anomaly",
+    title: "Anomali yorumu",
+    bullets
+  };
+}
+
+function buildAgrobotMarketSection({ marketLive = null, cropLabel = "" } = {}) {
+  if (!marketLive?.live) return null;
+  const fuelItem = Array.isArray(marketLive?.fuel?.items) ? marketLive.fuel.items.find((item) => /mazot|motorin/i.test(String(item.label || item.product || ""))) || marketLive.fuel.items[0] : null;
+  const boardItem = Array.isArray(marketLive?.board) ? marketLive.board[0] : null;
+  const bullets = [
+    fuelItem?.price ? `Akaryakit: ${fuelItem.label || fuelItem.product || "Mazot"} ${fuelItem.price} ${fuelItem.unit || ""}`.trim() : null,
+    boardItem ? `Pazar: ${boardItem.label || boardItem.crop || cropLabel || "urun"} ${boardItem.priceTlKg || boardItem.minTlKg || "-"} TL/kg civari.` : null,
+    Array.isArray(marketLive?.warnings) && marketLive.warnings.length ? `Uyari: ${marketLive.warnings.join(" • ")}` : null
+  ].filter(Boolean);
+  return {
+    id: "market",
+    title: "Pazar ozeti",
+    bullets
+  };
+}
+
+function buildAgrobotSummarySection({
+  city = "",
+  district = "",
+  neighborhood = "",
+  cropLabel = "",
+  weather = null,
+  diagnosisPack = null,
+  anomalyIntel = null,
+  irrigation = null
+} = {}) {
+  const locationLabel = buildLocationSearchQuery(city, district, neighborhood) || city || "Parsel";
+  const bullets = [
+    `${locationLabel} icin ${cropLabel || "urun"} odakli karar ozeti.`,
+    weather?.temp != null
+      ? `Anlik hava: ${weather.temp} C • nem ${weather.humidity ?? "-"} • ruzgar ${weather.windKmh ?? "-"} km/s`
+      : null,
+    diagnosisPack?.diagnosis?.name ? `Teshis sinyali: ${diagnosisPack.diagnosis.name}` : null,
+    anomalyIntel?.selectedAnomaly
+      ? `${anomalyIntel.selectedAnomaly.variableLabel || "Iklim"} anomalisi: ${(anomalyIntel.selectedAnomaly.anomalyType || "-").replace(/_/g, " ")} • ${anomalyIntel.selectedDate || anomalyIntel.selectedAnomaly.date || "-"}`
+      : null,
+    irrigation?.summary?.nextIrrigationDate ? `Siradaki sulama: ${irrigation.summary.nextIrrigationDate}` : null
+  ].filter(Boolean);
+  return {
+    id: "summary",
+    title: "Durum ozeti",
+    bullets
+  };
+}
+
+function buildAgrobotAnswerText({ primaryTopic = "summary", sections = [], cropLabel = "" } = {}) {
+  const firstSection = sections[0] || null;
+  const firstLine = firstSection?.bullets?.[0] || `${cropLabel || "Parsel"} icin ozet hazirlandi.`;
+  const secondLine = firstSection?.bullets?.[1] || null;
+  const thirdLine = sections[1]?.bullets?.[0] || null;
+  const normalizeSentence = (text) => {
+    const trimmed = String(text || "").trim();
+    if (!trimmed) return "";
+    return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+  };
+  return [firstLine, secondLine, thirdLine]
+    .filter(Boolean)
+    .map(normalizeSentence)
+    .join(" ");
+}
+
+async function buildAgrobotChatPayload({
+  message = "",
+  city = "Malatya",
+  district = "",
+  neighborhood = "",
+  plant = "",
+  crop = "",
+  weather = null,
+  soilReport = null,
+  diagnosisPack = null,
+  actionPlan = null
+} = {}) {
+  const topics = detectAgrobotTopics(message);
+  const cropKey = mapAgrobotCropKey({ crop, plant });
+  const cropConfig = getIrrigationCropConfig(cropKey);
+  const cropLabel = cropConfig?.label || plant || crop || "Urun";
+  const needsAnomaly = topics.summary || topics.anomaly || topics.weather || topics.irrigation;
+  const needsIrrigation = topics.summary || topics.irrigation || topics.weather;
+  const needsMarket = topics.market || /mazot|motorin|fiyat|pazar|hal/.test(normalizeAgrobotChatText(message));
+
+  const [anomalyIntel, irrigation, marketLive] = await Promise.all([
+    needsAnomaly
+      ? buildClimateAnomalyIntelPayload({ city, district, neighborhood, crop: cropKey, limit: 6 }).catch(() => null)
+      : Promise.resolve(null),
+    needsIrrigation
+      ? buildIrrigationCalendarPayload({
+          city,
+          district,
+          neighborhood,
+          crop: cropKey,
+          plantingDate: getDefaultIrrigationPlantingDate(cropKey),
+          areaHa: 1,
+          efficiency: 0.9,
+          method: "damla",
+          waterSource: "baraj_kanal",
+          horizonDays: 14
+        }).catch(() => null)
+      : Promise.resolve(null),
+    needsMarket
+      ? fetchMarketLiveIntel({ city, district, crop: cropKey }).catch(() => null)
+      : Promise.resolve(null)
+  ]);
+
+  const sections = [];
+  if (topics.summary) {
+    sections.push(
+      buildAgrobotSummarySection({
+        city,
+        district,
+        neighborhood,
+        cropLabel,
+        weather,
+        diagnosisPack,
+        anomalyIntel,
+        irrigation
+      })
+    );
+  }
+  if (topics.disease || topics.summary) sections.push(buildAgrobotDiseaseSection({ diagnosisPack, actionPlan }));
+  if (topics.irrigation || topics.summary || topics.weather) sections.push(buildAgrobotIrrigationSection({ irrigation }));
+  if (topics.soil || topics.summary) sections.push(buildAgrobotSoilSection({ soilReport }));
+  if (topics.anomaly || topics.summary || topics.weather) sections.push(buildAgrobotAnomalySection({ anomalyIntel }));
+  if (topics.market) sections.push(buildAgrobotMarketSection({ marketLive, cropLabel }));
+
+  const cleanedSections = sections.filter(Boolean).map((item) => ({
+    ...item,
+    bullets: (item.bullets || []).filter(Boolean).slice(0, 4)
+  })).filter((item) => item.bullets.length);
+
+  const highlights = buildAgrobotChatHighlights({
+    diagnosisPack,
+    anomalyIntel,
+    irrigation,
+    soilReport,
+    marketLive
+  });
+  const actionables = buildAgrobotActionables({
+    irrigation,
+    anomalyIntel,
+    marketLive
+  });
+
+  return {
+    updatedAt: new Date().toISOString(),
+    available: true,
+    live: true,
+    topic: topics.primary,
+    locationLabel: buildLocationSearchQuery(city, district, neighborhood) || city,
+    crop: {
+      key: cropKey,
+      label: cropLabel
+    },
+    answer: buildAgrobotAnswerText({
+      primaryTopic: topics.primary,
+      sections: cleanedSections,
+      cropLabel
+    }),
+    sections: cleanedSections,
+    highlights,
+    actionables,
+    suggestions: buildAgrobotChatSuggestions({
+      cropLabel,
+      topics,
+      hasDiagnosis: Boolean(diagnosisPack?.diagnosis?.name)
+    }),
+    sources: [
+      weather?.source ? { id: "weather", title: "Canli hava", detail: weather.source } : null,
+      soilReport?.source ? { id: "soil", title: "Toprak", detail: soilReport.source } : null,
+      anomalyIntel?.scope?.dataMode ? { id: "anomaly", title: "Anomali intel", detail: anomalyIntel.scope.dataMode } : null,
+      irrigation?.source ? { id: "irrigation", title: "Sulama", detail: irrigation.source } : null,
+      marketLive?.produce?.source ? { id: "market", title: "Pazar", detail: marketLive.produce.source } : null
+    ].filter(Boolean)
+  };
+}
+
+function buildHackhatonModelSuitePayload({ city = "", district = "", neighborhood = "" } = {}) {
+  const scope = buildHackhatonScope(city, district, neighborhood);
+  const cacheKey = `model-suite:${scope.locationLabel}`;
+  const cached = getHackhatonCacheEntry(cacheKey);
+  if (cached) return cached;
+
+  const primaryRun =
+    findLatestHackhatonRun({ prefixes: ["model_suite_realistic_"], requiredFile: "model_suite_summary.json" }) ||
+    findLatestHackhatonRun({ prefixes: ["stability_smoke_"], requiredFile: "model_suite_summary.json" });
+
+  if (!primaryRun) {
+    return setHackhatonCacheEntry(cacheKey, {
+      updatedAt: new Date().toISOString(),
+      scope,
+      available: false,
+      error: "hackhaton_model_suite_not_found"
+    });
+  }
+
+  const summaryPath = path.join(primaryRun.path, "model_suite_summary.json");
+  const summaryMdPath = path.join(primaryRun.path, "model_suite_summary.md");
+  const summary = hackhatonReadJsonSafe(summaryPath) || {};
+  const robustSummary =
+    hackhatonReadJsonSafe(path.join(primaryRun.path, "robust_selection", "robust_model_selection_summary.json")) ||
+    summary?.robust_selection?.summary ||
+    null;
+  const healthSummary =
+    summary?.health_suite?.summary ||
+    hackhatonReadJsonSafe(path.join(primaryRun.path, "health", "health_suite_summary.json")) ||
+    null;
+
+  const selectedModels = Array.isArray(robustSummary?.selected_models)
+    ? robustSummary.selected_models
+    : Array.isArray(robustSummary?.selectedModels)
+      ? robustSummary.selectedModels
+      : Array.isArray(summary?.robust_selection?.summary?.selected_models)
+        ? summary.robust_selection.summary.selected_models
+        : [];
+
+  const modelCards = selectedModels.map((item, idx) => {
+    const modelKey = String(item.model_key || item.modelKey || "").trim();
+    const variable = String(item.variable || "").trim();
+    const chartPath = hackhatonFindChart(primaryRun.path, modelKey, variable);
+    return {
+      id: `${modelKey || "model"}-${variable || idx}`,
+      modelKey,
+      modelLabel: hackhatonModelLabel(modelKey),
+      variable,
+      variableLabel: hackhatonVariableLabel(variable),
+      frequency: item.frequency || item.preferred_frequency || "-",
+      score: Number(item.score_total || 0),
+      rmse: Number(item.rmse || 0),
+      confidence: Number(item.confidence || 0),
+      grade: item.confidence_grade || item.confidenceGrade || "-",
+      metricSource: item.metric_source || item.metricSource || "-",
+      chart: hackhatonAssetRef(chartPath)
+    };
+  });
+
+  const healthModels = Array.isArray(healthSummary?.results)
+    ? healthSummary.results.map((item, idx) => ({
+        id: `${item.model || idx}`,
+        modelKey: item.model || "",
+        modelLabel: hackhatonModelLabel(item.model),
+        status: item.status || "unknown",
+        relativeRisk: Number(item.future_mean_rr || 0),
+        highRiskShare: Number(item.future_high_risk_share || 0),
+        heatIndex: Number(item.future_mean_heat_index_c || 0),
+        outputDir: item.output_dir || ""
+      }))
+    : [];
+
+  const topReports = ["temp", "humidity", "precip", "pressure"]
+    .map((variable) => {
+      const selected =
+        selectedModels.find((item) => String(item.variable || "").trim() === variable) ||
+        {};
+      const modelKey = String(selected.model_key || "").trim() || "quant";
+      const report = hackhatonFindReportJson(primaryRun.path, modelKey, variable);
+      const chartPath =
+        report?.chart_png ||
+        report?.regime_probs_png ||
+        hackhatonFindChart(primaryRun.path, modelKey, variable);
+      return {
+        id: `${modelKey}-${variable}-report`,
+        modelKey,
+        modelLabel: hackhatonModelLabel(modelKey),
+        variable,
+        variableLabel: hackhatonVariableLabel(variable),
+        rmse: Number(report?.cv_rmse || report?.rmse || selected.rmse || 0),
+        coverage: Number(report?.monthly_coverage || report?.coverage || 0),
+        bias: Number(report?.cv_bias || report?.bias_abs || 0),
+        chart: hackhatonAssetRef(chartPath),
+        chartFile: toHackhatonOutputRelative(chartPath),
+        forecastFile: toHackhatonOutputRelative(report?.forecast_csv || selected.forecast_csv || ""),
+        raw: report || null
+      };
+    })
+    .filter((item) => item.chart || item.forecastFile || item.raw);
+
+  const payload = {
+    updatedAt: new Date().toISOString(),
+    available: true,
+    scope,
+    run: {
+      name: primaryRun.name,
+      path: primaryRun.path
+    },
+    summary: {
+      observationsOriginal: summary?.observations_original || null,
+      observationsUsed: summary?.observations_used || null,
+      stabilization: summary?.stabilization || null,
+      modelsRequested: summary?.models_requested || [],
+      modelsOk: summary?.models_ok || [],
+      modelsFailed: summary?.models_failed || []
+    },
+    selectedModels: modelCards,
+    healthModels,
+    reportCards: topReports,
+    narratives: [
+      {
+        id: "model-suite-summary",
+        title: "Model Suite Ozet",
+        type: "markdown",
+        file: toHackhatonOutputRelative(summaryMdPath),
+        excerpt: hackhatonExcerpt(hackhatonReadTextSafe(summaryMdPath, 800))
+      },
+      {
+        id: "robust-selection-summary",
+        title: "Robust Model Secimi",
+        type: "markdown",
+        file: toHackhatonOutputRelative(path.join(primaryRun.path, "robust_selection", "robust_model_selection_summary.md")),
+        excerpt: hackhatonExcerpt(
+          hackhatonReadTextSafe(path.join(primaryRun.path, "robust_selection", "robust_model_selection_summary.md"), 800)
+        )
+      },
+      {
+        id: "health-suite-summary",
+        title: "Health Suite Ozet",
+        type: "markdown",
+        file: toHackhatonOutputRelative(path.join(primaryRun.path, "health", "health_suite_summary.md")),
+        excerpt: hackhatonExcerpt(
+          hackhatonReadTextSafe(path.join(primaryRun.path, "health", "health_suite_summary.md"), 800)
+        )
+      }
+    ].filter((item) => item.file || item.excerpt)
+  };
+
+  return setHackhatonCacheEntry(cacheKey, payload);
+}
+
+function buildHackhatonDashboardPayload({ city = "", district = "", neighborhood = "" } = {}) {
+  const scope = buildHackhatonScope(city, district, neighborhood);
+  const cacheKey = `dashboard:${scope.locationLabel}`;
+  const cached = getHackhatonCacheEntry(cacheKey);
+  if (cached) return cached;
+
+  const modelSuite = buildHackhatonModelSuitePayload({ city, district, neighborhood });
+  const presentationHtmlPath = path.join(HACKHATON_OUTPUT_ROOT, "presentation", "eto_analizi_v4.html");
+  const presentationSlides = hackhatonExtractPresentationSlides(presentationHtmlPath, 24);
+  const documents = [
+    {
+      id: "hackhaton-final-report",
+      title: "Hackhaton Final Raporu",
+      type: "pdf",
+      file: toHackhatonOutputRelative(path.join(HACKHATON_OUTPUT_ROOT, "pdf", "Hackhaton_Final_Raporu_2026-03-05.pdf"))
+    },
+    {
+      id: "health-brief",
+      title: "Yonetici Brif Tek Sayfa",
+      type: "pdf",
+      file: toHackhatonOutputRelative(path.join(HACKHATON_OUTPUT_ROOT, "health_impact", "yonetici_brif_tek_sayfa_latest.pdf"))
+    },
+    {
+      id: "eto-analysis",
+      title: "ET0 Analizi Sunumu",
+      type: "pdf",
+      file: toHackhatonOutputRelative(path.join(HACKHATON_OUTPUT_ROOT, "presentation", "eto_analizi_v4.pdf"))
+    },
+    {
+      id: "eto-analysis-html",
+      title: "ET0 Analizi HTML Sunum",
+      type: "html",
+      file: toHackhatonOutputRelative(presentationHtmlPath)
+    },
+    {
+      id: "presentation-html",
+      title: "Presentation HTML",
+      type: "html",
+      file: toHackhatonOutputRelative(path.join(HACKHATON_OUTPUT_ROOT, "presentation", "presentation.html"))
+    }
+  ]
+    .filter((item) => item.file)
+    .map((item) => ({
+      ...item,
+      asset: hackhatonAssetRef(path.join(HACKHATON_OUTPUT_ROOT, item.file))
+    }));
+
+  const visuals = Array.isArray(modelSuite?.reportCards)
+    ? modelSuite.reportCards
+        .filter((item) => item.chart)
+        .map((item, idx) => ({
+          id: `visual-${idx}-${item.variable}`,
+          title: `${item.variableLabel} gorunumu`,
+          subtitle: `${item.modelLabel} • RMSE ${hackhatonScoreText(item.rmse)}`,
+          variable: item.variable,
+          modelLabel: item.modelLabel,
+          chart: item.chart
+        }))
+    : [];
+
+  const gemGallery = [
+    {
+      id: "best-annual-trends",
+      title: "Yillik Trendler + Su Stresi",
+      subtitle: "Yagis, sicaklik ve su stresi tek panoda",
+      group: "En Iyi Grafikler",
+      file: path.join(HACKHATON_OUTPUT_ROOT, "en_iyi_grafikler_2026-03-05", "01_yillik_trendler_yagis_sicaklik_su_stresi.png")
+    },
+    {
+      id: "best-drought-spi12",
+      title: "SPI12 Kuraklik Izleme",
+      subtitle: "Kuraklik sinyalini zaman ekseninde gosterir",
+      group: "En Iyi Grafikler",
+      file: path.join(HACKHATON_OUTPUT_ROOT, "en_iyi_grafikler_2026-03-05", "02_spi12_kuraklik_izleme.png")
+    },
+    {
+      id: "best-risk-rates",
+      title: "Donemsel Risk Oranlari",
+      subtitle: "Risk dagilimi ve siddet orani",
+      group: "En Iyi Grafikler",
+      file: path.join(HACKHATON_OUTPUT_ROOT, "en_iyi_grafikler_2026-03-05", "03_donemsel_risk_oranlari.png")
+    },
+    {
+      id: "best-quant-temp",
+      title: "Sicaklik Quant 2035",
+      subtitle: "2035 ufkunda quant tabanli sicaklik gorunumu",
+      group: "En Iyi Grafikler",
+      file: path.join(HACKHATON_OUTPUT_ROOT, "en_iyi_grafikler_2026-03-05", "05_sicaklik_quant_2035.png")
+    },
+    {
+      id: "best-solar-potential",
+      title: "Gunes Potansiyeli 2035",
+      subtitle: "Enerji ve sulama planlama icin solar gorunum",
+      group: "En Iyi Grafikler",
+      file: path.join(HACKHATON_OUTPUT_ROOT, "en_iyi_grafikler_2026-03-05", "08_gunes_potansiyeli_2035_pro.png")
+    },
+    {
+      id: "spreadsheet-ml-performance",
+      title: "ML Performans Ozet",
+      subtitle: "Spreadsheet pipeline egitim performansi",
+      group: "Spreadsheet",
+      file: path.join(HACKHATON_OUTPUT_ROOT, "spreadsheet", "ml_performans.png")
+    },
+    {
+      id: "spreadsheet-et0-source-map",
+      title: "ET0 Kaynak Haritasi",
+      subtitle: "Kaynak dagilimi ve ET0 doldurma mantigi",
+      group: "Spreadsheet",
+      file: path.join(HACKHATON_OUTPUT_ROOT, "spreadsheet", "et0_kaynak_haritasi_1987.png")
+    },
+    {
+      id: "spreadsheet-cmip6",
+      title: "CMIP6 Projeksiyon",
+      subtitle: "Uzun vadeli iklim projeksiyon paneli",
+      group: "Spreadsheet",
+      file: path.join(HACKHATON_OUTPUT_ROOT, "spreadsheet", "cmip6_projeksiyon.png")
+    }
+  ]
+    .map((item) => ({
+      ...item,
+      asset: hackhatonAssetRef(item.file)
+    }))
+    .filter((item) => item.asset);
+
+  const trainingSummary = hackhatonReadJsonSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "spreadsheet", "meteoroloji_model_egitim_genisletilmis_ozet.json")
+  );
+  const completionSummary = hackhatonReadJsonSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "spreadsheet", "et0_completion_summary_1987.json")
+  );
+  const irrigationValidation = hackhatonReadJsonSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "spreadsheet", "irrigation_crop_ml_validation_1987.json")
+  );
+  const datasetHighlights = [
+    trainingSummary
+      ? {
+          id: "dataset-training",
+          title: "Meteoroloji egitim matrisi",
+          summary: "1918-2019 genisletilmis egitim matrisi ve tum degiskenler doldurulmus durumda.",
+          metrics: [
+            { label: "Ham satir", value: String(trainingSummary.input_obs_graph_rows || "-") },
+            { label: "Zaman damgasi", value: String(trainingSummary.expanded_wide_timestamps || "-") },
+            { label: "Degisken", value: Array.isArray(trainingSummary.variables) ? String(trainingSummary.variables.length) : "-" }
+          ]
+        }
+      : null,
+    completionSummary
+      ? {
+          id: "dataset-et0",
+          title: "ET0 tamamlama ozeti",
+          summary: "1987 yilinda yerel sicaklik/nem ile tamamlanmis ET0 uretimi.",
+          metrics: [
+            { label: "Gun sayisi", value: String(completionSummary.coverage?.days_total || "-") },
+            { label: "Yillik ET0", value: `${Number(completionSummary.et0?.completed_year_sum_mm || 0).toFixed(1)} mm` },
+            { label: "Gunluk ortalama", value: `${Number(completionSummary.et0?.completed_daily_mean_mm || 0).toFixed(2)} mm` }
+          ]
+        }
+      : null,
+    irrigationValidation
+      ? {
+          id: "dataset-irrigation-validation",
+          title: "Sulama ML validasyonu",
+          summary: irrigationValidation.all_passed
+            ? "Formul ve tahmin kontrolleri gecti."
+            : "Bazi validasyon adimlari kontrol gerektiriyor.",
+          metrics: [
+            { label: "Tum kontroller", value: irrigationValidation.all_passed ? "PASS" : "CHECK" },
+            { label: "Gunluk akış", value: irrigationValidation.checks?.daily_non_empty ? "OK" : "ERR" },
+            { label: "Liderboard", value: irrigationValidation.checks?.ml_leaderboard_non_empty ? "OK" : "ERR" }
+          ]
+        }
+      : null
+  ].filter(Boolean);
+
+  const formatMetric = (value, digits = 1, suffix = "") => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return "-";
+    return `${numeric.toFixed(digits)}${suffix}`;
+  };
+  const formatSignedMetric = (value, digits = 1, suffix = "") => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return "-";
+    const sign = numeric > 0 ? "+" : "";
+    return `${sign}${numeric.toFixed(digits)}${suffix}`;
+  };
+
+  const et0AccuracyRows = hackhatonReadCsvRowsSafe(path.join(HACKHATON_OUTPUT_ROOT, "spreadsheet", "et0_ml_accuracy_1987.csv"));
+  const bestEt0Row =
+    et0AccuracyRows.find((row) => /gradient/i.test(String(row?.model || ""))) || et0AccuracyRows[0] || null;
+
+  const playbooks = [
+    {
+      id: "playbook-model-suite",
+      title: "Model Suite Orkestrasyonu",
+      subtitle: "Quant, Prophet, Strong, robust selection ve health suite tek akis.",
+      category: "Forecast Stack",
+      filePath: path.join(HACKHATON_ROOT, "MODEL_SUITE_KULLANIM.md"),
+      metrics: [
+        { label: "Cekirdek", value: "9 model" },
+        { label: "Secim", value: "robust arbitration" },
+        { label: "Health", value: "entegre" }
+      ]
+    },
+    {
+      id: "playbook-et0-ml",
+      title: "ET0 ML + Sulama Rehberi",
+      subtitle: "Evapotranspirasyon tahmini, sulama planlama ve model dogrulama.",
+      category: "Sulama",
+      filePath: path.join(HACKHATON_ROOT, "ET_ML_KULLANIM.md"),
+      metrics: [
+        { label: "En iyi model", value: bestEt0Row?.model || "Gradient Boosting" },
+        { label: "R2", value: bestEt0Row ? `${formatMetric(bestEt0Row.r2_pct, 1, "%")}` : "-" },
+        { label: "RMSE", value: bestEt0Row ? `${formatMetric(bestEt0Row.rmse_mm_day, 3, " mm/gun")}` : "-" }
+      ]
+    },
+    {
+      id: "playbook-water-decision",
+      title: "Su Karar Destek Akisi",
+      subtitle: "Senaryolu rezervuar, erken uyari ve dashboard pipeline rehberi.",
+      category: "Su Yonetimi",
+      filePath: path.join(HACKHATON_ROOT, "MODEL_DECISION_DASHBOARD_KULLANIM.md"),
+      metrics: [
+        { label: "Ufuk", value: "60 ay" },
+        { label: "Senaryo", value: "7 akıs" },
+        { label: "Alert", value: "JSON + Slack" }
+      ]
+    },
+    {
+      id: "playbook-solar",
+      title: "Solar + Enerji Literaturi",
+      subtitle: "FAO-56, PVWatts ve 2024-2026 guncel review notlari.",
+      category: "Enerji",
+      filePath: path.join(HACKHATON_ROOT, "SOLAR_MODEL_LITERATURE.md"),
+      metrics: [
+        { label: "Referans", value: "FAO-56 + PVWatts" },
+        { label: "Yayin", value: "2024-2026" },
+        { label: "Yaklasim", value: "physics + ML" }
+      ]
+    },
+    {
+      id: "playbook-strong",
+      title: "Strong Ensemble Rehberi",
+      subtitle: "Prophet, ETS, SARIMA ve naive tabanli hibrit tahmin akisi.",
+      category: "Ensemble",
+      filePath: path.join(HACKHATON_ROOT, "STRONG_MODEL_KULLANIM.md"),
+      metrics: [
+        { label: "CV", value: "rolling" },
+        { label: "Aile", value: "5 model" },
+        { label: "Final", value: "agirlikli ensemble" }
+      ]
+    },
+    {
+      id: "playbook-prophet",
+      title: "Prophet Hiperparametre Rehberi",
+      subtitle: "Auto-tune, holdout ve multi-series iklim tahmin notlari.",
+      category: "Forecasting",
+      filePath: path.join(HACKHATON_ROOT, "PROPHET_KULLANIM.md"),
+      metrics: [
+        { label: "Tune", value: "auto" },
+        { label: "Backtest", value: "4 split" },
+        { label: "Fallback", value: "seasonal naive" }
+      ]
+    }
+  ]
+    .map((item) => ({
+      ...item,
+      asset: hackhatonRootAssetRef(item.filePath),
+      excerpt: hackhatonExcerpt(hackhatonReadTextSafe(item.filePath, 1400), 340)
+    }))
+    .filter((item) => item.excerpt || item.asset);
+
+  const droughtPeriodRows = hackhatonReadCsvRowsSafe(path.join(HACKHATON_OUTPUT_ROOT, "analysis_gelismis", "period_summary.csv"));
+  const droughtBaseline = droughtPeriodRows.find((row) => String(row?.period || "") === "1988-2018") || null;
+  const droughtFuture = droughtPeriodRows.find((row) => String(row?.period || "") === "2026-2035") || null;
+  const earlyWarningRows = hackhatonReadCsvRowsSafe(path.join(HACKHATON_OUTPUT_ROOT, "analysis_gelismis", "early_warning_dashboard.csv"));
+  const droughtCalendarRows = hackhatonReadCsvRowsSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "analysis_gelismis", "future_alert_calendar_monthly.csv"),
+    18
+  );
+  const droughtRiskYearRows = hackhatonReadCsvRowsSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "analysis_gelismis", "top_risk_years_wsi.csv"),
+    12
+  );
+  const droughtLagRows = hackhatonReadCsvRowsSafe(path.join(HACKHATON_OUTPUT_ROOT, "analysis_gelismis", "meteo_hydro_lag_summary.csv"));
+  const droughtReliabilityRows = hackhatonReadCsvRowsSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "analysis_gelismis", "spi_reliability_diagnostics.csv"),
+    120
+  );
+  const droughtPrecipDeltaPct =
+    droughtBaseline && droughtFuture
+      ? (Number(droughtFuture.annual_precip_mm_mean || 0) / Math.max(1e-9, Number(droughtBaseline.annual_precip_mm_mean || 0)) - 1) * 100
+      : null;
+  const droughtWaterBalanceDelta =
+    droughtBaseline && droughtFuture
+      ? Number(droughtFuture.annual_water_balance_mm_mean || 0) - Number(droughtBaseline.annual_water_balance_mm_mean || 0)
+      : null;
+  const droughtDryMonthDeltaPp =
+    droughtBaseline && droughtFuture
+      ? (Number(droughtFuture.dry_month_rate || 0) - Number(droughtBaseline.dry_month_rate || 0)) * 100
+      : null;
+  const droughtLagSpi12 =
+    droughtLagRows.find((row) => String(row?.period || "") === "1988-2035" && String(row?.meteo_index || "") === "spi12") ||
+    droughtLagRows.find((row) => String(row?.meteo_index || "") === "spi12") ||
+    null;
+  const droughtReliability =
+    droughtReliabilityRows.find((row) => String(row?.index_type || "") === "SPI" && String(row?.scale_months || "") === "12") ||
+    droughtReliabilityRows[0] ||
+    null;
+  const droughtIntel = {
+    title: "Kuraklik + Su Butcesi Istihbarati",
+    subtitle: "1988-2018 referansina gore 2026-2035 sinyal, erken uyari ve risk ozeti.",
+    cards: [
+      droughtPrecipDeltaPct != null
+        ? {
+            id: "drought-precip",
+            label: "Yillik yagis degisimi",
+            value: formatSignedMetric(droughtPrecipDeltaPct, 1, "%"),
+            detail: "2026-2035 vs 1988-2018"
+          }
+        : null,
+      droughtWaterBalanceDelta != null
+        ? {
+            id: "drought-water-balance",
+            label: "Su dengesi farki",
+            value: formatSignedMetric(droughtWaterBalanceDelta, 1, " mm"),
+            detail: "P - PET yillik ortalama"
+          }
+        : null,
+      droughtDryMonthDeltaPp != null
+        ? {
+            id: "drought-dry-rate",
+            label: "Kuru ay orani",
+            value: formatSignedMetric(droughtDryMonthDeltaPp, 1, " puan"),
+            detail: "P20 altindaki ay payi"
+          }
+        : null,
+      droughtLagSpi12
+        ? {
+            id: "drought-lag",
+            label: "Meteo -> hidro gecikme",
+            value: `${droughtLagSpi12.best_lag_months || "-"} ay`,
+            detail: `SPI12 corr ${formatMetric(droughtLagSpi12.best_corr, 2)}`
+          }
+        : null,
+      droughtReliability
+        ? {
+            id: "drought-reliability",
+            label: "SPI/SPEI guvenilirligi",
+            value: `${formatMetric(droughtReliability.reliability_score_0_100, 0)}/100`,
+            detail: String(droughtReliability.reliability_label || "yuksek")
+          }
+        : null
+    ].filter(Boolean),
+    documents: [
+      {
+        id: "drought-report-core",
+        title: "Kuraklik ve Su Kaynaklari Analizi",
+        subtitle: "Temel donem karsilastirma raporu",
+        filePath: path.join(HACKHATON_OUTPUT_ROOT, "analysis", "kuraklik_su_kaynaklari_analizi.md")
+      },
+      {
+        id: "drought-report-advanced",
+        title: "Gelismis Kuraklik + Su Analizi",
+        subtitle: "SPI/SPEI, su butcesi, trend ve guvenilirlik detaylari",
+        filePath: path.join(HACKHATON_OUTPUT_ROOT, "analysis_gelismis", "gelismis_kuraklik_su_analizi.md")
+      },
+      {
+        id: "drought-report-plain",
+        title: "Halk Dili Ozet",
+        subtitle: "Karar verici ve saha ekibi icin sade yorum",
+        filePath: path.join(HACKHATON_OUTPUT_ROOT, "analysis_gelismis", "halk_dili_ozet.md")
+      }
+    ]
+      .map((item) => ({
+        ...item,
+        asset: hackhatonAssetRef(item.filePath),
+        excerpt: hackhatonExcerpt(hackhatonReadTextSafe(item.filePath, 1200), 280)
+      }))
+      .filter((item) => item.asset || item.excerpt),
+    visuals: [
+      {
+        id: "drought-visual-trends",
+        title: "Yillik trendler",
+        subtitle: "Yagis, sicaklik ve su stresi ayni panelde",
+        asset: hackhatonAssetRef(path.join(HACKHATON_OUTPUT_ROOT, "en_iyi_grafikler_2026-03-05", "01_yillik_trendler_yagis_sicaklik_su_stresi.png"))
+      },
+      {
+        id: "drought-visual-spi12",
+        title: "SPI12 kuraklik izleme",
+        subtitle: "Kuraklik sinyalinin zaman ekseni",
+        asset: hackhatonAssetRef(path.join(HACKHATON_OUTPUT_ROOT, "en_iyi_grafikler_2026-03-05", "02_spi12_kuraklik_izleme.png"))
+      },
+      {
+        id: "drought-visual-risk-rates",
+        title: "Donemsel risk oranlari",
+        subtitle: "Risk siddeti ve dagilimi",
+        asset: hackhatonAssetRef(path.join(HACKHATON_OUTPUT_ROOT, "en_iyi_grafikler_2026-03-05", "03_donemsel_risk_oranlari.png"))
+      },
+      {
+        id: "drought-visual-news",
+        title: "Olay siddeti + haber paneli",
+        subtitle: "Olay etkisi ve haber temelli saha paneli",
+        asset: hackhatonAssetRef(path.join(HACKHATON_OUTPUT_ROOT, "en_iyi_grafikler_2026-03-05", "04_olay_siddet_haber_dashboard.png"))
+      }
+    ].filter((item) => item.asset),
+    alertCalendar: droughtCalendarRows.slice(0, 6).map((row) => ({
+      id: `alert-${row.timestamp}`,
+      month: String(row.timestamp || "").slice(0, 7),
+      riskLevel: row.risk_level || "-",
+      riskScore: formatMetric(row.risk_score, 1),
+      dryProb: formatMetric(Number(row.dry_prob || 0) * 100, 0, "%"),
+      hotProb: formatMetric(Number(row.hot_prob || 0) * 100, 0, "%")
+    })),
+    riskYears: droughtRiskYearRows.slice(0, 5).map((row) => ({
+      id: `risk-year-${row.year}`,
+      year: row.year || "-",
+      waterStress: formatMetric(row.water_stress_index, 2),
+      classLabel: row.wsi_class || "-",
+      droughtClass: row.de_martonne_class || "-",
+      precip: `${formatMetric(row.precip_total_mm, 0)} mm`
+    })),
+    indicatorNotes: earlyWarningRows.slice(0, 4).map((row) => ({
+      id: `indicator-${row.indicator}`,
+      indicator: row.indicator || "-",
+      baseline: formatMetric(Number(row.baseline || 0) * (String(row.indicator || "").includes("_rate") ? 100 : 1), String(row.indicator || "").includes("_rate") ? 1 : 2, String(row.indicator || "").includes("_rate") ? "%" : ""),
+      future: formatMetric(Number(row.future || 0) * (String(row.indicator || "").includes("_rate") ? 100 : 1), String(row.indicator || "").includes("_rate") ? 1 : 2, String(row.indicator || "").includes("_rate") ? "%" : ""),
+      note: row.note || ""
+    }))
+  };
+
+  const waterDecisionRunSummary = hackhatonReadJsonSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "run_summary.json")
+  );
+  const waterDecisionScenarioSummary = hackhatonReadJsonSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "scenario_summary.json")
+  );
+  const waterDecisionExpectedRisk = hackhatonReadJsonSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "expected_risk_summary.json")
+  );
+  const waterDecisionDynamicSummary = hackhatonReadJsonSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "dynamic_threshold_summary.json")
+  );
+  const waterDecisionCalibration = hackhatonReadJsonSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "calibration_summary.json")
+  );
+  const waterDecisionInterval = hackhatonReadJsonSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "interval_calibration_summary.json")
+  );
+  const waterDecisionPublicReport = hackhatonReadJsonSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "public_report_summary.json")
+  );
+  const waterDecisionBaselineSummary = hackhatonReadJsonSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "baseline_selected_strategy_summary.json")
+  );
+  const waterDecisionNewSummary = hackhatonReadJsonSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "new_selected_strategy_summary.json")
+  );
+  const waterDecisionAlertsWindow = hackhatonReadJsonSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "alerts_2026_03_2027_02.json")
+  );
+  const waterDecisionAlertsMulti = hackhatonReadJsonSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "alerts_multi_scenario.json")
+  );
+  const waterDecisionStrategyRows = hackhatonReadCsvRowsSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "new_selected_strategy_all.csv"),
+    40
+  )
+    .map((row) => ({
+      series: row.series || "-",
+      strategy: row.strategy || "-",
+      rmse: Number(row.rmse),
+      mae: Number(row.mae),
+      smape: Number(row.smape),
+      rmseRecent: Number(row.rmse_recent),
+      stability: Number(row.rmse_split_std),
+      score: Number(row.score_total)
+    }))
+    .filter((row) => Number.isFinite(row.score))
+    .sort((a, b) => a.score - b.score);
+  const waterDecisionWorstStrategyRows = hackhatonReadCsvRowsSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "new_selected_strategy_worst6.csv"),
+    12
+  )
+    .map((row) => ({
+      series: row.series || "-",
+      strategy: row.strategy || "-",
+      rmse: Number(row.rmse),
+      mae: Number(row.mae),
+      smape: Number(row.smape),
+      rmseRecent: Number(row.rmse_recent),
+      stability: Number(row.rmse_split_std),
+      score: Number(row.score_total)
+    }))
+    .filter((row) => Number.isFinite(row.score))
+    .sort((a, b) => b.score - a.score);
+  const waterDecisionHistoricalRows = hackhatonReadCsvRowsSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "istanbul_dam_monthly_history.csv"),
+    400
+  )
+    .map((row) => ({
+      ds: String(row.ds || "").slice(0, 10),
+      overallMeanPct: Number(row.overall_mean) * 100
+    }))
+    .filter((row) => row.ds && Number.isFinite(row.overallMeanPct));
+  const waterDecisionTimelineRows = hackhatonReadCsvRowsSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "story_overall_timeline_weighted.csv"),
+    120
+  )
+    .map((row) => ({
+      ds: String(row.ds || "").slice(0, 10),
+      expectedPct: Number(row.expected_yhat_pct)
+    }))
+    .filter((row) => row.ds && Number.isFinite(row.expectedPct));
+  const waterDecisionScenarioDynamicRows = hackhatonReadCsvRowsSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "scenario_dynamic_risk_summary.csv"),
+    200
+  )
+    .map((row) => ({
+      scenario: row.scenario || "-",
+      series: row.series || "-",
+      strategy: row.strategy || "-",
+      riskLevel: String(row.risk_level || "low").toLowerCase(),
+      monthsBelowWarning: Number(row.months_below_warning),
+      monthsBelowCritical: Number(row.months_below_critical),
+      meanProbBelowWarningPct: Number(row.mean_prob_below_warning_pct),
+      meanProbBelowCriticalPct: Number(row.mean_prob_below_critical_pct),
+      meanGapToWarningPct: Number(row.mean_gap_to_warning_pct),
+      worstWarningMonth: String(row.worst_warning_month || "").slice(0, 7),
+      worstForecastPct: Number(row.worst_forecast_pct)
+    }))
+    .filter((row) => row.scenario && row.series);
+  const waterDecisionDropMatchRows = hackhatonReadCsvRowsSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "istanbul_baraj_ani_dusus_gercek_olay_eslesme.csv"),
+    30
+  );
+  const waterDecisionVerifiedEventRows = hackhatonReadCsvRowsSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "istanbul_baraj_gercek_olaylar_dogrulanmis.csv"),
+    30
+  );
+  const waterDecisionExpectedRows = hackhatonReadCsvRowsSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "expected_risk_summary.csv"),
+    40
+  )
+    .sort((a, b) => Number(b.expected_prob_below_40_pct || 0) - Number(a.expected_prob_below_40_pct || 0))
+    .slice(0, 5);
+  const waterDecisionRiskRows = hackhatonReadCsvRowsSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "risk_summary_2026_03_to_2027_02.csv"),
+    40
+  )
+    .sort((a, b) => Number(b.mean_prob_below_40_pct || 0) - Number(a.mean_prob_below_40_pct || 0))
+    .slice(0, 5);
+  const waterDecisionHistoricalLatest =
+    waterDecisionHistoricalRows.length > 0 ? waterDecisionHistoricalRows[waterDecisionHistoricalRows.length - 1] : null;
+  const waterDecisionHistoricalMin = waterDecisionHistoricalRows.reduce(
+    (minRow, row) => (!minRow || row.overallMeanPct < minRow.overallMeanPct ? row : minRow),
+    null
+  );
+  const waterDecisionHistoricalMax = waterDecisionHistoricalRows.reduce(
+    (maxRow, row) => (!maxRow || row.overallMeanPct > maxRow.overallMeanPct ? row : maxRow),
+    null
+  );
+  const waterDecisionHistoricalAverage =
+    waterDecisionHistoricalRows.length > 0
+      ? waterDecisionHistoricalRows.reduce((sum, row) => sum + row.overallMeanPct, 0) / waterDecisionHistoricalRows.length
+      : null;
+  const waterDecisionOutlookRows = waterDecisionTimelineRows.slice(0, 12);
+  const waterDecisionOutlookMin = waterDecisionOutlookRows.reduce(
+    (minRow, row) => (!minRow || row.expectedPct < minRow.expectedPct ? row : minRow),
+    null
+  );
+  const waterDecisionOutlookAverage =
+    waterDecisionOutlookRows.length > 0
+      ? waterDecisionOutlookRows.reduce((sum, row) => sum + row.expectedPct, 0) / waterDecisionOutlookRows.length
+      : null;
+  const waterDecisionMetricLiftPct = (baselineValue, newValue) => {
+    const baselineNumeric = Number(baselineValue);
+    const newNumeric = Number(newValue);
+    if (!Number.isFinite(baselineNumeric) || !Number.isFinite(newNumeric) || baselineNumeric === 0) return null;
+    return ((baselineNumeric - newNumeric) / baselineNumeric) * 100;
+  };
+  const waterDecisionRiskPriority = { high: 0, medium: 1, low: 2 };
+  const waterDecisionScenarioHotspots = waterDecisionScenarioDynamicRows.reduce((acc, row) => {
+    const key = row.scenario;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(row);
+    return acc;
+  }, {});
+  Object.keys(waterDecisionScenarioHotspots).forEach((scenario) => {
+    waterDecisionScenarioHotspots[scenario].sort((a, b) => {
+      const priorityDelta = (waterDecisionRiskPriority[a.riskLevel] ?? 99) - (waterDecisionRiskPriority[b.riskLevel] ?? 99);
+      if (priorityDelta !== 0) return priorityDelta;
+      return (b.meanProbBelowWarningPct || 0) - (a.meanProbBelowWarningPct || 0);
+    });
+  });
+  const waterDecisionScenarioMatrix = Object.entries(waterDecisionAlertsMulti?.counts_by_scenario || {})
+    .map(([scenario, counts]) => {
+      const hotspot = waterDecisionScenarioHotspots[scenario]?.[0] || null;
+      return {
+        id: `water-scenario-${scenario}`,
+        scenario,
+        high: Number(counts?.high || 0),
+        medium: Number(counts?.medium || 0),
+        low: Number(counts?.low || 0),
+        total: Number(counts?.total || 0),
+        pressureScore: Number(counts?.high || 0) * 2 + Number(counts?.medium || 0),
+        topSeries: hotspot?.series || "-",
+        topRiskLevel: hotspot?.riskLevel || "low",
+        topWorstMonth: hotspot?.worstWarningMonth || "-",
+        topWorstFill: Number.isFinite(hotspot?.worstForecastPct) ? `${formatMetric(hotspot.worstForecastPct, 1)}%` : "-"
+      };
+    })
+    .sort((a, b) => b.pressureScore - a.pressureScore || a.scenario.localeCompare(b.scenario));
+  const waterDecisionAlertsFeed = Array.isArray(waterDecisionAlertsWindow?.alerts)
+    ? waterDecisionAlertsWindow.alerts
+        .map((row, index) => ({
+          id: `water-alert-feed-${row.series || index}`,
+          series: row.series || "-",
+          strategy: row.strategy || "-",
+          riskLevel: String(row.risk_level || "low").toLowerCase(),
+          monthsBelow40: row.months_below_40 ?? "-",
+          meanRisk: `${formatMetric(row.mean_probability_below_40_pct, 1)}%`,
+          meanForecast: `${formatMetric(row.mean_forecast_pct, 1)}%`,
+          worstMonth: String(row.worst_month || "").slice(0, 7),
+          worstFill: `${formatMetric(row.worst_forecast_pct, 1)}%`
+        }))
+        .sort((a, b) => {
+          const priorityDelta = (waterDecisionRiskPriority[a.riskLevel] ?? 99) - (waterDecisionRiskPriority[b.riskLevel] ?? 99);
+          if (priorityDelta !== 0) return priorityDelta;
+          return Number.parseFloat(b.meanRisk) - Number.parseFloat(a.meanRisk);
+        })
+        .slice(0, 8)
+    : [];
+  const waterDecisionDropEvents = [
+    ...waterDecisionDropMatchRows.map((row, index) => ({
+      id: `water-drop-match-${row.sira || index}`,
+      eventDate: String(row.olay_tarihi || row.dusus_tarihi || "").slice(0, 10),
+      kind: "Ani dusus eslesmesi",
+      title: row.olay_basligi || "Eslesen olay bulunamadi.",
+      source: row.kaynak || "-",
+      hazard: row.tehlike_tipi || "-",
+      dropScore: formatSignedMetric(row.dusus_puan, 1, " puan"),
+      summary: hackhatonExcerpt(row.olay_basligi || "", 150),
+      url: row.url || ""
+    })),
+    ...waterDecisionVerifiedEventRows.map((row, index) => ({
+      id: `water-drop-verified-${index}`,
+      eventDate: String(row.event_date || "").slice(0, 10),
+      kind: "Dogrulanmis arsiv olayi",
+      title: row.event_title || "Arsiv kaydi",
+      source: row.source_name || "-",
+      hazard: "baraj seviyesi",
+      dropScore: "-",
+      summary: hackhatonExcerpt(row.event_summary || "", 150),
+      url: row.source_url || ""
+    }))
+  ]
+    .filter((row) => row.eventDate && row.title)
+    .sort((a, b) => String(b.eventDate).localeCompare(String(a.eventDate)))
+    .slice(0, 10);
+  const waterDecisionStrategyPulse =
+    waterDecisionNewSummary || waterDecisionBaselineSummary
+      ? {
+          headline:
+            waterDecisionMetricLiftPct(waterDecisionBaselineSummary?.rmse_mean, waterDecisionNewSummary?.rmse_mean) > 0
+              ? "Secili strateji seti baseline'a gore iyilesmis."
+              : "Secili strateji seti baseline ile benzer seviyede.",
+          rmseLiftPct: waterDecisionMetricLiftPct(waterDecisionBaselineSummary?.rmse_mean, waterDecisionNewSummary?.rmse_mean),
+          maeLiftPct: waterDecisionMetricLiftPct(waterDecisionBaselineSummary?.mae_mean, waterDecisionNewSummary?.mae_mean),
+          smapeLiftPct: waterDecisionMetricLiftPct(waterDecisionBaselineSummary?.smape_mean, waterDecisionNewSummary?.smape_mean),
+          ensembleSharePct: Number(waterDecisionNewSummary?.ensemble_share || waterDecisionBaselineSummary?.ensemble_share) * 100,
+          seriesCount: Number(waterDecisionNewSummary?.n_series || waterDecisionBaselineSummary?.n_series || 0),
+          recentRmse: Number(waterDecisionNewSummary?.rmse_recent_mean),
+          stabilityStd: Number(waterDecisionNewSummary?.rmse_split_std_mean)
+        }
+      : null;
+  const waterDecisionHistorySummary =
+    waterDecisionHistoricalLatest || waterDecisionOutlookMin || waterDecisionHistoricalMin
+      ? {
+          latestObservedMonth: waterDecisionHistoricalLatest?.ds ? waterDecisionHistoricalLatest.ds.slice(0, 7) : "-",
+          latestObservedPct: waterDecisionHistoricalLatest?.overallMeanPct,
+          historicalMeanPct: waterDecisionHistoricalAverage,
+          historicalMinMonth: waterDecisionHistoricalMin?.ds ? waterDecisionHistoricalMin.ds.slice(0, 7) : "-",
+          historicalMinPct: waterDecisionHistoricalMin?.overallMeanPct,
+          historicalMaxMonth: waterDecisionHistoricalMax?.ds ? waterDecisionHistoricalMax.ds.slice(0, 7) : "-",
+          historicalMaxPct: waterDecisionHistoricalMax?.overallMeanPct,
+          outlookMinMonth: waterDecisionOutlookMin?.ds ? waterDecisionOutlookMin.ds.slice(0, 7) : "-",
+          outlookMinPct: waterDecisionOutlookMin?.expectedPct,
+          outlookAvgPct: waterDecisionOutlookAverage,
+          outlookDeltaPct:
+            Number.isFinite(waterDecisionOutlookAverage) && Number.isFinite(waterDecisionHistoricalLatest?.overallMeanPct)
+              ? waterDecisionOutlookAverage - waterDecisionHistoricalLatest.overallMeanPct
+              : null,
+          reportWindow:
+            waterDecisionPublicReport?.window_start && waterDecisionPublicReport?.window_end
+              ? `${String(waterDecisionPublicReport.window_start).slice(0, 7)} -> ${String(waterDecisionPublicReport.window_end).slice(0, 7)}`
+              : null
+        }
+      : null;
+  const waterDecision = {
+    title: "Su Karar Destek Paketi",
+    subtitle: "Senaryolu rezervuar, erken uyari ve kalibrasyon ciktilari.",
+    cards: [
+      waterDecisionExpectedRisk?.overall
+        ? {
+            id: "water-expected-fill",
+            label: "Beklenen sistem dolulugu",
+            value: `${formatMetric(waterDecisionExpectedRisk.overall.expected_mean_yhat_pct, 1)}%`,
+            detail: `${waterDecisionExpectedRisk.window_start || "2026-03"} -> ${waterDecisionExpectedRisk.window_end || "2027-02"}`
+          }
+        : null,
+      waterDecisionExpectedRisk?.overall
+        ? {
+            id: "water-risk-below-40",
+            label: "P(<40)",
+            value: `${formatMetric(waterDecisionExpectedRisk.overall.expected_prob_below_40_pct, 1)}%`,
+            detail: `${formatMetric(waterDecisionExpectedRisk.overall.expected_months_lt40, 1)} ay esit beklenen risk`
+          }
+        : null,
+      waterDecisionDynamicSummary
+        ? {
+            id: "water-dynamic-risk",
+            label: "Dinamik yuksek risk ayi",
+            value: `${waterDecisionDynamicSummary.threshold_high_risk_months || "-"} ay`,
+            detail: `%${formatMetric(waterDecisionDynamicSummary.threshold_high_prob, 0)} ustu kritik olasilik`
+          }
+        : null,
+      waterDecisionInterval?.overall
+        ? {
+            id: "water-coverage",
+            label: "Kalibre coverage",
+            value: `${formatMetric(waterDecisionInterval.overall.coverage_after_pct, 1)}%`,
+            detail: `hedef ${formatMetric(waterDecisionInterval.target_coverage_pct, 0)}% • scale ${formatMetric(
+              waterDecisionInterval.overall.interval_scale_factor,
+              2
+            )}x`
+          }
+        : null,
+      waterDecisionRunSummary
+        ? {
+            id: "water-horizon",
+            label: "Tahmin ufku",
+            value: `${waterDecisionRunSummary.forecast_horizon_months || "-"} ay`,
+            detail: `${waterDecisionScenarioSummary?.scenario_count || "-"} senaryo • ${
+              waterDecisionRunSummary.enable_stacked_ensemble ? "stacked" : "single"
+            }`
+          }
+        : null
+    ].filter(Boolean),
+    dashboards: [
+      {
+        id: "water-dashboard-v2",
+        title: "Karar Destek HTML",
+        subtitle: "Senaryo secimli dashboard v2",
+        asset: hackhatonAssetRef(path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "dashboard_v2.html"))
+      },
+      {
+        id: "water-dashboard-classic",
+        title: "Klasik Dashboard",
+        subtitle: "Ilk HTML karar destek paneli",
+        asset: hackhatonAssetRef(path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "dashboard.html"))
+      }
+    ].filter((item) => item.asset),
+    documents: [
+      {
+        id: "water-doc-summary",
+        title: "Karar Destek Ozeti",
+        subtitle: "Risk siralamasi ve operasyonel ozet",
+        filePath: path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "KARAR_DESTEK_OZETI.md")
+      },
+      {
+        id: "water-doc-story",
+        title: "Hikaye Ozeti",
+        subtitle: "Senaryo agirliklari ve beklenen en kritik seriler",
+        filePath: path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "HIKAYE_OZETI.md")
+      },
+      {
+        id: "water-doc-literature",
+        title: "Sonuc Ozeti + Literatur Kontrolu",
+        subtitle: "Literaturle uyum ve sonuc yorumu",
+        filePath: path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "SONUC_OZETI_VE_LITERATUR_KONTROLU.md")
+      }
+    ]
+      .map((item) => ({
+        ...item,
+        asset: hackhatonAssetRef(item.filePath),
+        excerpt: hackhatonExcerpt(hackhatonReadTextSafe(item.filePath, 1200), 280)
+      }))
+      .filter((item) => item.asset || item.excerpt),
+    visuals: [
+      {
+        id: "water-visual-heatmap",
+        title: "Risk heatmap P(<40)",
+        subtitle: "Seri bazli dusuk doluluk riski",
+        asset: hackhatonAssetRef(path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "risk_heatmap_prob_below_40.png"))
+      },
+      {
+        id: "water-visual-scenario",
+        title: "overall_mean senaryo karsilastirma",
+        subtitle: "Dry vs wet senaryolarin gorunumu",
+        asset: hackhatonAssetRef(path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "overall_mean_scenario_compare.png"))
+      },
+      {
+        id: "water-visual-timeline",
+        title: "Agirlikli zaman cizgisi",
+        subtitle: "Beklenen sistem dolulugu zaman akisi",
+        asset: hackhatonAssetRef(path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "story_overall_timeline_weighted.png"))
+      },
+      {
+        id: "water-visual-gap",
+        title: "Esik gap heatmap",
+        subtitle: "Dinamik uyarilara gore acik/kapama farki",
+        asset: hackhatonAssetRef(path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "story_expected_gap_heatmap.png"))
+      },
+      {
+        id: "water-visual-top-risk",
+        title: "Senaryo bazli en riskli seriler",
+        subtitle: "Her senaryoda baskin riskli rezervuarlar",
+        asset: hackhatonAssetRef(path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "top_risk_compare_by_scenario.png"))
+      },
+      {
+        id: "water-visual-pack",
+        title: "Story visual pack",
+        subtitle: "Sunumda kullanilan toplu baraj gorsel paketi",
+        asset: hackhatonAssetRef(path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "story_visual_pack.png"))
+      }
+    ].filter((item) => item.asset),
+    scenarioWeights: Array.isArray(waterDecisionExpectedRisk?.weights)
+      ? waterDecisionExpectedRisk.weights.slice(0, 5).map((row) => ({
+          id: `water-weight-${row.scenario}`,
+          scenario: row.scenario || "-",
+          weight: `${formatMetric(Number(row.weight || 0) * 100, 1)}%`,
+          score: formatMetric(row.weight_score, 0)
+        }))
+      : [],
+    criticalSeries: waterDecisionExpectedRows.map((row) => ({
+      id: `water-critical-${row.series}`,
+      series: row.series || "-",
+      expectedRisk: `${formatMetric(row.expected_prob_below_40_pct, 1)}%`,
+      meanFill: `${formatMetric(row.expected_mean_yhat_pct, 1)}%`,
+      highRisk: `${formatMetric(Number(row.prob_high_risk || 0) * 100, 1)}%`
+    })),
+    alertSeries: waterDecisionRiskRows.map((row) => ({
+      id: `water-alert-${row.series}`,
+      series: row.series || "-",
+      monthsLt40: row.months_lt40 || "-",
+      meanRisk: `${formatMetric(row.mean_prob_below_40_pct, 1)}%`,
+      worstMonth: String(row.worst_month || "").slice(0, 7),
+      worstFill: `${formatMetric(row.worst_yhat_pct, 1)}%`
+    })),
+    strategyPulse: waterDecisionStrategyPulse
+      ? {
+          headline: waterDecisionStrategyPulse.headline,
+          rmseLift: Number.isFinite(waterDecisionStrategyPulse.rmseLiftPct)
+            ? formatSignedMetric(waterDecisionStrategyPulse.rmseLiftPct, 1, "%")
+            : "-",
+          maeLift: Number.isFinite(waterDecisionStrategyPulse.maeLiftPct)
+            ? formatSignedMetric(waterDecisionStrategyPulse.maeLiftPct, 1, "%")
+            : "-",
+          smapeLift: Number.isFinite(waterDecisionStrategyPulse.smapeLiftPct)
+            ? formatSignedMetric(waterDecisionStrategyPulse.smapeLiftPct, 1, "%")
+            : "-",
+          ensembleShare: Number.isFinite(waterDecisionStrategyPulse.ensembleSharePct)
+            ? `${formatMetric(waterDecisionStrategyPulse.ensembleSharePct, 0)}%`
+            : "-",
+          seriesCount: Number.isFinite(waterDecisionStrategyPulse.seriesCount) ? String(waterDecisionStrategyPulse.seriesCount) : "-",
+          recentRmse: Number.isFinite(waterDecisionStrategyPulse.recentRmse)
+            ? formatMetric(waterDecisionStrategyPulse.recentRmse, 3)
+            : "-",
+          stabilityStd: Number.isFinite(waterDecisionStrategyPulse.stabilityStd)
+            ? formatMetric(waterDecisionStrategyPulse.stabilityStd, 3)
+            : "-"
+        }
+      : null,
+    historySummary: waterDecisionHistorySummary
+      ? {
+          latestObservedMonth: waterDecisionHistorySummary.latestObservedMonth,
+          latestObserved: Number.isFinite(waterDecisionHistorySummary.latestObservedPct)
+            ? `${formatMetric(waterDecisionHistorySummary.latestObservedPct, 1)}%`
+            : "-",
+          historicalMean: Number.isFinite(waterDecisionHistorySummary.historicalMeanPct)
+            ? `${formatMetric(waterDecisionHistorySummary.historicalMeanPct, 1)}%`
+            : "-",
+          historicalMin: Number.isFinite(waterDecisionHistorySummary.historicalMinPct)
+            ? `${formatMetric(waterDecisionHistorySummary.historicalMinPct, 1)}%`
+            : "-",
+          historicalMinMonth: waterDecisionHistorySummary.historicalMinMonth,
+          historicalMax: Number.isFinite(waterDecisionHistorySummary.historicalMaxPct)
+            ? `${formatMetric(waterDecisionHistorySummary.historicalMaxPct, 1)}%`
+            : "-",
+          historicalMaxMonth: waterDecisionHistorySummary.historicalMaxMonth,
+          outlookMin: Number.isFinite(waterDecisionHistorySummary.outlookMinPct)
+            ? `${formatMetric(waterDecisionHistorySummary.outlookMinPct, 1)}%`
+            : "-",
+          outlookMinMonth: waterDecisionHistorySummary.outlookMinMonth,
+          outlookAvg: Number.isFinite(waterDecisionHistorySummary.outlookAvgPct)
+            ? `${formatMetric(waterDecisionHistorySummary.outlookAvgPct, 1)}%`
+            : "-",
+          outlookDelta: Number.isFinite(waterDecisionHistorySummary.outlookDeltaPct)
+            ? formatSignedMetric(waterDecisionHistorySummary.outlookDeltaPct, 1, " puan")
+            : "-",
+          reportWindow: waterDecisionHistorySummary.reportWindow || "-"
+        }
+      : null,
+    historyTimeline: waterDecisionHistoricalRows.slice(-18).map((row, index) => ({
+      id: `water-history-${index}-${row.ds}`,
+      month: row.ds.slice(0, 7),
+      fillPct: Number(row.overallMeanPct.toFixed(1))
+    })),
+    outlookTimeline: waterDecisionOutlookRows.map((row, index) => ({
+      id: `water-outlook-${index}-${row.ds}`,
+      month: row.ds.slice(0, 7),
+      fillPct: Number(row.expectedPct.toFixed(1))
+    })),
+    scenarioMatrix: waterDecisionScenarioMatrix,
+    alertsFeed: waterDecisionAlertsFeed,
+    dropEvents: waterDecisionDropEvents,
+    strategyBoard: waterDecisionStrategyRows.slice(0, 6).map((row) => ({
+      id: `water-strategy-${row.series}`,
+      series: row.series,
+      strategy: row.strategy,
+      score: formatMetric(row.score, 3),
+      rmse: formatMetric(row.rmse, 3),
+      recent: Number.isFinite(row.rmseRecent) ? formatMetric(row.rmseRecent, 3) : "-",
+      stability: Number.isFinite(row.stability) ? formatMetric(row.stability, 3) : "-"
+    })),
+    watchlist: waterDecisionWorstStrategyRows.slice(0, 6).map((row) => ({
+      id: `water-watch-${row.series}`,
+      series: row.series,
+      strategy: row.strategy,
+      score: formatMetric(row.score, 3),
+      rmse: formatMetric(row.rmse, 3),
+      smape: Number.isFinite(row.smape) ? `${formatMetric(row.smape, 1)}%` : "-"
+    })),
+    calibration: waterDecisionCalibration?.overall
+      ? {
+          auc40: formatMetric(waterDecisionCalibration.overall.auc_thr1, 2),
+          brier40: formatMetric(waterDecisionCalibration.overall.brier_thr1, 3),
+          intervalGap: formatSignedMetric(waterDecisionCalibration.overall.interval_coverage_gap_pct, 1, " puan")
+        }
+      : null
+  };
+
+  const presentation = {
+    title: "ET0 Analizi Sunum Paketi",
+    subtitle: "Aktinograf, ET0, kuraklik ve su butcesi slaytlari",
+    html: hackhatonAssetRef(presentationHtmlPath),
+    pdf: hackhatonAssetRef(path.join(HACKHATON_OUTPUT_ROOT, "presentation", "eto_analizi_v4.pdf")),
+    alternateHtml: hackhatonAssetRef(path.join(HACKHATON_OUTPUT_ROOT, "presentation", "presentation.html")),
+    slides: presentationSlides.filter((item) => item.image || item.excerpt),
+    slideCount: presentationSlides.length
+  };
+  const longTermClimate = buildLongTermClimateSeries();
+  const hybridClimate = buildHybridClimateSeries();
+
+  const payload = {
+    updatedAt: new Date().toISOString(),
+    available: Boolean(modelSuite?.available || playbooks.length || droughtIntel.cards.length || waterDecision.cards.length || documents.length),
+    scope,
+    hero: {
+      title: "Hackhaton Iklim Dashboard",
+      subtitle: `${scope.locationLabel} icin model suite, tarim playbook kutuphanesi ve su karar destek vitrini`
+    },
+    visuals,
+    documents,
+    presentation,
+    gemGallery,
+    datasetHighlights,
+    longTermClimate,
+    hybridClimate,
+    playbooks,
+    droughtIntel,
+    waterDecision,
+    narratives: modelSuite?.narratives || [],
+    modelSuite
+  };
+
+  return setHackhatonCacheEntry(cacheKey, payload);
+}
+
+function normalizeIrrigationCropKey(value = "") {
+  const raw = cityKey(value);
+  if (!raw) return "domates";
+  for (const crop of Object.values(IRRIGATION_CROP_LIBRARY)) {
+    const aliases = [crop.key, ...(crop.aliases || [])].map((item) => cityKey(item));
+    if (aliases.includes(raw)) return crop.key;
+  }
+  return IRRIGATION_CROP_LIBRARY[raw] ? raw : "domates";
+}
+
+function resolveIrrigationMethod(value = "") {
+  const key = cityKey(value);
+  return IRRIGATION_METHOD_LIBRARY[key] || IRRIGATION_METHOD_LIBRARY.damla;
+}
+
+function resolveIrrigationWaterSource(value = "") {
+  const key = cityKey(value);
+  if (!key) return IRRIGATION_WATER_SOURCE_LIBRARY.baraj_kanal;
+  for (const source of Object.values(IRRIGATION_WATER_SOURCE_LIBRARY)) {
+    const aliases = [source.key, ...(source.aliases || [])].map((item) => cityKey(item));
+    if (aliases.includes(key)) return source;
+  }
+  return IRRIGATION_WATER_SOURCE_LIBRARY.baraj_kanal;
+}
+
+function getIrrigationCropConfig(value = "") {
+  return IRRIGATION_CROP_LIBRARY[normalizeIrrigationCropKey(value)] || IRRIGATION_CROP_LIBRARY.domates;
+}
+
+function getDefaultIrrigationPlantingDate(cropKey = "", now = new Date()) {
+  const crop = getIrrigationCropConfig(cropKey);
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const baseYear = crop.key === "bugday_kislik" && currentMonth <= 6 ? currentYear - 1 : currentYear;
+  return `${baseYear}-${crop.defaultPlantingMonthDay}`;
+}
+
+function getIrrigationStage(dayAfterPlant, crop) {
+  const numericDay = Number(dayAfterPlant);
+  if (!Number.isFinite(numericDay) || numericDay < 1 || numericDay > Number(crop.seasonLengthDays || 0)) {
+    return { id: "off_season", label: "Sezon disi", kc: 0, inSeason: false };
+  }
+  const initial = Number(crop.stageLengths?.initial || 0);
+  const development = Number(crop.stageLengths?.development || 0);
+  const mid = Number(crop.stageLengths?.mid || 0);
+  const late = Number(crop.stageLengths?.late || 0);
+  const boundary1 = initial;
+  const boundary2 = initial + development;
+  const boundary3 = initial + development + mid;
+  const boundary4 = initial + development + mid + late;
+  if (numericDay <= boundary1) {
+    return { id: "initial", label: "Baslangic", kc: Number(crop.kc.initial || 0), inSeason: true };
+  }
+  if (numericDay <= boundary2) {
+    const fraction = (numericDay - boundary1) / Math.max(1, development);
+    const kcValue = Number(crop.kc.initial || 0) + fraction * (Number(crop.kc.mid || 0) - Number(crop.kc.initial || 0));
+    return { id: "development", label: "Gelisim", kc: Number(kcValue.toFixed(3)), inSeason: true };
+  }
+  if (numericDay <= boundary3) {
+    return { id: "mid", label: "Orta sezon", kc: Number(crop.kc.mid || 0), inSeason: true };
+  }
+  if (numericDay <= boundary4) {
+    const fraction = (numericDay - boundary3) / Math.max(1, late);
+    const kcValue = Number(crop.kc.mid || 0) + fraction * (Number(crop.kc.end || 0) - Number(crop.kc.mid || 0));
+    return { id: "late", label: "Gec sezon", kc: Number(kcValue.toFixed(3)), inSeason: true };
+  }
+  return { id: "off_season", label: "Sezon disi", kc: 0, inSeason: false };
+}
+
+function computeSolarRaMjM2Day(doy = 1, latitudeDeg = 41.01) {
+  const latRad = (Math.PI / 180) * Number(latitudeDeg || 41.01);
+  const j = Number(doy || 1);
+  const gsc = 0.082;
+  const dr = 1 + 0.033 * Math.cos((2 * Math.PI / 365) * j);
+  const solarDec = 0.409 * Math.sin((2 * Math.PI / 365) * j - 1.39);
+  const wsArg = Math.max(-1, Math.min(1, -Math.tan(latRad) * Math.tan(solarDec)));
+  const ws = Math.acos(wsArg);
+  return (24 * 60 / Math.PI) * gsc * dr * (
+    ws * Math.sin(latRad) * Math.sin(solarDec) +
+    Math.cos(latRad) * Math.cos(solarDec) * Math.sin(ws)
+  );
+}
+
+function saturationVaporPressureKpa(tempC = 0) {
+  const numeric = Number(tempC);
+  if (!Number.isFinite(numeric)) return null;
+  return 0.6108 * Math.exp((17.27 * numeric) / (numeric + 237.3));
+}
+
+function computePercentile(values = [], pct = 0.5) {
+  const arr = values.map((item) => Number(item)).filter((item) => Number.isFinite(item)).sort((a, b) => a - b);
+  if (!arr.length) return null;
+  if (arr.length === 1) return arr[0];
+  const rank = Math.max(0, Math.min(arr.length - 1, pct * (arr.length - 1)));
+  const lower = Math.floor(rank);
+  const upper = Math.ceil(rank);
+  if (lower === upper) return arr[lower];
+  const weight = rank - lower;
+  return arr[lower] * (1 - weight) + arr[upper] * weight;
+}
+
+function buildWideDailyClimateNormals() {
+  const cacheKey = "wide-daily-climate";
+  const cached = irrigationClimateCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < 12 * 60 * 60 * 1000) {
+    return cached.value;
+  }
+  const wideCsvPath = path.join(HACKHATON_OUTPUT_ROOT, "spreadsheet", "meteoroloji_model_egitim_wide_genisletilmis_filled.csv");
+  const rows = hackhatonReadCsvRowsSafe(wideCsvPath, 60000);
+  if (!rows.length) {
+    const empty = { available: false, error: "wide_climate_csv_missing" };
+    irrigationClimateCache.set(cacheKey, { ts: Date.now(), value: empty });
+    return empty;
+  }
+
+  const byDate = new Map();
+  rows.forEach((row) => {
+    const dateText = String(row.ds || row.timestamp || "").trim().slice(0, 10);
+    if (!dateText) return;
+    const date = new Date(`${dateText}T00:00:00Z`);
+    if (Number.isNaN(date.getTime())) return;
+    const entry = byDate.get(dateText) || {
+      date: dateText,
+      year: date.getUTCFullYear(),
+      monthDay: `${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`,
+      doy: Math.floor((date - new Date(Date.UTC(date.getUTCFullYear(), 0, 0))) / 86400000),
+      temp: [],
+      humidity: [],
+      pressure: [],
+      solar: [],
+      wind: [],
+      precip: []
+    };
+    const temp = toFiniteNumber(row.temp);
+    const humidity = toFiniteNumber(row.humidity);
+    const pressure = toFiniteNumber(row.pressure);
+    const solar = toFiniteNumber(row.solar);
+    const wind = toFiniteNumber(row.wind_speed);
+    const precip = toFiniteNumber(row.precip);
+    if (temp !== null) entry.temp.push(temp);
+    if (humidity !== null) entry.humidity.push(humidity);
+    if (pressure !== null) entry.pressure.push(pressure);
+    if (solar !== null) entry.solar.push(solar);
+    if (wind !== null) entry.wind.push(wind);
+    if (precip !== null) entry.precip.push(precip);
+    byDate.set(dateText, entry);
+  });
+
+  const dailyRows = Array.from(byDate.values())
+    .map((entry) => ({
+      date: entry.date,
+      year: entry.year,
+      monthDay: entry.monthDay,
+      doy: entry.doy,
+      Tmean: avgOf(entry.temp),
+      Tmax: entry.temp.length ? Math.max(...entry.temp) : null,
+      Tmin: entry.temp.length ? Math.min(...entry.temp) : null,
+      rh_mean: avgOf(entry.humidity),
+      U2raw: avgOf(entry.wind),
+      RsRaw: avgOf(entry.solar),
+      pRaw: avgOf(entry.pressure),
+      Praw: entry.precip.reduce((sum, item) => sum + item, 0)
+    }))
+    .filter((row) => row.Tmean !== null && row.Tmax !== null && row.Tmin !== null);
+
+  if (!dailyRows.length) {
+    const empty = { available: false, error: "wide_climate_daily_empty" };
+    irrigationClimateCache.set(cacheKey, { ts: Date.now(), value: empty });
+    return empty;
+  }
+
+  const pressureMedian = computePercentile(dailyRows.map((row) => row.pRaw), 0.5);
+  const windP90 = computePercentile(dailyRows.map((row) => row.U2raw), 0.9);
+  const solarMedian = computePercentile(dailyRows.map((row) => row.RsRaw), 0.5);
+  const elevationM = 39.0;
+  const pFallback = 101.3 * ((293.0 - 0.0065 * elevationM) / 293.0) ** 5.26;
+
+  dailyRows.forEach((row) => {
+    const pKpa = row.pRaw == null
+      ? pFallback
+      : pressureMedian !== null && pressureMedian > 200
+        ? row.pRaw / 10
+        : row.pRaw;
+    const u2 = row.U2raw == null
+      ? 2
+      : windP90 !== null && windP90 > 15
+        ? row.U2raw / 3.6
+        : row.U2raw;
+    let rs = row.RsRaw;
+    if (rs == null) rs = null;
+    else if (solarMedian !== null && solarMedian > 50) rs = rs * 0.0864;
+    else if (solarMedian !== null && solarMedian < 1.5) rs = rs * 3.6;
+    const ra = computeSolarRaMjM2Day(row.doy, 41.01);
+    const rso = (0.75 + 2e-5 * elevationM) * ra;
+    const rsClamped = rs == null ? null : Math.min(Math.max(rs, 0), rso);
+    const esTmax = saturationVaporPressureKpa(row.Tmax);
+    const esTmin = saturationVaporPressureKpa(row.Tmin);
+    const es = esTmax !== null && esTmin !== null ? 0.5 * (esTmax + esTmin) : null;
+    const rhMean = row.rh_mean == null ? 60 : Math.max(1, Math.min(100, row.rh_mean));
+    const ea = es == null ? null : (rhMean / 100) * es;
+    const delta = row.Tmean == null
+      ? null
+      : 4098 * (0.6108 * Math.exp((17.27 * row.Tmean) / (row.Tmean + 237.3))) / ((row.Tmean + 237.3) ** 2);
+    const gamma = 0.000665 * pKpa;
+    const tmaxK = row.Tmax + 273.16;
+    const tminK = row.Tmin + 273.16;
+    const rsRso = rsClamped == null || rso <= 0 ? 0 : Math.max(0, Math.min(1, rsClamped / rso));
+    const rns = rsClamped == null ? 0 : 0.77 * rsClamped;
+    const rnl = ea == null
+      ? 0
+      : 4.903e-9 * (((tmaxK ** 4) + (tminK ** 4)) / 2) * (0.34 - 0.14 * Math.sqrt(Math.max(ea, 0))) * (1.35 * rsRso - 0.35);
+    const rn = rns - rnl;
+    const num = delta == null || es == null || ea == null
+      ? null
+      : 0.408 * delta * rn + gamma * (900 / (row.Tmean + 273)) * Math.max(0.1, Math.min(20, u2)) * (es - ea);
+    const den = delta == null ? null : delta + gamma * (1 + 0.34 * Math.max(0.1, Math.min(20, u2)));
+    const et0 = num == null || den == null || den <= 0 ? null : Math.max(0, num / den);
+    row.pKpa = Number(pKpa.toFixed(3));
+    row.U2 = Number(Math.max(0.1, Math.min(20, u2)).toFixed(3));
+    row.Rs = rsClamped == null ? null : Number(rsClamped.toFixed(3));
+    row.P = Number((row.Praw || 0).toFixed(3));
+    row.ET0 = et0 == null ? null : Number(et0.toFixed(3));
+  });
+
+  const monthDayMap = new Map();
+  dailyRows.forEach((row) => {
+    if (row.ET0 == null) return;
+    const bucket = monthDayMap.get(row.monthDay) || {
+      monthDay: row.monthDay,
+      years: new Set(),
+      et0: [],
+      precip: [],
+      tempMean: [],
+      rh: []
+    };
+    bucket.years.add(row.year);
+    bucket.et0.push(row.ET0);
+    bucket.precip.push(row.P || 0);
+    if (row.Tmean != null) bucket.tempMean.push(row.Tmean);
+    if (row.rh_mean != null) bucket.rh.push(row.rh_mean);
+    monthDayMap.set(row.monthDay, bucket);
+  });
+
+  const normals = new Map();
+  Array.from(monthDayMap.values()).forEach((bucket) => {
+    normals.set(bucket.monthDay, {
+      monthDay: bucket.monthDay,
+      sampleYears: bucket.years.size,
+      et0Mean: Number((avgOf(bucket.et0) || 0).toFixed(3)),
+      et0P25: Number((computePercentile(bucket.et0, 0.25) || 0).toFixed(3)),
+      et0P75: Number((computePercentile(bucket.et0, 0.75) || 0).toFixed(3)),
+      precipP25: Number((computePercentile(bucket.precip, 0.25) || 0).toFixed(3)),
+      precipMean: Number((avgOf(bucket.precip) || 0).toFixed(3)),
+      precipMedian: Number((computePercentile(bucket.precip, 0.5) || 0).toFixed(3)),
+      precipP75: Number((computePercentile(bucket.precip, 0.75) || 0).toFixed(3)),
+      rainyDayRate: Number((((bucket.precip.filter((item) => Number(item) > 0.1).length) / Math.max(1, bucket.precip.length)) * 100).toFixed(1)),
+      tempP25: Number((computePercentile(bucket.tempMean, 0.25) || 0).toFixed(2)),
+      tempMean: Number((avgOf(bucket.tempMean) || 0).toFixed(2)),
+      tempP75: Number((computePercentile(bucket.tempMean, 0.75) || 0).toFixed(2)),
+      rhMean: Number((avgOf(bucket.rh) || 0).toFixed(1))
+    });
+  });
+
+  const years = dailyRows.map((row) => row.year).filter((item) => Number.isFinite(item));
+  const payload = {
+    available: true,
+    periodStart: Math.min(...years),
+    periodEnd: Math.max(...years),
+    dayCount: dailyRows.length,
+    normals
+  };
+  irrigationClimateCache.set(cacheKey, { ts: Date.now(), value: payload });
+  return payload;
+}
+
+function computeLinearTrend(points = []) {
+  const clean = points.filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+  if (clean.length < 2) return null;
+  const n = clean.length;
+  const sumX = clean.reduce((sum, p) => sum + p.x, 0);
+  const sumY = clean.reduce((sum, p) => sum + p.y, 0);
+  const sumXY = clean.reduce((sum, p) => sum + p.x * p.y, 0);
+  const sumXX = clean.reduce((sum, p) => sum + p.x * p.x, 0);
+  const denom = n * sumXX - sumX * sumX;
+  if (!Number.isFinite(denom) || denom === 0) return null;
+  const slope = (n * sumXY - sumX * sumY) / denom;
+  const intercept = (sumY - slope * sumX) / n;
+  return { slope, intercept };
+}
+
+function parseBoolean(value) {
+  if (typeof value === "boolean") return value;
+  const text = String(value || "").trim().toLowerCase();
+  if (!text) return false;
+  return ["1", "true", "yes", "y", "t"].includes(text);
+}
+
+function buildHybridYearlySeriesFromMonthly(rows = [], {
+  actualKey = "actual",
+  forecastKey = "yhat",
+  forecastFlag = "is_forecast",
+  agg = "mean"
+} = {}) {
+  const yearMap = new Map();
+  rows.forEach((row) => {
+    const dateText = String(row.ds || row.timestamp || row.date || "").trim().slice(0, 10);
+    if (!dateText) return;
+    const date = new Date(`${dateText}T00:00:00Z`);
+    if (Number.isNaN(date.getTime())) return;
+    const year = date.getUTCFullYear();
+    const actual = toFiniteNumber(row[actualKey]);
+    const forecast = toFiniteNumber(row[forecastKey]);
+    const isForecast = parseBoolean(row[forecastFlag]) || actual == null;
+    if (actual == null && forecast == null) return;
+    const bucket = yearMap.get(year) || {
+      year,
+      actualSum: 0,
+      actualCount: 0,
+      forecastSum: 0,
+      forecastCount: 0
+    };
+    if (!isForecast && actual != null) {
+      bucket.actualSum += actual;
+      bucket.actualCount += 1;
+    } else if (forecast != null) {
+      bucket.forecastSum += forecast;
+      bucket.forecastCount += 1;
+    }
+    yearMap.set(year, bucket);
+  });
+  const yearly = Array.from(yearMap.values())
+    .sort((a, b) => a.year - b.year)
+    .map((row) => {
+      const totalCount = row.actualCount + row.forecastCount;
+      const coverageRatio = totalCount ? row.actualCount / totalCount : 0;
+      const totalSum = row.actualSum + row.forecastSum;
+      const value = agg === "sum"
+        ? totalSum
+        : totalCount
+          ? totalSum / totalCount
+          : null;
+      const isForecastYear = row.actualCount === 0 || coverageRatio < 0.7;
+      return {
+        year: row.year,
+        value: value == null ? null : Number(value.toFixed(3)),
+        coverageRatio: Number(coverageRatio.toFixed(2)),
+        isForecastYear
+      };
+    })
+    .filter((row) => Number.isFinite(row.year) && row.value != null);
+  if (!yearly.length) return null;
+  const years = yearly.map((row) => row.year);
+  const values = yearly.map((row) => row.value);
+  const forecastStartIndex = yearly.findIndex((row) => row.isForecastYear);
+  const actualEndYear = yearly.slice().reverse().find((row) => !row.isForecastYear)?.year || null;
+  const coverageAvg = yearly.reduce((sum, row) => sum + row.coverageRatio, 0) / yearly.length;
+  return {
+    years,
+    values,
+    forecastStartIndex,
+    actualEndYear,
+    coverageAvg: Number(coverageAvg.toFixed(2))
+  };
+}
+
+function buildHybridClimateSeries() {
+  const tempCsvPath = path.join(
+    HACKHATON_OUTPUT_ROOT,
+    "model_suite_realistic_1912_20260307_0349",
+    "quant",
+    "forecasts",
+    "temp_monthly_quant_to_2035.csv"
+  );
+  const precipCsvPath = path.join(
+    HACKHATON_OUTPUT_ROOT,
+    "model_suite_realistic_1912_20260307_0349",
+    "quant",
+    "forecasts",
+    "precip_monthly_quant_to_2035.csv"
+  );
+  const tempRows = hackhatonReadCsvRowsSafe(tempCsvPath, 200000);
+  const precipRows = hackhatonReadCsvRowsSafe(precipCsvPath, 120000);
+  const tempSeries = buildHybridYearlySeriesFromMonthly(tempRows, { agg: "mean" });
+  const precipSeries = buildHybridYearlySeriesFromMonthly(precipRows, { agg: "sum" });
+  if (!tempSeries && !precipSeries) {
+    return { available: false, error: "hybrid_climate_missing" };
+  }
+  const buildTrendMeta = (series = null, unit = "") => {
+    if (!series?.years?.length || !series?.values?.length) return null;
+    const endIdx = Number.isFinite(series.forecastStartIndex) && series.forecastStartIndex > 0
+      ? series.forecastStartIndex - 1
+      : series.values.length - 1;
+    const actualYears = series.years.slice(0, endIdx + 1);
+    const actualValues = series.values.slice(0, endIdx + 1);
+    const points = actualYears.map((year, idx) => ({ x: year, y: actualValues[idx] }));
+    const trend = computeLinearTrend(points);
+    const perDecade = trend ? Number((trend.slope * 10).toFixed(3)) : null;
+    const direction = perDecade == null ? "flat" : perDecade > 0 ? "up" : perDecade < 0 ? "down" : "flat";
+    const last10Values = actualValues.slice(Math.max(0, actualValues.length - 10));
+    const last10Years = actualYears.slice(Math.max(0, actualYears.length - 10));
+    const last10Mean = avgOf(last10Values);
+    const last10Std = stdOf(last10Values);
+    return {
+      trend: {
+        perDecade,
+        direction,
+        unit,
+        slopePerYear: trend ? Number(trend.slope.toFixed(4)) : null
+      },
+      last10: {
+        mean: last10Mean == null ? null : Number(last10Mean.toFixed(3)),
+        std: last10Std == null ? null : Number(last10Std.toFixed(3)),
+        years: last10Years
+      }
+    };
+  };
+  const tempMeta = buildTrendMeta(tempSeries, "C");
+  const precipMeta = buildTrendMeta(precipSeries, "mm");
+  const starts = [tempSeries?.years?.[0], precipSeries?.years?.[0]].filter(Number.isFinite);
+  const ends = [
+    tempSeries?.years?.[tempSeries?.years?.length - 1],
+    precipSeries?.years?.[precipSeries?.years?.length - 1]
+  ].filter(Number.isFinite);
+  const periodStart = starts.length ? Math.min(...starts) : null;
+  const periodEnd = ends.length ? Math.max(...ends) : null;
+  const highlights = [
+    tempSeries
+      ? {
+          label: "Sicaklik kapsam",
+          value: `${tempSeries.years[0]}-${tempSeries.years[tempSeries.years.length - 1]}`,
+          detail: `Gercek veri ${tempSeries.actualEndYear || "-"} • ort. kapsama ${tempSeries.coverageAvg}`
+        }
+      : null,
+    precipSeries
+      ? {
+          label: "Yagis kapsam",
+          value: `${precipSeries.years[0]}-${precipSeries.years[precipSeries.years.length - 1]}`,
+          detail: `Gercek veri ${precipSeries.actualEndYear || "-"} • ort. kapsama ${precipSeries.coverageAvg}`
+        }
+      : null
+  ].filter(Boolean);
+  return {
+    available: true,
+    kind: "hybrid-temp-precip",
+    periodStart,
+    periodEnd,
+    temp: tempSeries,
+    precip: precipSeries,
+    trends: {
+      temp: tempMeta?.trend || null,
+      precip: precipMeta?.trend || null
+    },
+    last10: {
+      temp: tempMeta?.last10 || null,
+      precip: precipMeta?.last10 || null
+    },
+    highlights,
+    sources: [
+      { id: "temp", file: toHackhatonOutputRelative(tempCsvPath) },
+      { id: "precip", file: toHackhatonOutputRelative(precipCsvPath) }
+    ]
+  };
+}
+
+function buildLongTermClimateSeries() {
+  const cacheKey = "longterm-climate-series";
+  const cached = longTermClimateCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < LONGTERM_CLIMATE_CACHE_TTL_MS) return cached.value;
+
+  const sunshineCsvPath = path.join(
+    HACKHATON_OUTPUT_ROOT,
+    "istanbul_sunshine_proxy",
+    "istanbul_monthly_sunshine_radiation_1911_2025.csv"
+  );
+  const sunshineRows = hackhatonReadCsvRowsSafe(sunshineCsvPath, 200000);
+  if (sunshineRows.length) {
+    const yearMap = new Map();
+    sunshineRows.forEach((row) => {
+      const dateText = String(row.timestamp || row.date || row.ds || "").trim().slice(0, 10);
+      if (!dateText) return;
+      const date = new Date(`${dateText}T00:00:00Z`);
+      if (Number.isNaN(date.getTime())) return;
+      const year = date.getUTCFullYear();
+      const bucket = yearMap.get(year) || {
+        year,
+        monthCount: 0,
+        cloudSum: 0,
+        cloudCount: 0,
+        sunshinePctSum: 0,
+        sunshinePctCount: 0,
+        sunshineDaySum: 0,
+        sunshineDayCount: 0,
+        sunshineMonthSum: 0,
+        radiationDaySum: 0,
+        radiationDayCount: 0,
+        radiationMonthSum: 0
+      };
+
+      const daysInMonth = toFiniteNumber(row.days_in_month);
+      const cloudPct = toFiniteNumber(row.cld_pct);
+      const sunshinePct = toFiniteNumber(row.sunp_proxy_pct) ?? toFiniteNumber(row.sunp_pct);
+      const sunshineHoursDay = toFiniteNumber(row.sunshine_hours_day_proxy) ?? toFiniteNumber(row.sunshine_hours_day);
+      let sunshineHoursMonth = toFiniteNumber(row.sunshine_hours_month_proxy) ?? toFiniteNumber(row.sunshine_hours_month);
+      if (sunshineHoursMonth == null && sunshineHoursDay != null && daysInMonth != null) {
+        sunshineHoursMonth = sunshineHoursDay * daysInMonth;
+      }
+      const radiationDay = toFiniteNumber(row.radiation_mj_m2_day_proxy) ?? toFiniteNumber(row.radiation_mj_m2_day);
+      let radiationMonth = toFiniteNumber(row.radiation_mj_m2_month_proxy) ?? toFiniteNumber(row.radiation_mj_m2_month);
+      if (radiationMonth == null && radiationDay != null && daysInMonth != null) {
+        radiationMonth = radiationDay * daysInMonth;
+      }
+
+      bucket.monthCount += 1;
+      if (cloudPct != null) {
+        bucket.cloudSum += cloudPct;
+        bucket.cloudCount += 1;
+      }
+      if (sunshinePct != null) {
+        bucket.sunshinePctSum += sunshinePct;
+        bucket.sunshinePctCount += 1;
+      }
+      if (sunshineHoursDay != null) {
+        bucket.sunshineDaySum += sunshineHoursDay;
+        bucket.sunshineDayCount += 1;
+      }
+      if (sunshineHoursMonth != null) {
+        bucket.sunshineMonthSum += sunshineHoursMonth;
+      }
+      if (radiationDay != null) {
+        bucket.radiationDaySum += radiationDay;
+        bucket.radiationDayCount += 1;
+      }
+      if (radiationMonth != null) {
+        bucket.radiationMonthSum += radiationMonth;
+      }
+      yearMap.set(year, bucket);
+    });
+
+    const yearly = Array.from(yearMap.values())
+      .sort((a, b) => a.year - b.year)
+      .map((row) => ({
+        year: row.year,
+        months: row.monthCount,
+        cloudPctMean: Number((row.cloudSum / Math.max(1, row.cloudCount)).toFixed(2)),
+        sunshinePctMean: Number((row.sunshinePctSum / Math.max(1, row.sunshinePctCount)).toFixed(2)),
+        sunshineHoursDayMean: Number((row.sunshineDaySum / Math.max(1, row.sunshineDayCount)).toFixed(3)),
+        sunshineHoursMonthSum: Number(row.sunshineMonthSum.toFixed(1)),
+        radiationDayMean: Number((row.radiationDaySum / Math.max(1, row.radiationDayCount)).toFixed(3)),
+        radiationMonthSum: Number(row.radiationMonthSum.toFixed(1))
+      }))
+      .filter((row) => Number.isFinite(row.year));
+
+    if (yearly.length) {
+      const years = yearly.map((row) => row.year);
+      const series = {
+        cloudPct: yearly.map((row) => row.cloudPctMean),
+        sunshinePct: yearly.map((row) => row.sunshinePctMean),
+        sunshineHoursDay: yearly.map((row) => row.sunshineHoursDayMean),
+        sunshineHoursMonth: yearly.map((row) => row.sunshineHoursMonthSum),
+        radiationDay: yearly.map((row) => row.radiationDayMean),
+        radiationMonth: yearly.map((row) => row.radiationMonthSum)
+      };
+
+      const sunshineTrend = computeLinearTrend(yearly.map((row) => ({ x: row.year, y: row.sunshineHoursDayMean })));
+      const radiationTrend = computeLinearTrend(yearly.map((row) => ({ x: row.year, y: row.radiationDayMean })));
+      const cloudTrend = computeLinearTrend(yearly.map((row) => ({ x: row.year, y: row.cloudPctMean })));
+      const endYear = years[years.length - 1];
+      const forecastYears = Array.from({ length: 10 }, (_, i) => endYear + i + 1);
+      const buildForecast = (trend, digits = 2) =>
+        trend
+          ? forecastYears.map((yr) => Number((trend.intercept + trend.slope * yr).toFixed(digits)))
+          : [];
+
+      const forecast = {
+        years: forecastYears,
+        sunshineHoursDay: buildForecast(sunshineTrend, 3),
+        radiationDay: buildForecast(radiationTrend, 3),
+        cloudPct: buildForecast(cloudTrend, 2)
+      };
+
+      const highlights = [
+        {
+          label: "Kapsam",
+          value: `${years[0]}-${years[years.length - 1]}`,
+          detail: `${years.length} yil • ${yearly.reduce((sum, item) => sum + (item.months || 0), 0)} ay`
+        },
+        {
+          label: "Guneslenme trendi",
+          value: sunshineTrend ? `${Number((sunshineTrend.slope * 10).toFixed(3))} saat/gun/10y` : "-",
+          detail: "Proxy gunluk saat"
+        },
+        {
+          label: "Radyasyon trendi",
+          value: radiationTrend ? `${Number((radiationTrend.slope * 10).toFixed(3))} MJ/10y` : "-",
+          detail: "Gunluk MJ/m2"
+        },
+        {
+          label: "Bulutluluk trendi",
+          value: cloudTrend ? `${Number((cloudTrend.slope * 10).toFixed(2))} %/10y` : "-",
+          detail: "Ortalama bulut"
+        }
+      ];
+
+      const payload = {
+        available: true,
+        kind: "sunshine_proxy_1911_2025",
+        sourceFile: toHackhatonOutputRelative(sunshineCsvPath),
+        periodStart: years[0],
+        periodEnd: years[years.length - 1],
+        yearCount: years.length,
+        years,
+        series,
+        forecast,
+        highlights
+      };
+
+      longTermClimateCache.set(cacheKey, { ts: Date.now(), value: payload });
+      return payload;
+    }
+  }
+
+  const wideCsvPath = path.join(HACKHATON_OUTPUT_ROOT, "spreadsheet", "meteoroloji_model_egitim_wide_genisletilmis_filled.csv");
+  const rows = hackhatonReadCsvRowsSafe(wideCsvPath, 120000);
+  if (!rows.length) {
+    const empty = { available: false, error: "longterm_climate_csv_missing" };
+    longTermClimateCache.set(cacheKey, { ts: Date.now(), value: empty });
+    return empty;
+  }
+
+  const byDate = new Map();
+  rows.forEach((row) => {
+    const dateText = String(row.ds || row.timestamp || "").trim().slice(0, 10);
+    if (!dateText) return;
+    const date = new Date(`${dateText}T00:00:00Z`);
+    if (Number.isNaN(date.getTime())) return;
+    const entry = byDate.get(dateText) || {
+      date: dateText,
+      year: date.getUTCFullYear(),
+      monthDay: `${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`,
+      doy: Math.floor((date - new Date(Date.UTC(date.getUTCFullYear(), 0, 0))) / 86400000),
+      temp: [],
+      humidity: [],
+      pressure: [],
+      solar: [],
+      wind: [],
+      precip: []
+    };
+    const temp = toFiniteNumber(row.temp);
+    const humidity = toFiniteNumber(row.humidity);
+    const pressure = toFiniteNumber(row.pressure);
+    const solar = toFiniteNumber(row.solar);
+    const wind = toFiniteNumber(row.wind_speed);
+    const precip = toFiniteNumber(row.precip);
+    if (temp !== null) entry.temp.push(temp);
+    if (humidity !== null) entry.humidity.push(humidity);
+    if (pressure !== null) entry.pressure.push(pressure);
+    if (solar !== null) entry.solar.push(solar);
+    if (wind !== null) entry.wind.push(wind);
+    if (precip !== null) entry.precip.push(precip);
+    byDate.set(dateText, entry);
+  });
+
+  const dailyRows = Array.from(byDate.values())
+    .map((entry) => ({
+      date: entry.date,
+      year: entry.year,
+      monthDay: entry.monthDay,
+      doy: entry.doy,
+      Tmean: avgOf(entry.temp),
+      Tmax: entry.temp.length ? Math.max(...entry.temp) : null,
+      Tmin: entry.temp.length ? Math.min(...entry.temp) : null,
+      rh_mean: avgOf(entry.humidity),
+      U2raw: avgOf(entry.wind),
+      RsRaw: avgOf(entry.solar),
+      pRaw: avgOf(entry.pressure),
+      Praw: entry.precip.reduce((sum, item) => sum + item, 0)
+    }))
+    .filter((row) => row.Tmean !== null && row.Tmax !== null && row.Tmin !== null);
+
+  if (!dailyRows.length) {
+    const empty = { available: false, error: "longterm_climate_daily_empty" };
+    longTermClimateCache.set(cacheKey, { ts: Date.now(), value: empty });
+    return empty;
+  }
+
+  const pressureMedian = computePercentile(dailyRows.map((row) => row.pRaw), 0.5);
+  const windP90 = computePercentile(dailyRows.map((row) => row.U2raw), 0.9);
+  const solarMedian = computePercentile(dailyRows.map((row) => row.RsRaw), 0.5);
+  const elevationM = 39.0;
+  const pFallback = 101.3 * ((293.0 - 0.0065 * elevationM) / 293.0) ** 5.26;
+
+  dailyRows.forEach((row) => {
+    const pKpa = row.pRaw == null
+      ? pFallback
+      : pressureMedian !== null && pressureMedian > 200
+        ? row.pRaw / 10
+        : row.pRaw;
+    const u2 = row.U2raw == null
+      ? 2
+      : windP90 !== null && windP90 > 15
+        ? row.U2raw / 3.6
+        : row.U2raw;
+    let rs = row.RsRaw;
+    if (rs == null) rs = null;
+    else if (solarMedian !== null && solarMedian > 50) rs = rs * 0.0864;
+    else if (solarMedian !== null && solarMedian < 1.5) rs = rs * 3.6;
+    const ra = computeSolarRaMjM2Day(row.doy, 41.01);
+    const rso = (0.75 + 2e-5 * elevationM) * ra;
+    const rsClamped = rs == null ? null : Math.min(Math.max(rs, 0), rso);
+    const esTmax = saturationVaporPressureKpa(row.Tmax);
+    const esTmin = saturationVaporPressureKpa(row.Tmin);
+    const es = esTmax !== null && esTmin !== null ? 0.5 * (esTmax + esTmin) : null;
+    const rhMean = row.rh_mean == null ? 60 : Math.max(1, Math.min(100, row.rh_mean));
+    const ea = es == null ? null : (rhMean / 100) * es;
+    const delta = row.Tmean == null
+      ? null
+      : 4098 * (0.6108 * Math.exp((17.27 * row.Tmean) / (row.Tmean + 237.3))) / ((row.Tmean + 237.3) ** 2);
+    const gamma = 0.000665 * pKpa;
+    const tmaxK = row.Tmax + 273.16;
+    const tminK = row.Tmin + 273.16;
+    const rsRso = rsClamped == null || rso <= 0 ? 0 : Math.max(0, Math.min(1, rsClamped / rso));
+    const rns = rsClamped == null ? 0 : 0.77 * rsClamped;
+    const rnl = ea == null
+      ? 0
+      : 4.903e-9 * (((tmaxK ** 4) + (tminK ** 4)) / 2) * (0.34 - 0.14 * Math.sqrt(Math.max(ea, 0))) * (1.35 * rsRso - 0.35);
+    const rn = rns - rnl;
+    const num = delta == null || es == null || ea == null
+      ? null
+      : 0.408 * delta * rn + gamma * (900 / (row.Tmean + 273)) * Math.max(0.1, Math.min(20, u2)) * (es - ea);
+    const den = delta == null ? null : delta + gamma * (1 + 0.34 * Math.max(0.1, Math.min(20, u2)));
+    const et0 = num == null || den == null || den <= 0 ? null : Math.max(0, num / den);
+    row.pKpa = Number(pKpa.toFixed(3));
+    row.U2 = Number(Math.max(0.1, Math.min(20, u2)).toFixed(3));
+    row.Rs = rsClamped == null ? null : Number(rsClamped.toFixed(3));
+    row.P = Number((row.Praw || 0).toFixed(3));
+    row.ET0 = et0 == null ? null : Number(et0.toFixed(3));
+  });
+
+  const yearMap = new Map();
+  dailyRows.forEach((row) => {
+    const year = row.year;
+    if (!Number.isFinite(year)) return;
+    const bucket = yearMap.get(year) || {
+      year,
+      count: 0,
+      tempSum: 0,
+      humiditySum: 0,
+      pressureSum: 0,
+      windSum: 0,
+      precipSum: 0,
+      et0Sum: 0
+    };
+    bucket.count += 1;
+    if (Number.isFinite(row.Tmean)) bucket.tempSum += row.Tmean;
+    if (Number.isFinite(row.rh_mean)) bucket.humiditySum += row.rh_mean;
+    if (Number.isFinite(row.pKpa)) bucket.pressureSum += row.pKpa;
+    if (Number.isFinite(row.U2)) bucket.windSum += row.U2;
+    if (Number.isFinite(row.P)) bucket.precipSum += row.P;
+    if (Number.isFinite(row.ET0)) bucket.et0Sum += row.ET0;
+    yearMap.set(year, bucket);
+  });
+
+  const yearly = Array.from(yearMap.values())
+    .sort((a, b) => a.year - b.year)
+    .map((row) => ({
+      year: row.year,
+      tempMeanC: Number((row.tempSum / Math.max(1, row.count)).toFixed(2)),
+      humidityMean: Number((row.humiditySum / Math.max(1, row.count)).toFixed(1)),
+      pressureMeanKpa: Number((row.pressureSum / Math.max(1, row.count)).toFixed(2)),
+      windMeanMs: Number((row.windSum / Math.max(1, row.count)).toFixed(2)),
+      precipSumMm: Number(row.precipSum.toFixed(1)),
+      et0SumMm: Number(row.et0Sum.toFixed(1)),
+      et0MeanMm: Number((row.et0Sum / Math.max(1, row.count)).toFixed(3))
+    }));
+
+  if (!yearly.length) {
+    const empty = { available: false, error: "longterm_climate_yearly_empty" };
+    longTermClimateCache.set(cacheKey, { ts: Date.now(), value: empty });
+    return empty;
+  }
+
+  const years = yearly.map((row) => row.year);
+  const series = {
+    tempMeanC: yearly.map((row) => row.tempMeanC),
+    precipSumMm: yearly.map((row) => row.precipSumMm),
+    et0SumMm: yearly.map((row) => row.et0SumMm),
+    et0MeanMm: yearly.map((row) => row.et0MeanMm),
+    humidityMean: yearly.map((row) => row.humidityMean),
+    pressureMeanKpa: yearly.map((row) => row.pressureMeanKpa),
+    windMeanMs: yearly.map((row) => row.windMeanMs)
+  };
+
+  const tempTrend = computeLinearTrend(yearly.map((row) => ({ x: row.year, y: row.tempMeanC })));
+  const et0Trend = computeLinearTrend(yearly.map((row) => ({ x: row.year, y: row.et0MeanMm })));
+  const precipTrend = computeLinearTrend(yearly.map((row) => ({ x: row.year, y: row.precipSumMm })));
+  const endYear = years[years.length - 1];
+  const forecastYears = Array.from({ length: 10 }, (_, i) => endYear + i + 1);
+
+  const buildForecast = (trend) =>
+    trend
+      ? forecastYears.map((yr) => Number((trend.intercept + trend.slope * yr).toFixed(2)))
+      : [];
+
+  const forecast = {
+    years: forecastYears,
+    tempMeanC: buildForecast(tempTrend),
+    et0MeanMm: buildForecast(et0Trend),
+    precipSumMm: buildForecast(precipTrend)
+  };
+
+  const highlights = [
+    {
+      label: "Kapsam",
+      value: `${years[0]}-${years[years.length - 1]}`,
+      detail: `${years.length} yil • ${dailyRows.length} gun`
+    },
+    {
+      label: "Sicaklik trendi",
+      value: tempTrend ? `${Number((tempTrend.slope * 10).toFixed(2))} C/10y` : "-",
+      detail: "Lineer trend"
+    },
+    {
+      label: "ET0 trendi",
+      value: et0Trend ? `${Number((et0Trend.slope * 10).toFixed(3))} mm/gun/10y` : "-",
+      detail: "Lineer trend"
+    },
+    {
+      label: "Yagis trendi",
+      value: precipTrend ? `${Number((precipTrend.slope * 10).toFixed(1))} mm/10y` : "-",
+      detail: "Yillik toplam trendi"
+    }
+  ];
+
+  const payload = {
+    available: true,
+    kind: "wide_climate_derived",
+    periodStart: years[0],
+    periodEnd: years[years.length - 1],
+    yearCount: years.length,
+    years,
+    series,
+    forecast,
+    highlights
+  };
+
+  longTermClimateCache.set(cacheKey, { ts: Date.now(), value: payload });
+  return payload;
+}
+
+function getIrrigationScenarioConfig(scenarioKey = "normal") {
+  return IRRIGATION_REFERENCE_SCENARIOS[scenarioKey] || IRRIGATION_REFERENCE_SCENARIOS.normal;
+}
+
+function buildWideSeasonScenario({
+  climate,
+  crop,
+  plantingDate = "",
+  areaHa = 1,
+  efficiency = 0.9,
+  scenarioKey = "normal"
+} = {}) {
+  if (!climate?.available || !crop) return null;
+  const scenario = getIrrigationScenarioConfig(scenarioKey);
+  const startDate = new Date(`${plantingDate || getDefaultIrrigationPlantingDate(crop.key)}T00:00:00`);
+  if (Number.isNaN(startDate.getTime())) return null;
+  const weeklyMap = new Map();
+  let seasonEtcMm = 0;
+  let seasonNetMm = 0;
+  let seasonGrossMm = 0;
+  let seasonGrossM3 = 0;
+  let peakWeeklyM3 = 0;
+  let peakWeekId = null;
+  const coverageSamples = [];
+
+  for (let offset = 0; offset < Number(crop.seasonLengthDays || 0); offset += 1) {
+    const day = new Date(startDate);
+    day.setUTCDate(day.getUTCDate() + offset);
+    const monthDay = `${String(day.getUTCMonth() + 1).padStart(2, "0")}-${String(day.getUTCDate()).padStart(2, "0")}`;
+    const normal = climate.normals.get(monthDay);
+    const stage = getIrrigationStage(offset + 1, crop);
+    if (!normal || !stage.inSeason) continue;
+    const et0Mm = Number(normal?.[scenario.et0Field] ?? normal.et0Mean ?? 0);
+    const precipitationMm = Number(normal?.[scenario.precipField] ?? normal.precipMedian ?? 0);
+    const effectiveRainMm = Number((Math.max(0, precipitationMm) * 0.8).toFixed(2));
+    const etcMm = Number((Math.max(0, et0Mm) * stage.kc).toFixed(2));
+    const netMm = Number(Math.max(0, etcMm - effectiveRainMm).toFixed(2));
+    const grossMm = Number((netMm / Math.max(0.35, Number(efficiency || 0.9))).toFixed(2));
+    const grossM3 = Number((grossMm * Number(areaHa || 1) * 10).toFixed(0));
+    const tempMean = Number(normal.tempMean || 0);
+    const weekLabel = getIsoWeekLabel(day.toISOString().slice(0, 10));
+    const bucket = weeklyMap.get(weekLabel) || {
+      weekLabel,
+      weekStart: day.toISOString().slice(0, 10),
+      weekEnd: day.toISOString().slice(0, 10),
+      etcMm: 0,
+      netMm: 0,
+      grossMm: 0,
+      grossM3: 0,
+      effectiveRainMm: 0,
+      meanKcSamples: [],
+      tempSamples: [],
+      sampleYears: []
+    };
+    seasonEtcMm += etcMm;
+    seasonNetMm += netMm;
+    seasonGrossMm += grossMm;
+    seasonGrossM3 += grossM3;
+    coverageSamples.push(Number(normal.sampleYears || 0));
+    bucket.weekEnd = day.toISOString().slice(0, 10);
+    bucket.etcMm += etcMm;
+    bucket.netMm += netMm;
+    bucket.grossMm += grossMm;
+    bucket.grossM3 += grossM3;
+    bucket.effectiveRainMm += effectiveRainMm;
+    bucket.meanKcSamples.push(stage.kc);
+    bucket.tempSamples.push(tempMean);
+    bucket.sampleYears.push(Number(normal.sampleYears || 0));
+    weeklyMap.set(weekLabel, bucket);
+  }
+
+  const weekly = Array.from(weeklyMap.values()).map((bucket) => {
+    const grossM3 = Number(bucket.grossM3.toFixed(0));
+    if (grossM3 > peakWeeklyM3) {
+      peakWeeklyM3 = grossM3;
+      peakWeekId = bucket.weekLabel;
+    }
+    return {
+      weekLabel: bucket.weekLabel,
+      weekStart: bucket.weekStart,
+      weekEnd: bucket.weekEnd,
+      etcMm: Number(bucket.etcMm.toFixed(1)),
+      netMm: Number(bucket.netMm.toFixed(1)),
+      grossMm: Number(bucket.grossMm.toFixed(1)),
+      grossM3,
+      effectiveRainMm: Number(bucket.effectiveRainMm.toFixed(1)),
+      meanKc: Number((avgOf(bucket.meanKcSamples) || 0).toFixed(2)),
+      meanTempC: Number((avgOf(bucket.tempSamples) || 0).toFixed(1)),
+      sampleYears: Math.max(...bucket.sampleYears, 0)
+    };
+  });
+
+  return {
+    key: scenario.key,
+    label: scenario.label,
+    note: scenario.note,
+    summary: {
+      seasonEtcMm: Number(seasonEtcMm.toFixed(1)),
+      seasonNetMm: Number(seasonNetMm.toFixed(1)),
+      seasonGrossMm: Number(seasonGrossMm.toFixed(1)),
+      seasonGrossM3: Number(seasonGrossM3.toFixed(0)),
+      peakWeekId,
+      peakWeeklyM3,
+      coverageYearsMin: coverageSamples.length ? Math.min(...coverageSamples) : 0,
+      coverageYearsMax: coverageSamples.length ? Math.max(...coverageSamples) : 0
+    },
+    weekly
+  };
+}
+
+function buildForecastIrrigationAnomaly(scheduleRows = [], climate = null) {
+  if (!Array.isArray(scheduleRows) || !scheduleRows.length || !climate?.available) return null;
+  let et0ForecastMm = 0;
+  let et0NormalMm = 0;
+  let etcForecastMm = 0;
+  let etcNormalMm = 0;
+  let rainForecastMm = 0;
+  let rainNormalMm = 0;
+  let tempDeltaTotal = 0;
+  let humidityDeltaTotal = 0;
+  let coverageDays = 0;
+  let inSeasonDays = 0;
+  let stressDays = 0;
+  let reliefDays = 0;
+  const dayRows = [];
+
+  scheduleRows.forEach((row) => {
+    const date = new Date(`${String(row.date).slice(0, 10)}T00:00:00Z`);
+    if (Number.isNaN(date.getTime())) return;
+    const monthDay = `${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+    const normal = climate.normals.get(monthDay);
+    if (!normal) return;
+    coverageDays += 1;
+    const et0Normal = Number(normal.et0Mean || 0);
+    const etcNormal = Number((et0Normal * Number(row.kc || 0)).toFixed(2));
+    const rainNormal = Number(normal.precipMedian || 0);
+    const tempDelta = Number((Number(row.tempMean ?? 0) - Number(normal.tempMean || 0)).toFixed(2));
+    const humidityDelta = row.humidityMean == null ? null : Number((Number(row.humidityMean) - Number(normal.rhMean || 0)).toFixed(1));
+    const et0Delta = Number((Number(row.et0Mm || 0) - et0Normal).toFixed(2));
+    const rainDelta = Number((Number(row.precipitationMm || 0) - rainNormal).toFixed(2));
+    const inSeason = Boolean(row.inSeason);
+    const stressScore = !inSeason
+      ? 0
+      : (Number(row.et0Mm || 0) >= Number(normal.et0P75 || et0Normal) ? 1 : 0) +
+        (tempDelta >= 2 ? 1 : 0) +
+        (Number(row.precipitationMm || 0) < Number(normal.precipP25 || rainNormal) ? 1 : 0);
+    const reliefScore = !inSeason
+      ? 0
+      : (Number(row.precipitationMm || 0) >= Number(normal.precipP75 || rainNormal) ? 1 : 0) +
+        (tempDelta <= -1.5 ? 1 : 0);
+    if (inSeason) inSeasonDays += 1;
+    if (stressScore >= 2) stressDays += 1;
+    if (reliefScore >= 1) reliefDays += 1;
+    et0ForecastMm += Number(row.et0Mm || 0);
+    et0NormalMm += et0Normal;
+    etcForecastMm += Number(row.etcMm || 0);
+    etcNormalMm += etcNormal;
+    rainForecastMm += Number(row.precipitationMm || 0);
+    rainNormalMm += rainNormal;
+    tempDeltaTotal += tempDelta;
+    if (humidityDelta != null) humidityDeltaTotal += humidityDelta;
+    dayRows.push({
+      date: row.date,
+      stage: row.stage,
+      et0DeltaMm: et0Delta,
+      tempDeltaC: tempDelta,
+      rainDeltaMm: rainDelta,
+      stressScore,
+      reliefScore
+    });
+  });
+
+  if (!coverageDays) return null;
+  const et0DeltaMm = Number((et0ForecastMm - et0NormalMm).toFixed(1));
+  const rainDeltaMm = Number((rainForecastMm - rainNormalMm).toFixed(1));
+  const etcDeltaMm = Number((etcForecastMm - etcNormalMm).toFixed(1));
+  const anomalyLevel =
+    inSeasonDays === 0
+      ? "planning"
+      : stressDays >= 4 || et0DeltaMm >= 8
+        ? "high"
+        : stressDays >= 2 || et0DeltaMm >= 4 || rainDeltaMm <= -8
+          ? "elevated"
+          : reliefDays >= 3 || rainDeltaMm >= 10
+            ? "relief"
+            : "normal";
+  const headlineMap = {
+    planning: "Kampanya henuz aktif degil; referans sezonu izle.",
+    high: "Onumuzdeki pencere normalden daha susuz.",
+    elevated: "Sulama baskisi normalin ustunde.",
+    relief: "Yagis ve serinlik sulama baskisini yumusatiyor.",
+    normal: "Tahmin, cok yilli banda yakin gidiyor."
+  };
+  return {
+    level: anomalyLevel,
+    headline: headlineMap[anomalyLevel],
+    coverageDays,
+    inSeasonDays,
+    et0ForecastMm: Number(et0ForecastMm.toFixed(1)),
+    et0NormalMm: Number(et0NormalMm.toFixed(1)),
+    et0DeltaMm,
+    etcForecastMm: Number(etcForecastMm.toFixed(1)),
+    etcNormalMm: Number(etcNormalMm.toFixed(1)),
+    etcDeltaMm,
+    rainForecastMm: Number(rainForecastMm.toFixed(1)),
+    rainNormalMm: Number(rainNormalMm.toFixed(1)),
+    rainDeltaMm,
+    meanTempDeltaC: Number((tempDeltaTotal / coverageDays).toFixed(1)),
+    meanHumidityDeltaPct: Number((humidityDeltaTotal / coverageDays).toFixed(1)),
+    stressDays,
+    reliefDays,
+    daily: dayRows
+  };
+}
+
+function buildIrrigationActionPlan({
+  summary = null,
+  anomaly = null,
+  irrigationMethod = null,
+  crop = null,
+  waterSupplyAdvisor = null
+} = {}) {
+  if (summary?.campaignStatus === "planlama") {
+    return {
+      priority: "planning",
+      headline: "Kampanya henuz baslamadi.",
+      detail: `${crop?.label || "Urun"} icin dikim oncesi penceredesin. Cok yilli referans ve anomali merkezini kullanarak ilk sulama haftasini planla.`,
+      reason: anomaly?.headline || "14 gunluk tahmin dikim oncesi pencereyi gosteriyor."
+    };
+  }
+  const nextDate = String(summary?.nextIrrigationDate || "").trim();
+  if (nextDate) {
+    const sourceNote =
+      waterSupplyAdvisor?.reductionPct > 0
+        ? ` Kaynak modu nedeniyle etkin doz tavani ~%${waterSupplyAdvisor.reductionPct} kisitla okunmali.`
+        : "";
+    return {
+      priority:
+        waterSupplyAdvisor?.mode === "critical"
+          ? "high"
+          : anomaly?.level === "high" || waterSupplyAdvisor?.mode === "tight"
+            ? "elevated"
+            : "planned",
+      headline: `${nextDate} tarihinde sulama penceresi var.`,
+      detail: `${summary?.nextIrrigationGrossMm || 0} mm brut (${summary?.nextIrrigationGrossM3 || 0} m3) uygula. ${irrigationMethod?.window || "Sabah penceresi"} onerilir.${sourceNote}`,
+      reason: anomaly?.headline || `${crop?.label || "Urun"} icin RAW esigi tetiklendi.`
+    };
+  }
+  if (waterSupplyAdvisor?.mode === "critical" || waterSupplyAdvisor?.mode === "tight") {
+    return {
+      priority: waterSupplyAdvisor.mode === "critical" ? "high" : "elevated",
+      headline: "Su kaynagi kisit modunda.",
+      detail: `${waterSupplyAdvisor.detail || "Haftalik tahsisi parcala."} Gece payini %${waterSupplyAdvisor.recommendedNightSharePct || 70} ustune cek.`,
+      reason: waterSupplyAdvisor.sourceContext || "Su kaynagi alarmi sulama planini daraltiyor."
+    };
+  }
+  if (anomaly?.level === "high" || anomaly?.level === "elevated") {
+    return {
+      priority: anomaly.level,
+      headline: "Sulama baskisi yukseliyor.",
+      detail: "Esik henuz asilmasa da depo hizla bosalabilir. Parsel nemini gunluk izle ve event penceresini acik tut.",
+      reason: anomaly.headline
+    };
+  }
+  if (anomaly?.level === "relief") {
+    return {
+      priority: "relief",
+      headline: "Yagis baskiyi yumusatiyor.",
+      detail: "Planli event yoksa sulamayi aceleye getirme. Toprak ust katmanini tekrar olc.",
+      reason: anomaly.headline
+    };
+  }
+  return {
+    priority: "watch",
+    headline: "Takvim stabil.",
+    detail: "Su anda zorunlu event yok. Haftalik ozet ve anomali kartini takip et.",
+    reason: anomaly?.headline || "Cok yilli band ile tahmin birbirine yakin."
+  };
+}
+
+function shiftIsoDateDays(dateText = "", deltaDays = 0) {
+  const date = new Date(`${String(dateText).slice(0, 10)}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return String(dateText || "").slice(0, 10);
+  date.setUTCDate(date.getUTCDate() + Number(deltaDays || 0));
+  return date.toISOString().slice(0, 10);
+}
+
+function buildIrrigationStageBoard(scheduleRows = []) {
+  const stageMap = new Map();
+  scheduleRows
+    .filter((row) => row.inSeason)
+    .forEach((row) => {
+      const key = row.stageKey || row.stage || "stage";
+      const existing = stageMap.get(key) || {
+        id: key,
+        label: row.stage || key,
+        dayCount: 0,
+        etcMm: 0,
+        grossMm: 0,
+        effectiveRainMm: 0,
+        eventCount: 0,
+        kcSamples: [],
+        peakDailyEtcMm: 0,
+        peakDailyGrossMm: 0
+      };
+      existing.dayCount += 1;
+      existing.etcMm += Number(row.etcMm || 0);
+      existing.grossMm += Number(row.irrigationGrossMm || 0);
+      existing.effectiveRainMm += Number(row.effectiveRainMm || 0);
+      existing.eventCount += row.eventType === "sula" ? 1 : 0;
+      existing.kcSamples.push(Number(row.kc || 0));
+      existing.peakDailyEtcMm = Math.max(existing.peakDailyEtcMm, Number(row.etcMm || 0));
+      existing.peakDailyGrossMm = Math.max(existing.peakDailyGrossMm, Number(row.irrigationGrossMm || 0));
+      stageMap.set(key, existing);
+    });
+  const order = ["initial", "development", "mid", "late"];
+  return Array.from(stageMap.values())
+    .map((item) => ({
+      ...item,
+      etcMm: Number(item.etcMm.toFixed(1)),
+      grossMm: Number(item.grossMm.toFixed(1)),
+      effectiveRainMm: Number(item.effectiveRainMm.toFixed(1)),
+      meanKc: Number((avgOf(item.kcSamples) || 0).toFixed(2)),
+      peakDailyEtcMm: Number(item.peakDailyEtcMm.toFixed(1)),
+      peakDailyGrossMm: Number(item.peakDailyGrossMm.toFixed(1))
+    }))
+    .sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+}
+
+function buildIrrigationTaskBoard({
+  scheduleRows = [],
+  summary = null,
+  anomaly = null,
+  irrigationMethod = null,
+  crop = null
+} = {}) {
+  const tasks = [];
+  const nextEvents = scheduleRows.filter((row) => row.eventType === "sula").slice(0, 3);
+  nextEvents.forEach((row, idx) => {
+    tasks.push({
+      id: `irrigation-event-${row.date}-${idx}`,
+      date: row.date,
+      priority: idx === 0 ? "high" : "medium",
+      title: `${row.date} sulama eventini hazirla`,
+      detail: `${row.irrigationGrossMm} mm brut • ${row.irrigationGrossM3} m3 • ${row.stage} • ${irrigationMethod?.window || "Sabah penceresi"}`
+    });
+  });
+  if (summary?.campaignStatus === "planlama") {
+    tasks.unshift(
+      {
+        id: "plan-1",
+        date: "-",
+        priority: "planning",
+        title: "Dikim ve ilk event haftasini kilitle",
+        detail: `${crop?.label || "Urun"} icin sezon acilisi once operasyon haftasini belirle.`
+      },
+      {
+        id: "plan-2",
+        date: "-",
+        priority: "planning",
+        title: "Debi ve uniformite testi yap",
+        detail: `${irrigationMethod?.label || "Sulama"} hattinda basinc ve debi kaybini saha notuna isle.`
+      }
+    );
+  } else if (anomaly?.level === "high" || anomaly?.level === "elevated") {
+    tasks.push({
+      id: "stress-followup",
+      date: scheduleRows[0]?.date || "-",
+      priority: anomaly.level,
+      title: "Kok bolgesi nem teyidi yap",
+      detail: "Tahmin normalin ustunde su baskisi gosteriyor; kritik bloklari elle teyit et."
+    });
+  } else if (!nextEvents.length) {
+    tasks.push({
+      id: "watch-1",
+      date: scheduleRows[0]?.date || "-",
+      priority: "watch",
+      title: "Gunluk izleme modunu koru",
+      detail: "Zorunlu event yok; tahmin ve kok bolgesi dolulugunu takip et."
+    });
+  }
+  return tasks.slice(0, 5);
+}
+
+function buildIrrigationPlantingShiftBoard({
+  climate = null,
+  crop = null,
+  plantingDate = "",
+  areaHa = 1,
+  efficiency = 0.9
+} = {}) {
+  if (!climate?.available || !crop) return [];
+  const variants = [
+    { id: "early", label: "Erken", shiftDays: -14 },
+    { id: "base", label: "Baz", shiftDays: 0 },
+    { id: "late", label: "Gec", shiftDays: 14 }
+  ];
+  const rows = variants
+    .map((variant) => {
+      const shiftedDate = shiftIsoDateDays(plantingDate, variant.shiftDays);
+      const scenario = buildWideSeasonScenario({
+        climate,
+        crop,
+        plantingDate: shiftedDate,
+        areaHa,
+        efficiency,
+        scenarioKey: "normal"
+      });
+      if (!scenario?.summary) return null;
+      return {
+        id: variant.id,
+        label: variant.label,
+        shiftDays: variant.shiftDays,
+        plantingDate: shiftedDate,
+        seasonGrossMm: Number(scenario.summary.seasonGrossMm || 0),
+        seasonGrossM3: Number(scenario.summary.seasonGrossM3 || 0),
+        peakWeekId: scenario.summary.peakWeekId || "-",
+        peakWeeklyM3: Number(scenario.summary.peakWeeklyM3 || 0)
+      };
+    })
+    .filter(Boolean);
+  const bestGross = rows.length ? Math.min(...rows.map((item) => item.seasonGrossMm)) : null;
+  return rows.map((item) => ({
+    ...item,
+    isBest: bestGross != null && item.seasonGrossMm === bestGross
+  }));
+}
+
+function buildIrrigationDepletionTrace(scheduleRows = [], tawMm = 0, rawMm = 0) {
+  return scheduleRows.slice(0, 14).map((row) => {
+    const depletionMm = Number(row.depletionAfterMm || 0);
+    const depletionPct = rawMm > 0 ? Number(((depletionMm / rawMm) * 100).toFixed(0)) : 0;
+    const storagePct = tawMm > 0 ? Number((Math.max(0, 1 - depletionMm / tawMm) * 100).toFixed(0)) : 0;
+    return {
+      id: row.id,
+      date: row.date,
+      dayLabel: row.dayLabel,
+      stage: row.stage,
+      eventType: row.eventType,
+      depletionMm,
+      depletionPct,
+      storagePct,
+      effectiveRainMm: Number(row.effectiveRainMm || 0),
+      irrigationGrossMm: Number(row.irrigationGrossMm || 0),
+      risk: depletionMm >= rawMm ? "alarm" : depletionMm >= rawMm * 0.85 ? "watch" : "normal"
+    };
+  });
+}
+
+function estimateVpdKpa(tempMean = null, humidityMean = null) {
+  const temp = Number(tempMean);
+  const rh = Number(humidityMean);
+  if (!Number.isFinite(temp) || !Number.isFinite(rh)) return null;
+  const es = saturationVaporPressureKpa(temp);
+  if (!Number.isFinite(es)) return null;
+  return Number(Math.max(0, es * (1 - Math.max(1, Math.min(100, rh)) / 100)).toFixed(2));
+}
+
+function classifyEvapoDriver({
+  tempMean = null,
+  humidityMean = null,
+  windMaxKmh = null,
+  shortwaveMjM2 = null,
+  precipitationMm = null,
+  et0Mm = null,
+  normalEt0Mm = null
+} = {}) {
+  const vpdKpa = estimateVpdKpa(tempMean, humidityMean);
+  const solarScore = Number(shortwaveMjM2 || 0) >= 18 ? 2 : Number(shortwaveMjM2 || 0) >= 12 ? 1 : 0;
+  const heatScore = Number(tempMean || 0) >= 30 ? 2 : Number(tempMean || 0) >= 24 ? 1 : 0;
+  const windScore = Number(windMaxKmh || 0) >= 28 ? 2 : Number(windMaxKmh || 0) >= 18 ? 1 : 0;
+  const dryAirScore = Number(vpdKpa || 0) >= 1.6 ? 2 : Number(vpdKpa || 0) >= 1.1 ? 1 : 0;
+  const rainRelief = Number(precipitationMm || 0) >= 6;
+  const etGap = Number(et0Mm || 0) - Number(normalEt0Mm || 0);
+  let driverId = "balanced";
+  let label = "Dengeli talep";
+  let note = "ET0 suruculeri dengeli ilerliyor.";
+  if (rainRelief) {
+    driverId = "rain_relief";
+    label = "Yagis rahatlatmasi";
+    note = "Yagis gunluk talebi yumusatiyor.";
+  } else if (heatScore + solarScore >= 3 && heatScore + solarScore >= windScore + dryAirScore) {
+    driverId = "heat_solar";
+    label = "Isi + radyasyon";
+    note = "Guneslenme ve sicaklik ET0 talebini yukari cekiyor.";
+  } else if (windScore + dryAirScore >= 3) {
+    driverId = "dry_wind";
+    label = "Kuru hava + ruzgar";
+    note = "Advectif kuruma ve ruzgar ET0 baskisini artiriyor.";
+  } else if (solarScore >= 2) {
+    driverId = "solar";
+    label = "Radyasyon yuklu";
+    note = "Net radyasyon etkisi belirgin.";
+  }
+  const risk =
+    rainRelief
+      ? "relief"
+      : etGap >= 1.5 || Number(vpdKpa || 0) >= 1.8
+        ? "high"
+        : etGap >= 0.7 || Number(vpdKpa || 0) >= 1.2
+          ? "watch"
+          : "normal";
+  return {
+    driverId,
+    label,
+    note,
+    risk,
+    vpdKpa
+  };
+}
+
+function buildEvapotranspirationProfile({
+  scheduleRows = [],
+  climate = null,
+  crop = null
+} = {}) {
+  if (!Array.isArray(scheduleRows) || !scheduleRows.length) return null;
+  let totalEt0Mm = 0;
+  let totalEtcMm = 0;
+  let totalShortwaveMjM2 = 0;
+  let totalRainMm = 0;
+  let totalEffectiveRainMm = 0;
+  let vpdSum = 0;
+  let vpdCount = 0;
+  let highVpdDays = 0;
+  let highEtDays = 0;
+  const driverMix = new Map();
+  let peakEt0Row = null;
+  let peakEtcRow = null;
+
+  const daily = scheduleRows.map((row) => {
+    const date = new Date(`${String(row.date).slice(0, 10)}T00:00:00Z`);
+    const monthDay = Number.isNaN(date.getTime())
+      ? null
+      : `${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+    const normal = monthDay && climate?.normals instanceof Map ? climate.normals.get(monthDay) : null;
+    const normalEt0Mm = Number(normal?.et0Mean || 0);
+    const driver = classifyEvapoDriver({
+      tempMean: row.tempMean,
+      humidityMean: row.humidityMean,
+      windMaxKmh: row.windMaxKmh,
+      shortwaveMjM2: row.shortwaveMjM2,
+      precipitationMm: row.precipitationMm,
+      et0Mm: row.et0Mm,
+      normalEt0Mm
+    });
+    totalEt0Mm += Number(row.et0Mm || 0);
+    totalEtcMm += Number(row.etcMm || 0);
+    totalShortwaveMjM2 += Number(row.shortwaveMjM2 || 0);
+    totalRainMm += Number(row.precipitationMm || 0);
+    totalEffectiveRainMm += Number(row.effectiveRainMm || 0);
+    if (Number.isFinite(Number(driver.vpdKpa))) {
+      vpdSum += Number(driver.vpdKpa);
+      vpdCount += 1;
+      if (Number(driver.vpdKpa) >= 1.6) highVpdDays += 1;
+    }
+    if (Number(row.et0Mm || 0) >= Math.max(normalEt0Mm + 1, Number(normal?.et0P75 || 0))) highEtDays += 1;
+    driverMix.set(driver.label, (driverMix.get(driver.label) || 0) + 1);
+    if (!peakEt0Row || Number(row.et0Mm || 0) > Number(peakEt0Row.et0Mm || 0)) peakEt0Row = row;
+    if (!peakEtcRow || Number(row.etcMm || 0) > Number(peakEtcRow.etcMm || 0)) peakEtcRow = row;
+    return {
+      id: row.id,
+      date: row.date,
+      dayLabel: row.dayLabel,
+      stage: row.stage,
+      kc: Number(row.kc || 0),
+      et0Mm: Number(row.et0Mm || 0),
+      etcMm: Number(row.etcMm || 0),
+      normalEt0Mm: Number(normalEt0Mm.toFixed(2)),
+      et0DeltaMm: Number((Number(row.et0Mm || 0) - normalEt0Mm).toFixed(2)),
+      tempMean: row.tempMean,
+      humidityMean: row.humidityMean,
+      windMaxKmh: row.windMaxKmh,
+      shortwaveMjM2: Number(Number(row.shortwaveMjM2 || 0).toFixed(1)),
+      precipitationMm: Number(row.precipitationMm || 0),
+      effectiveRainMm: Number(row.effectiveRainMm || 0),
+      vpdKpa: driver.vpdKpa,
+      driver: driver.label,
+      driverId: driver.driverId,
+      driverNote: driver.note,
+      risk: driver.risk
+    };
+  });
+
+  const dominantDriver = Array.from(driverMix.entries()).sort((a, b) => b[1] - a[1])[0] || null;
+  const kcCurve = daily
+    .filter((row) => row.kc > 0)
+    .map((row) => ({ date: row.date, stage: row.stage, kc: row.kc, etcMm: row.etcMm }));
+
+  return {
+    summary: {
+      totalEt0Mm: Number(totalEt0Mm.toFixed(1)),
+      totalEtcMm: Number(totalEtcMm.toFixed(1)),
+      totalShortwaveMjM2: Number(totalShortwaveMjM2.toFixed(1)),
+      totalRainMm: Number(totalRainMm.toFixed(1)),
+      totalEffectiveRainMm: Number(totalEffectiveRainMm.toFixed(1)),
+      meanVpdKpa: vpdCount ? Number((vpdSum / vpdCount).toFixed(2)) : null,
+      highVpdDays,
+      highEtDays,
+      peakEt0Date: peakEt0Row?.date || null,
+      peakEt0Mm: peakEt0Row ? Number(Number(peakEt0Row.et0Mm || 0).toFixed(2)) : null,
+      peakEtcDate: peakEtcRow?.date || null,
+      peakEtcMm: peakEtcRow ? Number(Number(peakEtcRow.etcMm || 0).toFixed(2)) : null,
+      dominantDriver: dominantDriver ? { label: dominantDriver[0], days: dominantDriver[1] } : null,
+      cropLabel: crop?.label || "Urun"
+    },
+    daily,
+    kcCurve,
+    explainers: [
+      { id: "et0", label: "ET0", detail: "Referans atmosferik talep; Open-Meteo FAO ET0 kullanilir." },
+      { id: "etc", label: "ETc", detail: "Bitki talebi = ET0 x Kc." },
+      { id: "vpd", label: "VPD", detail: "Yaklasik buhar basincli acik; kuru hava stresini temsil eder." },
+      { id: "driver", label: "Surucu", detail: "Radyasyon, isi, ruzgar ve yagis etkisini heuristik olarak etiketler." }
+    ]
+  };
+}
+
+const ET0_MONTH_LABELS = ["Oca", "Sub", "Mar", "Nis", "May", "Haz", "Tem", "Agu", "Eyl", "Eki", "Kas", "Ara"];
+
+function buildEt0SeasonalProfile(climate = null) {
+  if (!climate?.available || !(climate.normals instanceof Map)) return [];
+  const months = ET0_MONTH_LABELS.map((label, idx) => ({
+    month: idx + 1,
+    label,
+    days: 0,
+    sampleYears: Infinity,
+    et0TotalMm: 0,
+    precipTotalMm: 0,
+    tempMeanSum: 0,
+    rhMeanSum: 0
+  }));
+  climate.normals.forEach((normal, monthDay) => {
+    const month = Number(String(monthDay || "").slice(0, 2));
+    if (!Number.isFinite(month) || month < 1 || month > 12) return;
+    const bucket = months[month - 1];
+    bucket.days += 1;
+    bucket.et0TotalMm += Number(normal?.et0Mean || 0);
+    bucket.precipTotalMm += Number(normal?.precipMean ?? normal?.precipMedian ?? 0);
+    bucket.tempMeanSum += Number(normal?.tempMean || 0);
+    bucket.rhMeanSum += Number(normal?.rhMean || 0);
+    const sampleYears = Number(normal?.sampleYears || 0);
+    if (sampleYears > 0) bucket.sampleYears = Math.min(bucket.sampleYears, sampleYears);
+  });
+  return months.map((bucket) => {
+    const deficitMm = bucket.et0TotalMm - bucket.precipTotalMm;
+    return {
+      month: bucket.month,
+      label: bucket.label,
+      et0TotalMm: Number(bucket.et0TotalMm.toFixed(1)),
+      precipTotalMm: Number(bucket.precipTotalMm.toFixed(1)),
+      deficitMm: Number(deficitMm.toFixed(1)),
+      meanDailyEt0Mm: bucket.days ? Number((bucket.et0TotalMm / bucket.days).toFixed(2)) : 0,
+      meanTempC: bucket.days ? Number((bucket.tempMeanSum / bucket.days).toFixed(1)) : null,
+      rhMean: bucket.days ? Number((bucket.rhMeanSum / bucket.days).toFixed(1)) : null,
+      sampleYears: Number.isFinite(bucket.sampleYears) ? bucket.sampleYears : 0,
+      pressureBand:
+        deficitMm >= 110 ? "cok yuksek" : deficitMm >= 70 ? "yuksek" : deficitMm >= 35 ? "orta" : "dusuk"
+    };
+  });
+}
+
+function buildEt0ScenarioComparison(referenceCampaign = null) {
+  const scenarios = Array.isArray(referenceCampaign?.scenarios) ? referenceCampaign.scenarios : [];
+  if (!scenarios.length) return [];
+  const normal = scenarios.find((item) => item.key === "normal") || scenarios[0];
+  const normalGrossM3 = Number(normal?.summary?.seasonGrossM3 || 0);
+  return scenarios.map((item) => {
+    const seasonGrossM3 = Number(item?.summary?.seasonGrossM3 || 0);
+    return {
+      key: item.key,
+      label: item.label,
+      note: item.note,
+      seasonGrossM3,
+      seasonGrossMm: Number(item?.summary?.seasonGrossMm || 0),
+      seasonEtcMm: Number(item?.summary?.seasonEtcMm || 0),
+      peakWeeklyM3: Number(item?.summary?.peakWeeklyM3 || 0),
+      peakWeekId: item?.summary?.peakWeekId || "-",
+      deltaFromNormalM3: Number((seasonGrossM3 - normalGrossM3).toFixed(0))
+    };
+  });
+}
+
+function buildEt0TrendSnapshot({
+  evapotranspirationProfile = null,
+  summary = null,
+  anomaly = null,
+  seasonalProfile = [],
+  waterSupplyAdvisor = null
+} = {}) {
+  const horizonNormalEt0Mm = Array.isArray(evapotranspirationProfile?.daily)
+    ? evapotranspirationProfile.daily.reduce((sum, row) => sum + Number(row.normalEt0Mm || 0), 0)
+    : 0;
+  const totalEt0Mm = Number(evapotranspirationProfile?.summary?.totalEt0Mm || 0);
+  const totalEtcMm = Number(evapotranspirationProfile?.summary?.totalEtcMm || 0);
+  const rainCoverPct = totalEtcMm > 0 ? Number((((Number(summary?.horizonEffectiveRainMm || 0)) / totalEtcMm) * 100).toFixed(1)) : 0;
+  const peakMonth = seasonalProfile.slice().sort((a, b) => Number(b.et0TotalMm || 0) - Number(a.et0TotalMm || 0))[0] || null;
+  const deficitMonths = seasonalProfile.filter((item) => Number(item.deficitMm || 0) >= 70).length;
+  return [
+    {
+      id: "horizon-et0",
+      label: "14 gunluk ET0",
+      value: `${Number(totalEt0Mm.toFixed(1))} mm`,
+      detail: `${Number((totalEt0Mm - horizonNormalEt0Mm).toFixed(1)) >= 0 ? "+" : ""}${Number((totalEt0Mm - horizonNormalEt0Mm).toFixed(1))} mm normale gore`
+    },
+    {
+      id: "rain-cover",
+      label: "Yagis karsilama",
+      value: `%${rainCoverPct}`,
+      detail: `${Number(summary?.horizonEffectiveRainMm || 0).toFixed(1)} mm etkin yagis • ${Number(totalEtcMm.toFixed(1))} mm ETc`
+    },
+    {
+      id: "peak-season",
+      label: "Sezon zirvesi",
+      value: peakMonth?.label || "-",
+      detail: peakMonth ? `${peakMonth.et0TotalMm} mm/ay ET0 • acik ${peakMonth.deficitMm} mm` : "Mevsimsel profil hazir degil"
+    },
+    {
+      id: "source-mode",
+      label: "Su kaynagi modu",
+      value: waterSupplyAdvisor?.mode || "normal",
+      detail: anomaly?.headline || waterSupplyAdvisor?.headline || "Kaynak ve anomali baskisi birlikte okunur"
+    },
+    {
+      id: "high-vpd",
+      label: "Yuksek VPD gunu",
+      value: `${Number(evapotranspirationProfile?.summary?.highVpdDays || 0)}`,
+      detail: `${Number(evapotranspirationProfile?.summary?.highEtDays || 0)} yuksek ET gunu • ${deficitMonths} kritik ay`
+    }
+  ];
+}
+
+function buildEt0DecisionHooks({
+  evapotranspirationProfile = null,
+  summary = null,
+  anomaly = null,
+  waterSupplyAdvisor = null,
+  irrigationMethod = null,
+  waterSource = null,
+  scenarioComparison = [],
+  seasonalProfile = []
+} = {}) {
+  const hooks = [];
+  const horizonNormalEt0Mm = Array.isArray(evapotranspirationProfile?.daily)
+    ? evapotranspirationProfile.daily.reduce((sum, row) => sum + Number(row.normalEt0Mm || 0), 0)
+    : 0;
+  const horizonDeltaMm = Number(Number(evapotranspirationProfile?.summary?.totalEt0Mm || 0) - horizonNormalEt0Mm);
+  const rainCoverPct =
+    Number(evapotranspirationProfile?.summary?.totalEtcMm || 0) > 0
+      ? (((Number(summary?.horizonEffectiveRainMm || 0)) / Number(evapotranspirationProfile.summary.totalEtcMm || 1)) * 100)
+      : 0;
+  const dryScenario = scenarioComparison.find((item) => item.key === "dry") || null;
+  const normalScenario = scenarioComparison.find((item) => item.key === "normal") || null;
+  const stressMonths = seasonalProfile
+    .slice()
+    .sort((a, b) => Number(b.deficitMm || 0) - Number(a.deficitMm || 0))
+    .slice(0, 3)
+    .map((item) => item.label);
+
+  if (horizonDeltaMm >= 3 || Number(evapotranspirationProfile?.summary?.highEtDays || 0) >= 3) {
+    hooks.push({
+      id: "et0-above-normal",
+      title: "ET0 baskisi normale gore yuksek",
+      detail: `Bu pencerede atmosferik talep ${Number(horizonDeltaMm.toFixed(1))} mm yukarida. ${irrigationMethod?.label || "Sulama"} icin gece/sabah bandini koru.`,
+      tone: "risk"
+    });
+  }
+  if (rainCoverPct <= 20) {
+    hooks.push({
+      id: "rain-cover-low",
+      title: "Yagis talebi tasimiyor",
+      detail: `Etkin yagis ETc'nin yalnizca %${Number(rainCoverPct.toFixed(1))}'ini karsiliyor. Event aralarini yagis beklentisiyle uzatma.`,
+      tone: "alert"
+    });
+  }
+  if (waterSupplyAdvisor?.mode === "critical" || waterSupplyAdvisor?.mode === "tight") {
+    hooks.push({
+      id: "source-tight",
+      title: "Kaynak baskisi aktif",
+      detail: `${waterSource?.label || "Su kaynagi"} modu ${waterSupplyAdvisor.mode}. Sonraki event tavani ${waterSupplyAdvisor.nextEventCapM3 || 0} m3 civari okunmali.`,
+      tone: "risk"
+    });
+  }
+  if (dryScenario && normalScenario && dryScenario.deltaFromNormalM3 > 0) {
+    hooks.push({
+      id: "dry-year-gap",
+      title: "Kuru yil farki hazirlanmali",
+      detail: `Kuru yil senaryosu normalin ustune ${dryScenario.deltaFromNormalM3} m3 ek su istiyor. ${stressMonths.join(" / ") || "zirve aylar"} icin yedek vardiya planla.`,
+      tone: "watch"
+    });
+  }
+  if (anomaly?.level === "high" || anomaly?.stressDays >= 3) {
+    hooks.push({
+      id: "anomaly-coupling",
+      title: "Anomali ile birlikte okumaya devam et",
+      detail: `${anomaly?.headline || "Yuksek ET / yagis acigi sinyali"} bu periyotta fenolojiye gore sulama araligini daraltabilir.`,
+      tone: "watch"
+    });
+  }
+  if (!hooks.length) {
+    hooks.push({
+      id: "stable-window",
+      title: "ET0 penceresi kontrollu",
+      detail: "Mevcut horizon normal banda yakin. Standart vardiya ve izleme akisi korunabilir.",
+      tone: "ok"
+    });
+  }
+  return hooks.slice(0, 5);
+}
+
+function buildEt0ReservoirBridge({
+  seasonalProfile = [],
+  summary = null,
+  waterSupplyAdvisor = null,
+  scenarioComparison = []
+} = {}) {
+  const stressMonths = seasonalProfile
+    .slice()
+    .sort((a, b) => Number(b.deficitMm || 0) - Number(a.deficitMm || 0))
+    .slice(0, 4);
+  const dryScenario = scenarioComparison.find((item) => item.key === "dry") || null;
+  const normalScenario = scenarioComparison.find((item) => item.key === "normal") || null;
+  const extraM3 = dryScenario && normalScenario ? Number(dryScenario.seasonGrossM3 || 0) - Number(normalScenario.seasonGrossM3 || 0) : 0;
+  return {
+    headline:
+      waterSupplyAdvisor?.mode === "critical"
+        ? "Baraj / tahsis baskisi ET0 penceresi ile cakisiyor."
+        : stressMonths.length
+          ? `${stressMonths.map((item) => item.label).join(" / ")} ET0-acik penceresi rezervuar icin kritik okunmali.`
+          : "Rezervuar baglantisi icin sezonluk profil hazir.",
+    triggerCards: [
+      {
+        id: "critical-window",
+        label: "Kritik pencere",
+        value: stressMonths.length ? stressMonths.map((item) => item.label).join(" / ") : "-",
+        detail: stressMonths.length ? `${stressMonths[0].deficitMm} mm'ye kadar aylik acik` : "Aylik ET0-acik profili hazir degil"
+      },
+      {
+        id: "next-event",
+        label: "Sonraki event",
+        value: `${Number(summary?.nextIrrigationGrossM3 || 0)} m3`,
+        detail: `${Number(summary?.nextIrrigationGrossMm || 0).toFixed(1)} mm brut doz`
+      },
+      {
+        id: "dry-gap",
+        label: "Kuru yil farki",
+        value: `${Number(extraM3.toFixed(0))} m3`,
+        detail: "Dry - normal sezon brut su farki"
+      },
+      {
+        id: "source-mode",
+        label: "Kaynak modu",
+        value: waterSupplyAdvisor?.mode || "normal",
+        detail: waterSupplyAdvisor?.detail || "Kaynak kisiti su anda belirgin degil"
+      }
+    ]
+  };
+}
+
+function buildIrrigationPriorityBoard({
+  summary = null,
+  anomaly = null,
+  hourlyEvapoCommand = null,
+  evapotranspirationProfile = null,
+  waterSupplyAdvisor = null,
+  et0ResearchPack = null,
+  irrigationMethod = null,
+  crop = null
+} = {}) {
+  const priorities = [];
+  const nextDate = summary?.nextIrrigationDate || null;
+  if (nextDate) {
+    priorities.push({
+      id: "next-event",
+      level: "high",
+      title: "Siradaki sulama event'i kilitlenmeli",
+      metric: `${summary?.nextIrrigationGrossM3 || 0} m3`,
+      detail: `${nextDate} icin ${summary?.nextIrrigationGrossMm || 0} mm brut doz bekleniyor. ${irrigationMethod?.window || "Sabah"} penceresini bloke et.`
+    });
+  }
+  if (hourlyEvapoCommand?.summary?.shiftGainPct != null) {
+    priorities.push({
+      id: "shift-gain",
+      level: Number(hourlyEvapoCommand.summary.shiftGainPct) >= 4 ? "elevated" : "watch",
+      title: "Saat kaydirma kazanci",
+      metric: `%${hourlyEvapoCommand.summary.shiftGainPct}`,
+      detail: `Ogleden ${hourlyEvapoCommand.summary.bestWindowLabel || "-"} bandina gecis, buharlasma kaybini dusurur.`
+    });
+  }
+  if (waterSupplyAdvisor?.mode === "critical" || waterSupplyAdvisor?.mode === "tight") {
+    priorities.push({
+      id: "source-pressure",
+      level: "high",
+      title: "Su kaynagi baskisi",
+      metric: `${waterSupplyAdvisor.weeklyCapM3 || 0} m3/hafta`,
+      detail: `${waterSupplyAdvisor.headline || "Kaynak baskisi aktif."} Sonraki event tavani ${waterSupplyAdvisor.nextEventCapM3 || 0} m3.`
+    });
+  }
+  const topHook = Array.isArray(et0ResearchPack?.decisionHooks) ? et0ResearchPack.decisionHooks[0] : null;
+  if (topHook) {
+    priorities.push({
+      id: "et0-hook",
+      level: topHook.tone === "risk" || topHook.tone === "alert" ? "high" : topHook.tone === "watch" ? "elevated" : "watch",
+      title: topHook.title,
+      metric: `${crop?.label || "Urun"} • ${summary?.campaignStatus || "-"}`,
+      detail: topHook.detail
+    });
+  }
+  if (anomaly?.headline) {
+    priorities.push({
+      id: "anomaly",
+      level: anomaly?.level === "high" ? "high" : anomaly?.level === "elevated" ? "elevated" : "watch",
+      title: "Anomali eslesmesi",
+      metric: `${anomaly?.stressDays || 0} stres gunu`,
+      detail: anomaly.headline
+    });
+  }
+  if (evapotranspirationProfile?.summary?.peakEtcDate) {
+    priorities.push({
+      id: "peak-etc",
+      level: "watch",
+      title: "Peak ETc gunu",
+      metric: `${evapotranspirationProfile.summary.peakEtcMm || 0} mm`,
+      detail: `${evapotranspirationProfile.summary.peakEtcDate} tarihinde bitki talebi zirveye cikiyor.`
+    });
+  }
+  return priorities.slice(0, 5);
+}
+
+function buildIrrigationAlertBundle({
+  summary = null,
+  anomaly = null,
+  hourlyEvapoCommand = null,
+  waterSupplyAdvisor = null,
+  priorityBoard = []
+} = {}) {
+  const top = Array.isArray(priorityBoard) ? priorityBoard[0] : null;
+  const level =
+    waterSupplyAdvisor?.mode === "critical" || anomaly?.level === "high"
+      ? "high"
+      : waterSupplyAdvisor?.mode === "tight" || anomaly?.level === "elevated"
+        ? "elevated"
+        : summary?.nextIrrigationDate
+          ? "watch"
+          : "normal";
+  const cards = [
+    {
+      id: "mode",
+      label: "Risk modu",
+      value: level,
+      detail: top?.title || "Sulama akisi dengeli."
+    },
+    {
+      id: "best-window",
+      label: "En iyi pencere",
+      value: hourlyEvapoCommand?.summary?.bestWindowLabel || "-",
+      detail:
+        hourlyEvapoCommand?.summary?.shiftGainPct != null
+          ? `Kayip kazanci %${hourlyEvapoCommand.summary.shiftGainPct}`
+          : "Saatlik pencere sinyali bekleniyor"
+    },
+    {
+      id: "source",
+      label: "Kaynak",
+      value: waterSupplyAdvisor?.mode || "normal",
+      detail: waterSupplyAdvisor?.detail || "Ek kisit yok"
+    }
+  ];
+  const actions = [
+    top?.detail || null,
+    summary?.nextIrrigationDate ? `${summary.nextIrrigationDate} icin ekipman ve vardiya planini sabitle.` : null,
+    waterSupplyAdvisor?.reductionPct ? `Dozu yaklasik %${waterSupplyAdvisor.reductionPct} kisacak alternatif plan hazirla.` : null,
+    hourlyEvapoCommand?.summary?.bestWindowLabel ? `Uygulamayi ${hourlyEvapoCommand.summary.bestWindowLabel} penceresine kaydir.` : null
+  ].filter(Boolean).slice(0, 4);
+  return {
+    level,
+    headline:
+      level === "high"
+        ? "Sulama operasyonu yuksek dikkat gerektiriyor."
+        : level === "elevated"
+          ? "Sulama operasyonu baski altinda."
+          : level === "watch"
+            ? "Sulama akisi izleme modunda."
+            : "Sulama akisi kontrollu.",
+    cards,
+    actions
+  };
+}
+
+function buildIrrigationTaskDrafts({
+  summary = null,
+  hourlyEvapoCommand = null,
+  waterSupplyAdvisor = null,
+  priorityBoard = []
+} = {}) {
+  const tasks = [];
+  if (summary?.nextIrrigationDate) {
+    tasks.push({
+      id: "lock-next-irrigation",
+      lane: "bugun",
+      title: "Sonraki sulama eventini kilitle",
+      detail: `${summary.nextIrrigationDate} icin ${summary.nextIrrigationGrossM3 || 0} m3 doz ve ekip planini onayla.`,
+      severity: "high"
+    });
+  }
+  if (hourlyEvapoCommand?.summary?.bestWindowLabel) {
+    tasks.push({
+      id: "shift-window",
+      lane: "24s",
+      title: "Uygulama saatini kaydir",
+      detail: `${hourlyEvapoCommand.summary.bestWindowLabel} en verimli slot olarak gorunuyor.`,
+      severity: hourlyEvapoCommand.summary.shiftGainPct >= 4 ? "elevated" : "watch"
+    });
+  }
+  if (waterSupplyAdvisor?.mode === "critical" || waterSupplyAdvisor?.mode === "tight") {
+    tasks.push({
+      id: "source-cap",
+      lane: "72s",
+      title: "Kaynak kisiti planini uygula",
+      detail: `Haftalik guvenli tavan ${waterSupplyAdvisor.weeklyCapM3 || 0} m3. Zone bazli tahsisle ilerle.`,
+      severity: "high"
+    });
+  }
+  const top = Array.isArray(priorityBoard) ? priorityBoard[0] : null;
+  if (top?.id === "et0-hook") {
+    tasks.push({
+      id: "et0-watch",
+      lane: "72s",
+      title: "ET0 baskisini izleyip yeniden hesapla",
+      detail: top.detail,
+      severity: top.level
+    });
+  }
+  return tasks.slice(0, 5);
+}
+
+function buildEt0PresentationResearchPack({
+  climate = null,
+  evapotranspirationProfile = null,
+  summary = null,
+  anomaly = null,
+  waterSupplyAdvisor = null,
+  irrigationMethod = null,
+  waterSource = null,
+  referenceCampaign = null
+} = {}) {
+  const sourcePath = "/Users/yasinkaya/Downloads/ET0_Analizi_v5.pptx";
+  const seasonalProfile = buildEt0SeasonalProfile(climate);
+  const scenarioComparison = buildEt0ScenarioComparison(referenceCampaign);
+  const trendSnapshot = buildEt0TrendSnapshot({
+    evapotranspirationProfile,
+    summary,
+    anomaly,
+    seasonalProfile,
+    waterSupplyAdvisor
+  });
+  const decisionHooks = buildEt0DecisionHooks({
+    evapotranspirationProfile,
+    summary,
+    anomaly,
+    waterSupplyAdvisor,
+    irrigationMethod,
+    waterSource,
+    scenarioComparison,
+    seasonalProfile
+  });
+  const reservoirBridge = buildEt0ReservoirBridge({
+    seasonalProfile,
+    summary,
+    waterSupplyAdvisor,
+    scenarioComparison
+  });
+  return {
+    title: "ET0 Analizi v5",
+    sourcePath,
+    cards: [
+      {
+        id: "series",
+        label: "Veri serisi",
+        value: "~50 yil",
+        detail: "1975-2024 kapsami • ~11.000 gunluk kayit"
+      },
+      {
+        id: "trend",
+        label: "Uzun donem trend",
+        value: "+1.42 mm/yil",
+        detail: "Sunum ozetine gore artan ET0 baskisi"
+      },
+      {
+        id: "summer-share",
+        label: "Yaz payi",
+        value: "%46",
+        detail: "Haz-Agu donemi yillik ET0'nun neredeyse yarisi"
+      },
+      {
+        id: "peak-month",
+        label: "Peak ay",
+        value: "Haziran",
+        detail: "Yaklasik 146.3 mm/ay"
+      },
+      {
+        id: "forecast-window",
+        label: "Kantil ongoru",
+        value: "2005-2036",
+        detail: "Harmonik + trend, taban yukseliyor"
+      },
+      {
+        id: "hourly-opportunity",
+        label: "Saatlik firsat",
+        value: "%8-15",
+        detail: "Saatlik ET0 gunluk yaklasima gore daha hassas olabilir"
+      }
+    ],
+    formulaNotes: [
+      "FAO-56 Penman-Monteith gunluk ET0 omurgasi kullanilir.",
+      "Gunluk olcekte G = 0 varsayimi FAO-56 standart yaklasimidir.",
+      "Ruzgar verisi yoksa sunumda belirtildigi gibi u2 = 2.0 m/s fallback kullanilabilir.",
+      "Buhar basinci tarafinda arsiv/yeni istasyon ayrimi veri kalitesine gore yorumlanmali."
+    ],
+    irrigationApplications: [
+      "ETc = Kc x ET0 ile bitki ihtiyaci gunluk hesaplanir.",
+      "NIR = ETc - Peffective - toprak nemi degisimi mantigi sulama tetigine baglanir.",
+      "Toprak nemi kritik esigin altina indiginde sulama event'i tetiklenir.",
+      "Sunumdaki beklenti: iyi kurgu ile %20-40 su tasarrufu."
+    ],
+    reservoirApplications: [
+      "Haziran-Eylul ET0 > yagis penceresi rezervuar stresi icin kritik kabul edilir.",
+      "Doluluk %40 altina indiginde ET0 etkisi daha belirleyici yorumlanir.",
+      "Sunumdaki yorum: ET0 artisi kritik donemi dekadlar icinde uzatabilir."
+    ],
+    hourlyOpportunity: [
+      "Gunluk hesap pratik ama gun ici Delta degisimini gizler.",
+      "Saatlik sicaklik/radyasyon/nem varsa saatlik ET0 daha dogru pencereleme verir.",
+      "Mevcut uygulamadaki saatlik komuta modulu bu ihtiyaca operasyonel bir cevap verir."
+    ],
+    slideHighlights: [
+      { id: "s2", title: "FAO Penman-Monteith denklemi", note: "Referans yuzey ve degiskenler netlestirildi." },
+      { id: "s3", title: "Sabitler ve gerekceler", note: "G=0, u2 fallback, hibrit ea yaklasimi." },
+      { id: "s5", title: "Yillik trend", note: "30 yillik pencerede robust artis sinyali." },
+      { id: "s7", title: "Uygulama alanlari", note: "Sulama, baraj, iklim senaryosu." },
+      { id: "s9", title: "Saatlik ET0 firsati", note: "Gun ici farklari daha iyi yakalama potansiyeli." }
+    ],
+    seasonalProfile,
+    scenarioComparison,
+    trendSnapshot,
+    decisionHooks,
+    reservoirBridge
+  };
+}
+
+function getIrrigationDaypart(hour = 0) {
+  const h = Number(hour);
+  if (h >= 0 && h <= 5) return { key: "night", label: "Gece", window: "00:00-05:59" };
+  if (h >= 6 && h <= 10) return { key: "morning", label: "Sabah", window: "06:00-10:59" };
+  if (h >= 11 && h <= 16) return { key: "midday", label: "Ogle", window: "11:00-16:59" };
+  if (h >= 17 && h <= 21) return { key: "evening", label: "Aksam", window: "17:00-21:59" };
+  return { key: "late", label: "Gec gece", window: "22:00-23:59" };
+}
+
+function buildHourlyEvapoCommand({
+  forecastPack = null,
+  irrigationMethod = null,
+  waterSupplyAdvisor = null
+} = {}) {
+  const hourlyRows = Array.isArray(forecastPack?.hourly) ? forecastPack.hourly.slice(0, 48) : [];
+  if (!hourlyRows.length) return null;
+  const methodLossBase = {
+    damla: 0.12,
+    yagmurlama: 0.2,
+    salma: 0.26
+  };
+  const sourcePenalty = waterSupplyAdvisor?.mode === "critical" ? 8 : waterSupplyAdvisor?.mode === "tight" ? 4 : 0;
+  const scoredRows = hourlyRows
+    .map((row) => {
+      const timeText = String(row.time || "");
+      const date = timeText.slice(0, 10);
+      const hour = Number(timeText.slice(11, 13));
+      if (!date || !Number.isFinite(hour)) return null;
+      const daypart = getIrrigationDaypart(hour);
+      const vpdKpa = estimateVpdKpa(row.tempC, row.humidityPct);
+      let pressureScore = 10;
+      const precipProb = Number.isFinite(Number(row.precipitationProb)) ? Number(row.precipitationProb) : null;
+      if (Number(row.tempC || 0) >= 33) pressureScore += 22;
+      else if (Number(row.tempC || 0) >= 28) pressureScore += 12;
+      if (Number(vpdKpa || 0) >= 1.8) pressureScore += 24;
+      else if (Number(vpdKpa || 0) >= 1.2) pressureScore += 12;
+      if (Number(row.windKmh || 0) >= 25) pressureScore += 18;
+      else if (Number(row.windKmh || 0) >= 15) pressureScore += 9;
+      if (Number(row.shortwaveWm2 || 0) >= 520) pressureScore += 24;
+      else if (Number(row.shortwaveWm2 || 0) >= 240) pressureScore += 10;
+      if (Number(row.precipitationMm || 0) >= 0.6) pressureScore -= 18;
+      if (precipProb != null) {
+        if (precipProb >= 70) pressureScore -= 12;
+        else if (precipProb >= 40) pressureScore -= 6;
+      }
+      if (daypart.key === "midday") pressureScore += 6;
+      if (daypart.key === "night" || daypart.key === "late") pressureScore -= 4;
+      pressureScore = Math.max(0, Math.min(100, pressureScore + sourcePenalty));
+      const lossBase = methodLossBase[irrigationMethod?.key] ?? 0.12;
+      const methodLossPct = Number((lossBase * (pressureScore / 100) * 100).toFixed(1));
+      const status =
+        pressureScore >= 70 ? "avoid" : pressureScore >= 45 ? "watch" : Number(row.precipitationMm || 0) >= 1.2 ? "rain" : "ideal";
+      return {
+        id: `${date}-${hour}`,
+        date,
+        time: timeText.slice(11, 16),
+        hour,
+        daypartKey: daypart.key,
+        daypartLabel: daypart.label,
+        daypartWindow: daypart.window,
+        tempC: Number.isFinite(row.tempC) ? Number(Number(row.tempC).toFixed(1)) : null,
+        humidityPct: Number.isFinite(row.humidityPct) ? Number(Number(row.humidityPct).toFixed(0)) : null,
+        windKmh: Number.isFinite(row.windKmh) ? Number(Number(row.windKmh).toFixed(0)) : null,
+        precipitationMm: Number.isFinite(row.precipitationMm) ? Number(Number(row.precipitationMm).toFixed(1)) : null,
+        precipitationProb: precipProb,
+        shortwaveWm2: Number.isFinite(row.shortwaveWm2) ? Number(Number(row.shortwaveWm2).toFixed(0)) : null,
+        vpdKpa,
+        pressureScore,
+        methodLossPct,
+        status
+      };
+    })
+    .filter(Boolean);
+
+  const windowMap = new Map();
+  scoredRows.forEach((row) => {
+    const key = `${row.date}-${row.daypartKey}`;
+    const bucket = windowMap.get(key) || {
+      id: key,
+      date: row.date,
+      daypartKey: row.daypartKey,
+      daypartLabel: row.daypartLabel,
+      window: row.daypartWindow,
+      scores: [],
+      losses: [],
+      temps: [],
+      winds: [],
+      vpds: [],
+      precipTotal: 0
+    };
+    bucket.scores.push(Number(row.pressureScore || 0));
+    bucket.losses.push(Number(row.methodLossPct || 0));
+    bucket.temps.push(Number(row.tempC || 0));
+    bucket.winds.push(Number(row.windKmh || 0));
+    bucket.vpds.push(Number(row.vpdKpa || 0));
+    bucket.precipTotal += Number(row.precipitationMm || 0);
+    windowMap.set(key, bucket);
+  });
+  const windows = Array.from(windowMap.values()).map((bucket) => ({
+    id: bucket.id,
+    date: bucket.date,
+    daypart: bucket.daypartLabel,
+    window: bucket.window,
+    pressureScore: Number((avgOf(bucket.scores) || 0).toFixed(0)),
+    methodLossPct: Number((avgOf(bucket.losses) || 0).toFixed(1)),
+    meanTempC: Number((avgOf(bucket.temps) || 0).toFixed(1)),
+    meanWindKmh: Number((avgOf(bucket.winds) || 0).toFixed(0)),
+    meanVpdKpa: Number((avgOf(bucket.vpds) || 0).toFixed(2)),
+    precipTotalMm: Number(bucket.precipTotal.toFixed(1)),
+    status:
+      (avgOf(bucket.scores) || 0) >= 70
+        ? "avoid"
+        : (avgOf(bucket.scores) || 0) >= 45
+          ? "watch"
+          : bucket.precipTotal >= 1.2
+            ? "rain"
+            : "ideal"
+  }));
+  const bestWindows = windows
+    .slice()
+    .sort((a, b) => a.pressureScore - b.pressureScore || a.methodLossPct - b.methodLossPct)
+    .slice(0, 4);
+  const avoidWindows = windows
+    .slice()
+    .sort((a, b) => b.pressureScore - a.pressureScore || b.methodLossPct - a.methodLossPct)
+    .slice(0, 4);
+  const middayRows = windows.filter((row) => row.daypart === "Ogle");
+  const middayLossPct = middayRows.length ? Number((avgOf(middayRows.map((row) => row.methodLossPct)) || 0).toFixed(1)) : null;
+  const bestLossPct = bestWindows.length ? Number((avgOf(bestWindows.map((row) => row.methodLossPct)) || 0).toFixed(1)) : null;
+  const topHours = scoredRows
+    .slice()
+    .sort((a, b) => b.pressureScore - a.pressureScore || b.methodLossPct - a.methodLossPct)
+    .slice(0, 6)
+    .map((row) => ({
+      id: `peak-${row.id}`,
+      date: row.date,
+      time: row.time,
+      pressureScore: row.pressureScore,
+      methodLossPct: row.methodLossPct,
+      vpdKpa: row.vpdKpa,
+      tempC: row.tempC,
+      windKmh: row.windKmh
+    }));
+
+  return {
+    summary: {
+      bestWindowLabel: bestWindows[0] ? `${bestWindows[0].date} • ${bestWindows[0].daypart}` : "-",
+      bestWindowScore: bestWindows[0]?.pressureScore ?? 0,
+      worstWindowLabel: avoidWindows[0] ? `${avoidWindows[0].date} • ${avoidWindows[0].daypart}` : "-",
+      worstWindowScore: avoidWindows[0]?.pressureScore ?? 0,
+      middayLossPct,
+      bestLossPct,
+      shiftGainPct:
+        Number.isFinite(middayLossPct) && Number.isFinite(bestLossPct)
+          ? Number((middayLossPct - bestLossPct).toFixed(1))
+          : null
+    },
+    bestWindows,
+    avoidWindows,
+    topHours,
+    windows
+  };
+}
+
+function buildIrrigationWindowGuidance(scheduleRows = [], irrigationMethod = null) {
+  const inSeasonRows = Array.isArray(scheduleRows) ? scheduleRows.filter((row) => row.inSeason) : [];
+  const scoredRows = inSeasonRows.map((row) => {
+    let score = row.eventType === "sula" ? 68 : 54;
+    const notes = [];
+    if (Number(row.precipitationMm || 0) >= 8) {
+      score -= 26;
+      notes.push("yagis pencereyi bozuyor");
+    } else if (Number(row.precipitationMm || 0) >= 3) {
+      score -= 12;
+      notes.push("hafif yagis var");
+    } else {
+      score += 4;
+    }
+    if (Number(row.windMaxKmh || 0) >= 30) {
+      score -= 18;
+      notes.push("ruzgar yuksek");
+    } else if (Number(row.windMaxKmh || 0) >= 20) {
+      score -= 8;
+      notes.push("ruzgar orta");
+    } else {
+      score += 4;
+    }
+    if (Number(row.tempMax || 0) >= 35 || Number(row.tempMean || 0) >= 30) {
+      score -= 14;
+      notes.push("isi baskisi var");
+    } else if (Number(row.tempMax || 0) <= 29 && Number(row.tempMean || 0) <= 24) {
+      score += 5;
+    }
+    if (irrigationMethod?.key === "yagmurlama" && Number(row.humidityMean || 0) >= 85) {
+      score -= 10;
+      notes.push("nem yuksek");
+    }
+    if (row.eventType === "izle" && Number(row.depletionAfterMm || 0) >= Number(row.rawThresholdMm || 0) * 0.85) {
+      score += 6;
+      notes.push("esik yaklasiyor");
+    }
+    const level = score >= 66 ? "ideal" : score >= 48 ? "uygun" : "kacin";
+    return {
+      date: row.date,
+      dayLabel: row.dayLabel,
+      stage: row.stage,
+      eventType: row.eventType,
+      grossMm: row.irrigationGrossMm,
+      grossM3: row.irrigationGrossM3,
+      score: Math.max(0, Math.min(100, Math.round(score))),
+      level,
+      window: irrigationMethod?.window || "Sabah",
+      detail:
+        notes.join(" • ") ||
+        (row.eventType === "sula" ? "RAW esigi nedeniyle pencere aktif." : "Ikincil risk sinyali dusuk."),
+      tempBand: row.tempBand
+    };
+  });
+  return {
+    bestWindows: scoredRows.slice().sort((a, b) => b.score - a.score).slice(0, 3),
+    avoidWindows: scoredRows
+      .filter((item) => item.level === "kacin" || Number(item.score) <= 42)
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 3)
+  };
+}
+
+function buildIrrigationWaterSupplyAdvisor({
+  city = "",
+  waterSource = null,
+  irrigationMethod = null,
+  crop = null,
+  summary = null,
+  anomaly = null,
+  scheduleRows = [],
+  weekly = [],
+  referenceCampaign = null
+} = {}) {
+  const resolvedSource = waterSource || IRRIGATION_WATER_SOURCE_LIBRARY.baraj_kanal;
+  const cityNormalized = cityKey(city);
+  const formatLocalMetric = (value, digits = 1, suffix = "") => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return "-";
+    return `${numeric.toFixed(digits)}${suffix}`;
+  };
+  const modePriority = { critical: 3, tight: 2, watch: 1, normal: 0 };
+  const modeConfig = {
+    normal: {
+      label: "normal",
+      reductionPct: 0,
+      weeklyCutPct: 0,
+      headline: "Su kaynagi tarafinda ek bir kisit sinyali yok."
+    },
+    watch: {
+      label: "watch",
+      reductionPct: 8,
+      weeklyCutPct: 5,
+      headline: "Su kaynagi izleme moduna gecti."
+    },
+    tight: {
+      label: "tight",
+      reductionPct: 15,
+      weeklyCutPct: 12,
+      headline: "Su kaynagi baskili; haftalik tahsisi daralt."
+    },
+    critical: {
+      label: "critical",
+      reductionPct: 25,
+      weeklyCutPct: 18,
+      headline: "Su kaynagi kritik; korumali ve parcali sulama uygula."
+    }
+  };
+  const stageSensitivity = {
+    initial: 0.7,
+    development: 0.85,
+    mid: 0.35,
+    late: 1.0
+  };
+  const zoneTemplates = {
+    normal: [
+      { id: "zone-core", label: "Ana blok", sharePct: 45, deficitPct: 0, note: "Standart program." },
+      { id: "zone-support", label: "Destek blok", sharePct: 35, deficitPct: 0, note: "Standart program." },
+      { id: "zone-buffer", label: "Buffer blok", sharePct: 20, deficitPct: 0, note: "Standart program." }
+    ],
+    watch: [
+      { id: "zone-core", label: "Ana blok", sharePct: 45, deficitPct: 0, note: "Verim bloğunu koru." },
+      { id: "zone-support", label: "Destek blok", sharePct: 35, deficitPct: 6, note: "Kisa sureli hafif deficit uygulanabilir." },
+      { id: "zone-buffer", label: "Buffer blok", sharePct: 20, deficitPct: 12, note: "Yagis varsa bu bolgeyi ertele." }
+    ],
+    tight: [
+      { id: "zone-core", label: "Ana blok", sharePct: 45, deficitPct: 0, note: "Meyve/yuksek degerli bloklar tam korunur." },
+      { id: "zone-support", label: "Destek blok", sharePct: 35, deficitPct: 12, note: "Aralikli deficit uygulanir." },
+      { id: "zone-buffer", label: "Buffer blok", sharePct: 20, deficitPct: 25, note: "Zorunlu olmadikca son vardiyaya kalir." }
+    ],
+    critical: [
+      { id: "zone-core", label: "Ana blok", sharePct: 50, deficitPct: 0, note: "Sadece cekirdek verim alani tam beslenir." },
+      { id: "zone-support", label: "Destek blok", sharePct: 30, deficitPct: 18, note: "Kok bolgesi teyidiyle parcali sulama." },
+      { id: "zone-buffer", label: "Buffer blok", sharePct: 20, deficitPct: 35, note: "Gece vardiyasina veya yagis penceresine kaydir." }
+    ]
+  };
+
+  let mode = "normal";
+  let sourceContext = resolvedSource.notes?.[0] || "";
+  let detail = resolvedSource.label;
+
+  if (resolvedSource.key === "baraj_kanal" && cityNormalized === "istanbul") {
+    const expectedRisk = hackhatonReadJsonSafe(
+      path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "expected_risk_summary.json")
+    );
+    const alerts = hackhatonReadJsonSafe(
+      path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "alerts_2026_03_2027_02.json")
+    );
+    const timelineRows = hackhatonReadCsvRowsSafe(
+      path.join(HACKHATON_OUTPUT_ROOT, "istanbul_dam_forecast_decision", "story_overall_timeline_weighted.csv"),
+      24
+    )
+      .map((row) => ({
+        ds: String(row.ds || "").slice(0, 10),
+        expectedPct: Number(row.expected_yhat_pct)
+      }))
+      .filter((row) => row.ds && Number.isFinite(row.expectedPct));
+    const overallRiskPct = Number(expectedRisk?.overall?.expected_prob_below_40_pct || 0);
+    const highCount = Number(alerts?.counts?.high || 0);
+    const mediumCount = Number(alerts?.counts?.medium || 0);
+    const worstOutlook = timelineRows.reduce(
+      (minRow, row) => (!minRow || row.expectedPct < minRow.expectedPct ? row : minRow),
+      null
+    );
+    if (overallRiskPct >= 45 || highCount >= 3) mode = "critical";
+    else if (overallRiskPct >= 30 || highCount >= 1) mode = "tight";
+    else if (overallRiskPct >= 20 || mediumCount >= 3) mode = "watch";
+    sourceContext = `Istanbul baraj karar destegi • P(<40): ${formatLocalMetric(overallRiskPct, 1)}%`;
+    detail = worstOutlook
+      ? `${String(worstOutlook.ds).slice(0, 7)} icin beklenen dip ${formatLocalMetric(worstOutlook.expectedPct, 1)}%`
+      : "Baraj paneli ile entegre su kisit sinyali";
+  } else if (resolvedSource.key === "kuyu") {
+    if (anomaly?.level === "high" && irrigationMethod?.key === "salma") mode = "critical";
+    else if (anomaly?.level === "high" || anomaly?.level === "elevated") mode = "tight";
+    else if (irrigationMethod?.key === "salma") mode = "watch";
+    sourceContext = "Kuyu/pompaj icin ana baski enerji saati ve pompa uniformitesi.";
+    detail = irrigationMethod?.key === "salma" ? "Dusuk verimli yontem nedeniyle pompaj saati artar." : "Gece vardiyasi ve debi takibiyle baski yonetilir.";
+  } else {
+    const seasonalSpreadMm = Number(referenceCampaign?.scenarios?.find((item) => item.key === "dry")?.summary?.seasonGrossMm || 0) -
+      Number(referenceCampaign?.scenarios?.find((item) => item.key === "wet")?.summary?.seasonGrossMm || 0);
+    if (anomaly?.level === "high" && seasonalSpreadMm >= 140) mode = "tight";
+    else if (anomaly?.level === "high" || seasonalSpreadMm >= 100) mode = "watch";
+    sourceContext = "Karma kaynak; basincli haftalarda kaynaklar arasi gecis plani gerekir.";
+    detail = seasonalSpreadMm ? `Kuru-nemli sezon farki ${formatLocalMetric(seasonalSpreadMm, 1)} mm.` : "Senaryo farki sinirli.";
+  }
+
+  if (modePriority[anomaly?.level === "high" ? "watch" : "normal"] > modePriority[mode]) {
+    mode = anomaly?.level === "high" ? "watch" : mode;
+  }
+
+  const config = modeConfig[mode] || modeConfig.normal;
+  const nextEvent = Array.isArray(scheduleRows) ? scheduleRows.find((row) => row.eventType === "sula") || null : null;
+  const planningFallbackEventM3 = Number(referenceCampaign?.summary?.peakWeeklyM3 || 0);
+  const baseEventM3 = Number(nextEvent?.irrigationGrossM3 || weekly?.[0]?.grossM3 || planningFallbackEventM3 || 0);
+  const recommendedNightSharePct = Math.max(
+    55,
+    Math.min(88, Number(resolvedSource.defaultNightSharePct || 70) + (mode === "critical" ? 6 : mode === "tight" ? 3 : 0))
+  );
+  const eventAdjustments = Array.isArray(scheduleRows)
+    ? scheduleRows
+        .filter((row) => row.eventType === "sula")
+        .slice(0, 4)
+        .map((row) => {
+          const stageFactor = stageSensitivity[row.stageKey] ?? 0.8;
+          const effectiveReductionPct = Number((config.reductionPct * stageFactor).toFixed(1));
+          const adjustedGrossMm = Number((Number(row.irrigationGrossMm || 0) * (1 - effectiveReductionPct / 100)).toFixed(1));
+          const adjustedGrossM3 = Number((Number(row.irrigationGrossM3 || 0) * (1 - effectiveReductionPct / 100)).toFixed(0));
+          return {
+            id: `water-adjust-${row.id}`,
+            date: row.date,
+            stage: row.stage,
+            baseGrossMm: Number(row.irrigationGrossMm || 0),
+            adjustedGrossMm,
+            baseGrossM3: Number(row.irrigationGrossM3 || 0),
+            adjustedGrossM3,
+            reductionPct: effectiveReductionPct,
+            note:
+              effectiveReductionPct > 0
+                ? `${row.stage} evresinde ${effectiveReductionPct}% kisitli uygula, gece payini artir.`
+                : "Tam event uygula; kisit gerekli degil."
+          };
+        })
+    : [];
+  const weeklyAllocation = Array.isArray(weekly) && weekly.length
+    ? weekly.slice(0, 3).map((row, index) => ({
+        id: `water-week-${row.weekLabel}-${index}`,
+        weekLabel: row.weekLabel,
+        baseGrossM3: Number(row.grossM3 || 0),
+        adjustedGrossM3: Number((Number(row.grossM3 || 0) * (1 - config.weeklyCutPct / 100)).toFixed(0)),
+        baseGrossMm: Number(row.grossMm || 0),
+        adjustedGrossMm: Number((Number(row.grossMm || 0) * (1 - config.weeklyCutPct / 100)).toFixed(1)),
+        eventCount: Number(row.irrigationEvents || 0)
+      }))
+    : referenceCampaign?.summary?.peakWeekId
+      ? [
+          {
+            id: "water-week-planning",
+            weekLabel: referenceCampaign.summary.peakWeekId,
+            baseGrossM3: Number(referenceCampaign.summary.peakWeeklyM3 || 0),
+            adjustedGrossM3: Number((Number(referenceCampaign.summary.peakWeeklyM3 || 0) * (1 - config.weeklyCutPct / 100)).toFixed(0)),
+            baseGrossMm: Number(referenceCampaign.summary.peakWeeklyMm || 0),
+            adjustedGrossMm: Number((Number(referenceCampaign.summary.peakWeeklyMm || 0) * (1 - config.weeklyCutPct / 100)).toFixed(1)),
+            eventCount: 1
+          }
+        ]
+      : [];
+  const firstPositiveWeeklyAllocation = weeklyAllocation.find((row) => Number(row.adjustedGrossM3 || 0) > 0) || null;
+  const zonePlan = (zoneTemplates[mode] || zoneTemplates.normal).map((zone) => ({
+    ...zone,
+    suggestedGrossM3: Number((baseEventM3 * (zone.sharePct / 100) * (1 - zone.deficitPct / 100)).toFixed(0))
+  }));
+  const triggers = [
+    config.headline,
+    sourceContext,
+    detail,
+    irrigationMethod?.key === "salma" ? "Salma sulamada bu kisit daha fazla kayip uretir; damla/yagmurlama onceliklendir." : null,
+    nextEvent ? `${nextEvent.date} eventi icin gece payini en az %${recommendedNightSharePct} tut.` : null
+  ].filter(Boolean);
+
+  return {
+    mode,
+    source: {
+      key: resolvedSource.key,
+      label: resolvedSource.label
+    },
+    headline: config.headline,
+    detail,
+    sourceContext,
+    reductionPct: config.reductionPct,
+    weeklyCutPct: config.weeklyCutPct,
+    recommendedNightSharePct,
+    weeklyCapM3:
+      firstPositiveWeeklyAllocation?.adjustedGrossM3 ?? Number((baseEventM3 * (1 - config.weeklyCutPct / 100)).toFixed(0)),
+    nextEventCapM3: eventAdjustments[0]?.adjustedGrossM3 ?? Number((baseEventM3 * (1 - config.reductionPct / 100)).toFixed(0)),
+    zonePlan,
+    weeklyAllocation,
+    eventAdjustments,
+    triggers
+  };
+}
+
+function buildIrrigationAgrobotGuide({
+  scheduleRows = [],
+  summary = null,
+  anomaly = null,
+  crop = null,
+  irrigationMethod = null,
+  soilProfile = null,
+  referenceCampaign = null,
+  waterSupplyAdvisor = null
+} = {}) {
+  const windows = buildIrrigationWindowGuidance(scheduleRows, irrigationMethod);
+  const nextEvent = Array.isArray(scheduleRows) ? scheduleRows.find((row) => row.eventType === "sula") || null : null;
+  const modeMap = {
+    planning: {
+      tone: "planning",
+      title: "Planlama modu",
+      summary: "Sezon acilmadan referans, ilk event ve risk penceresini sabitle."
+    },
+    high: {
+      tone: "high",
+      title: "Yuksek su baskisi",
+      summary: "Tahmin cok yilli banda gore daha susuz; operasyon pencereni erken ac."
+    },
+    elevated: {
+      tone: "elevated",
+      title: "Basincli pencere",
+      summary: "Esik hizla dolabilir; saha takibini gundelik hale getir."
+    },
+    relief: {
+      tone: "relief",
+      title: "Rahatlatan pencere",
+      summary: "Yagis ve serinlik kisa sureli nefes aldiriyor."
+    },
+    normal: {
+      tone: "normal",
+      title: "Dengeli akış",
+      summary: "Tahmin ile cok yilli normal birbirine yakin gidiyor."
+    }
+  };
+  const mode = modeMap[anomaly?.level || "normal"] || modeMap.normal;
+  const scenarios = Array.isArray(referenceCampaign?.scenarios) ? referenceCampaign.scenarios : [];
+  const dryScenario = scenarios.find((item) => item.key === "dry");
+  const wetScenario = scenarios.find((item) => item.key === "wet");
+  const normalScenario = scenarios.find((item) => item.key === "normal");
+  const seasonalSpreadMm =
+    dryScenario && wetScenario
+      ? Number((Number(dryScenario.summary?.seasonGrossMm || 0) - Number(wetScenario.summary?.seasonGrossMm || 0)).toFixed(1))
+      : null;
+  const watchItems = [
+    anomaly?.headline || null,
+    Number(soilProfile?.initialDepletionMm || 0) >= Number(soilProfile?.rawMm || 0) * 0.75
+      ? "Baslangicta kok bolgesi acik; ilk event pencereni geciktirme."
+      : "Baslangic depolama tamponu kabul edilebilir.",
+    windows.avoidWindows[0]?.detail ? `${windows.avoidWindows[0].date}: ${windows.avoidWindows[0].detail}` : null,
+    waterSupplyAdvisor?.headline ? `Su kaynagi modu: ${waterSupplyAdvisor.headline}` : null
+  ].filter(Boolean);
+  const todayActions =
+    summary?.campaignStatus === "planlama"
+      ? [
+          `${crop?.label || "Urun"} icin dikim tarihini ve ilk sulama haftasini netlestir.`,
+          `${irrigationMethod?.label || "Sulama"} hattinin debi ve uniformitesini test et.`,
+          "Toprak nemini sezon acilisindan once referans olarak kaydet."
+        ]
+      : [
+          nextEvent
+            ? `${nextEvent.date} icin ${nextEvent.grossMm} mm brut (${nextEvent.grossM3} m3) pencereyi bloke et.`
+            : "Bugun zorunlu event yok; nem ve tahmin ekranini takip et.",
+          anomaly?.level === "high" || anomaly?.level === "elevated"
+            ? "Kritik bloklarda kok bolgesi nemini saha gozlemiyle dogrula."
+            : "Sulama vardiyasini mevcut sabah penceresinde tut.",
+          windows.bestWindows[0]
+            ? `${windows.bestWindows[0].date} en guclu operasyon slotu olarak one cikiyor.`
+            : "Bugun icin net operasyon slotu cikmadi."
+          ,
+          waterSupplyAdvisor?.reductionPct
+            ? `Su kaynagi baskisi nedeniyle sonraki eventte yaklasik %${waterSupplyAdvisor.reductionPct} kisit opsiyonu hazir tut.`
+            : "Su kaynagi tarafinda ek kisit görünmuyor."
+        ].filter(Boolean);
+  const weekActions = [
+    summary?.irrigationEventCount
+      ? `Onumuzdeki 14 gunde ${summary.irrigationEventCount} adet sulama eventi bekleniyor.`
+      : "Onumuzdeki 14 gunde zorunlu sulama eventi gorunmuyor.",
+    seasonalSpreadMm != null
+      ? `Kuru ve nemli yil farki ${seasonalSpreadMm} mm; rezerv planini buna gore tut.`
+      : "Senaryo yayilimi sinirli; default banda gore git.",
+    normalScenario?.summary?.peakWeekId
+      ? `Cok yilli tepe hafta ${normalScenario.summary.peakWeekId}; lojistik ve enerji planini ona gore yap.`
+      : "Tepe hafta bilgisi hazir degil.",
+    waterSupplyAdvisor?.weeklyCapM3
+      ? `Mevcut kaynak modunda bu haftaki guvenli tavan ${waterSupplyAdvisor.weeklyCapM3} m3 civari.`
+      : null
+  ].filter(Boolean);
+  return {
+    mode,
+    todayActions,
+    weekActions,
+    watchItems,
+    bestWindows: windows.bestWindows,
+    avoidWindows: windows.avoidWindows,
+    waterBudget: {
+      horizonGrossMm: Number(summary?.horizonGrossMm || 0),
+      horizonGrossM3: Number(scheduleRows.reduce((sum, row) => sum + Number(row.irrigationGrossM3 || 0), 0).toFixed(0)),
+      nextEventGrossMm: Number(summary?.nextIrrigationGrossMm || 0),
+      nextEventGrossM3: Number(summary?.nextIrrigationGrossM3 || 0),
+      rawMm: Number(soilProfile?.rawMm || 0),
+      initialDepletionMm: Number(soilProfile?.initialDepletionMm || 0)
+    },
+    seasonalSpreadMm,
+    seasonalSpreadM3:
+      dryScenario && wetScenario
+        ? Number((Number(dryScenario.summary?.seasonGrossM3 || 0) - Number(wetScenario.summary?.seasonGrossM3 || 0)).toFixed(0))
+        : null
+  };
+}
+
+function buildWideIrrigationReference(cropKey = "domates", plantingDate = "", areaHa = 1, efficiency = 0.9) {
+  const climate = buildWideDailyClimateNormals();
+  if (!climate?.available) return null;
+  const crop = getIrrigationCropConfig(cropKey);
+  const startDate = new Date(`${plantingDate || getDefaultIrrigationPlantingDate(crop.key)}T00:00:00`);
+  if (Number.isNaN(startDate.getTime())) return null;
+  const referenceYear = startDate.getUTCFullYear();
+  const summaryScenario = buildWideSeasonScenario({
+    climate,
+    crop,
+    plantingDate,
+    areaHa,
+    efficiency,
+    scenarioKey: "normal"
+  });
+  if (!summaryScenario) return null;
+  const scenarioKeys = ["dry", "normal", "wet"];
+  const scenarios = scenarioKeys
+    .map((key) =>
+      buildWideSeasonScenario({
+        climate,
+        crop,
+        plantingDate,
+        areaHa,
+        efficiency,
+        scenarioKey: key
+      })
+    )
+    .filter(Boolean);
+  const coverageMin = scenarios.length
+    ? Math.min(...scenarios.map((item) => Number(item.summary?.coverageYearsMin || 0)).filter((item) => item > 0))
+    : 0;
+  const coverageMax = scenarios.length
+    ? Math.max(...scenarios.map((item) => Number(item.summary?.coverageYearsMax || 0)).filter((item) => item > 0), 0)
+    : 0;
+  return {
+    periodLabel: `${climate.periodStart}-${climate.periodEnd} multi-year normal`,
+    sampleYears: Number(summaryScenario.summary.coverageYearsMin || climate.periodEnd - climate.periodStart + 1),
+    coverage: {
+      yearsMin: coverageMin,
+      yearsMax: coverageMax,
+      dayCount: climate.dayCount,
+      periodStart: climate.periodStart,
+      periodEnd: climate.periodEnd
+    },
+    summary: {
+      plantingDate: `${referenceYear}-${String(startDate.getUTCMonth() + 1).padStart(2, "0")}-${String(startDate.getUTCDate()).padStart(2, "0")}`,
+      seasonEtcMm: summaryScenario.summary.seasonEtcMm,
+      seasonGrossMm: summaryScenario.summary.seasonGrossMm,
+      seasonGrossM3: summaryScenario.summary.seasonGrossM3,
+      peakWeekId: summaryScenario.summary.peakWeekId,
+      peakWeeklyM3: summaryScenario.summary.peakWeeklyM3,
+      dataQuality: "multi-year-climatology"
+    },
+    weekly: summaryScenario.weekly,
+    scenarios
+  };
+}
+
+function inferSoilWaterHoldingProfile({ soilType = "", sand = null, clay = null, silt = null } = {}) {
+  const normalized = cityKey(soilType);
+  if (normalized.includes("kum")) {
+    return {
+      bucket: "coarse",
+      label: "Kumlu / hafif",
+      awcMmPerM: 80,
+      fieldCapacityTheta: 0.23,
+      wiltingPointTheta: 0.09
+    };
+  }
+  if (normalized.includes("kil")) {
+    return {
+      bucket: "fine",
+      label: "Killi / agir",
+      awcMmPerM: 180,
+      fieldCapacityTheta: 0.38,
+      wiltingPointTheta: 0.2
+    };
+  }
+  if (normalized.includes("silt")) {
+    return {
+      bucket: "medium",
+      label: "Siltli / orta",
+      awcMmPerM: 155,
+      fieldCapacityTheta: 0.32,
+      wiltingPointTheta: 0.15
+    };
+  }
+  if (Number.isFinite(Number(sand)) && Number(sand) > 65) {
+    return {
+      bucket: "coarse",
+      label: "Kum egilimli",
+      awcMmPerM: 85,
+      fieldCapacityTheta: 0.24,
+      wiltingPointTheta: 0.1
+    };
+  }
+  if (Number.isFinite(Number(clay)) && Number(clay) > 35) {
+    return {
+      bucket: "fine",
+      label: "Kil egilimli",
+      awcMmPerM: 175,
+      fieldCapacityTheta: 0.37,
+      wiltingPointTheta: 0.2
+    };
+  }
+  return {
+    bucket: "medium",
+    label: "Tinli / orta",
+    awcMmPerM: 140,
+    fieldCapacityTheta: 0.31,
+    wiltingPointTheta: 0.14
+  };
+}
+
+function estimateInitialDepletionMm({ topMoisture = null, midMoisture = null, tawMm = 0, soilProfile = null } = {}) {
+  const profile = soilProfile || inferSoilWaterHoldingProfile();
+  const values = [topMoisture, midMoisture].map((item) => Number(item)).filter((item) => Number.isFinite(item));
+  if (!values.length) return Number((Math.max(0, tawMm) * 0.35).toFixed(1));
+  const theta = values.reduce((sum, item) => sum + item, 0) / values.length;
+  const denominator = Math.max(0.01, Number(profile.fieldCapacityTheta || 0.31) - Number(profile.wiltingPointTheta || 0.14));
+  const availableFraction = clamp01((theta - Number(profile.wiltingPointTheta || 0.14)) / denominator);
+  const depletionFraction = clamp01(1 - availableFraction);
+  return Number((Math.max(0, tawMm) * depletionFraction).toFixed(1));
+}
+
+function getIsoWeekLabel(dateText = "") {
+  const date = new Date(dateText);
+  if (Number.isNaN(date.getTime())) return "Hafta";
+  const utc = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const dayNum = utc.getUTCDay() || 7;
+  utc.setUTCDate(utc.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(utc.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((utc - yearStart) / 86400000) + 1) / 7);
+  return `${utc.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+}
+
+async function fetchOpenMeteoIrrigationForecast(lat, lon, horizonDays = 14) {
+  const safeHorizon = Math.max(3, Math.min(16, Number(horizonDays) || 14));
+  const daily = [
+    "temperature_2m_min",
+    "temperature_2m_max",
+    "temperature_2m_mean",
+    "precipitation_sum",
+    "precipitation_probability_max",
+    "wind_speed_10m_max",
+    "relative_humidity_2m_mean",
+    "shortwave_radiation_sum",
+    "et0_fao_evapotranspiration"
+  ].join(",");
+  const hourly = [
+    "temperature_2m",
+    "relative_humidity_2m",
+    "wind_speed_10m",
+    "precipitation",
+    "precipitation_probability",
+    "shortwave_radiation"
+  ].join(",");
+  const url =
+    `${OPEN_METEO_FORECAST_URL}?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}` +
+    `&daily=${encodeURIComponent(daily)}&hourly=${encodeURIComponent(hourly)}&forecast_days=${safeHorizon}&timezone=auto`;
+  const json = await fetchJsonWithRetry(url, { headers: { accept: "application/json" } }, 1, 9000).catch(() => null);
+  if (!json?.daily?.time?.length) return null;
+  const elevationM = Number.isFinite(Number(json?.elevation)) ? Number(json.elevation) : 20;
+  const rows = json.daily.time.map((date, idx) => {
+    const tempMin = toFiniteNumber(json.daily?.temperature_2m_min?.[idx]);
+    const tempMax = toFiniteNumber(json.daily?.temperature_2m_max?.[idx]);
+    const tempMean = toFiniteNumber(json.daily?.temperature_2m_mean?.[idx]);
+    const humidityMean = toFiniteNumber(json.daily?.relative_humidity_2m_mean?.[idx]);
+    const windMaxKmh = toFiniteNumber(json.daily?.wind_speed_10m_max?.[idx]);
+    const shortwaveMjM2 = toFiniteNumber(json.daily?.shortwave_radiation_sum?.[idx]);
+    const precipitationMm = toFiniteNumber(json.daily?.precipitation_sum?.[idx]);
+    const precipProbMax = toFiniteNumber(json.daily?.precipitation_probability_max?.[idx]);
+    let et0Mm = toFiniteNumber(json.daily?.et0_fao_evapotranspiration?.[idx]);
+    let et0Source = et0Mm == null ? "derived" : "open-meteo";
+    if (et0Mm == null && tempMin != null && tempMax != null && tempMean != null && shortwaveMjM2 != null) {
+      const dateObj = new Date(`${date}T00:00:00Z`);
+      const doy = Number.isFinite(dateObj.getTime())
+        ? Math.floor((dateObj - new Date(Date.UTC(dateObj.getUTCFullYear(), 0, 0))) / 86400000)
+        : null;
+      const ra = doy == null ? null : computeSolarRaMjM2Day(doy, Number(lat));
+      const rso = ra == null ? null : (0.75 + 2e-5 * elevationM) * ra;
+      const rs = shortwaveMjM2;
+      const rsClamped = rso == null ? rs : Math.min(Math.max(rs, 0), rso);
+      const esTmax = saturationVaporPressureKpa(tempMax);
+      const esTmin = saturationVaporPressureKpa(tempMin);
+      const es = esTmax !== null && esTmin !== null ? 0.5 * (esTmax + esTmin) : null;
+      const rhMean = humidityMean == null ? 60 : Math.max(1, Math.min(100, humidityMean));
+      const ea = es == null ? null : (rhMean / 100) * es;
+      const delta = tempMean == null
+        ? null
+        : 4098 * (0.6108 * Math.exp((17.27 * tempMean) / (tempMean + 237.3))) / ((tempMean + 237.3) ** 2);
+      const pKpa = 101.3 * ((293.0 - 0.0065 * elevationM) / 293.0) ** 5.26;
+      const gamma = 0.000665 * pKpa;
+      const tmaxK = tempMax + 273.16;
+      const tminK = tempMin + 273.16;
+      const rsRso = rso && rso > 0 ? Math.max(0, Math.min(1, rsClamped / rso)) : 0;
+      const rns = rsClamped == null ? 0 : 0.77 * rsClamped;
+      const rnl = ea == null
+        ? 0
+        : 4.903e-9 * (((tmaxK ** 4) + (tminK ** 4)) / 2) * (0.34 - 0.14 * Math.sqrt(Math.max(ea, 0))) * (1.35 * rsRso - 0.35);
+      const rn = rns - rnl;
+      const u2 = windMaxKmh == null ? 2 : Math.max(0.1, Math.min(20, windMaxKmh / 3.6));
+      const num = delta == null || es == null || ea == null
+        ? null
+        : 0.408 * delta * rn + gamma * (900 / (tempMean + 273)) * u2 * (es - ea);
+      const den = delta == null ? null : delta + gamma * (1 + 0.34 * u2);
+      et0Mm = num == null || den == null || den <= 0 ? null : Number(Math.max(0, num / den).toFixed(3));
+    }
+    return {
+      date,
+      et0Mm,
+      et0Source,
+      precipitationMm,
+      precipProbMax,
+      tempMin,
+      tempMax,
+      tempMean,
+      humidityMean,
+      windMaxKmh,
+      shortwaveMjM2
+    };
+  });
+  const hourlyRows = Array.isArray(json?.hourly?.time)
+    ? json.hourly.time.slice(0, safeHorizon * 24).map((time, idx) => ({
+        time,
+        tempC: toFiniteNumber(json.hourly?.temperature_2m?.[idx]),
+        humidityPct: toFiniteNumber(json.hourly?.relative_humidity_2m?.[idx]),
+        windKmh: toFiniteNumber(json.hourly?.wind_speed_10m?.[idx]),
+        precipitationMm: toFiniteNumber(json.hourly?.precipitation?.[idx]),
+        precipitationProb: toFiniteNumber(json.hourly?.precipitation_probability?.[idx]),
+        shortwaveWm2: toFiniteNumber(json.hourly?.shortwave_radiation?.[idx])
+      }))
+    : [];
+  return {
+    url,
+    horizonDays: safeHorizon,
+    timeZone: json.timezone || null,
+    elevation: toFiniteNumber(json.elevation),
+    days: rows,
+    hourly: hourlyRows
+  };
+}
+
+function buildHackhatonIrrigationHistoricalExample(cropKey = "domates", plantingDate = "") {
+  const normalizedCrop = normalizeIrrigationCropKey(cropKey);
+  const weeklyRows = hackhatonReadCsvRowsSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "spreadsheet", "irrigation_weekly_1987.csv"),
+    4000
+  );
+  const comparisonRows = hackhatonReadCsvRowsSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "spreadsheet", "crop_shift_comparison_1987.csv"),
+    400
+  );
+  const crop = getIrrigationCropConfig(normalizedCrop);
+  const plantingShiftTarget = plantingDate
+    ? Math.round(
+        (new Date(plantingDate) - new Date(`${String(new Date(plantingDate).getFullYear())}-${crop.defaultPlantingMonthDay}`)) /
+          86400000
+      )
+    : 0;
+  const candidateShifts = [-15, 0, 15];
+  const selectedShift = candidateShifts.reduce((best, item) =>
+    Math.abs(item - plantingShiftTarget) < Math.abs(best - plantingShiftTarget) ? item : best
+  , 0);
+  const referenceWeekly = weeklyRows
+    .filter((row) => normalizeIrrigationCropKey(row.crop) === normalizedCrop && Number(row.sowing_shift_days || 0) === selectedShift)
+    .slice(0, 12)
+    .map((row) => ({
+      weekLabel: `${row.iso_year || "1987"}-W${String(row.iso_week || "").padStart(2, "0")}`,
+      weekStart: row.week_start || null,
+      weekEnd: row.week_end || null,
+      etcMm: Number(Number(row.etc_mm_week || 0).toFixed(1)),
+      netMm: Number(Number(row.net_mm_week || 0).toFixed(1)),
+      grossMm: Number(Number(row.gross_mm_week || 0).toFixed(1)),
+      grossM3: Number(Number(row.dose_m3_week || 0).toFixed(0)),
+      meanKc: Number(Number(row.mean_kc_week || 0).toFixed(2))
+    }));
+  const comparisonRow =
+    comparisonRows.find(
+      (row) => normalizeIrrigationCropKey(row.crop) === normalizedCrop && Number(row.sowing_shift_days || 0) === selectedShift
+    ) ||
+    comparisonRows.find((row) => normalizeIrrigationCropKey(row.crop) === normalizedCrop) ||
+    null;
+  const validation = hackhatonReadJsonSafe(
+    path.join(HACKHATON_OUTPUT_ROOT, "spreadsheet", "irrigation_crop_ml_validation_1987.json")
+  );
+  const slides = hackhatonExtractPresentationSlides(
+    path.join(HACKHATON_OUTPUT_ROOT, "presentation", "eto_analizi_v4.html"),
+    24
+  )
+    .filter((item) => /sulama|et0|evap|su stresi|kurak|hassas/i.test(`${item.title || ""} ${item.excerpt || ""}`))
+    .slice(0, 4);
+  return {
+    year: 1987,
+    selectedShiftDays: selectedShift,
+    summary: comparisonRow
+      ? {
+          plantingDate: comparisonRow.planting_date_shifted || null,
+          seasonEtcMm: Number(Number(comparisonRow.season_etc_mm || 0).toFixed(1)),
+          seasonGrossMm: Number(Number(comparisonRow.season_gross_irrigation_mm || 0).toFixed(1)),
+          seasonGrossM3: Number(Number(comparisonRow.season_gross_irrigation_m3 || 0).toFixed(0)),
+          peakWeekId: comparisonRow.peak_week_id || null,
+          peakWeeklyM3: Number(Number(comparisonRow.peak_weekly_gross_m3 || 0).toFixed(0)),
+          dataQuality: comparisonRow.data_quality_flag || "-"
+        }
+      : null,
+    weekly: referenceWeekly,
+    validation:
+      validation && typeof validation === "object"
+        ? {
+            allPassed: Boolean(validation.all_passed),
+            checks: validation.checks || {}
+          }
+        : null,
+    slides
+  };
+}
+
+async function buildIrrigationCalendarPayload({
+  city = "",
+  district = "",
+  neighborhood = "",
+  coords = "",
+  crop = "domates",
+  plantingDate = "",
+  areaHa = 1,
+  efficiency = null,
+  method = "damla",
+  waterSource = "baraj_kanal",
+  horizonDays = 14,
+  strictLive = true,
+  seasonPlan = true
+} = {}) {
+  const scope = buildHackhatonScope(city, district, neighborhood);
+  const cropConfig = getIrrigationCropConfig(crop);
+  const irrigationMethod = resolveIrrigationMethod(method);
+  const irrigationWaterSource = resolveIrrigationWaterSource(waterSource);
+  const numericAreaHa = Math.max(0.1, Math.min(500, Number(areaHa) || 1));
+  const numericEfficiency = Math.max(
+    0.35,
+    Math.min(0.98, Number.isFinite(Number(efficiency)) ? Number(efficiency) : irrigationMethod.efficiency)
+  );
+  const requestedPlantingDate = String(plantingDate || "").trim() || getDefaultIrrigationPlantingDate(cropConfig.key);
+  const [latRaw, lonRaw] = String(coords || "").split(",").map((item) => Number(item.trim()));
+  let resolved = null;
+  if (Number.isFinite(latRaw) && Number.isFinite(lonRaw)) {
+    resolved = {
+      lat: latRaw,
+      lon: lonRaw,
+      city,
+      district: district || null,
+      neighborhood: neighborhood || null,
+      geoSource: "query-coords"
+    };
+  } else {
+    resolved =
+      (await geocodeCity(city, district, neighborhood).catch(() => null)) ||
+      (district ? getDistrictCentroid(city, district) : null);
+    if (resolved && !resolved.geoSource) {
+      resolved = {
+        ...resolved,
+        city: resolved.city || toTurkishTitleCase(city),
+        district: resolved.district || district || null,
+        neighborhood: resolved.neighborhood || neighborhood || null,
+        geoSource: "district-centroid"
+      };
+    }
+  }
+  if (!resolved?.lat || !resolved?.lon) {
+    return {
+      updatedAt: new Date().toISOString(),
+      available: false,
+      error: "irrigation_geocode_failed",
+      scope
+    };
+  }
+
+  const [forecastPack, soilPack, soilSignals] = await Promise.all([
+    fetchOpenMeteoIrrigationForecast(resolved.lat, resolved.lon, horizonDays).catch(() => null),
+    runWithTimeoutFallback(() => fetchSoilGrids(resolved.lat, resolved.lon).catch(() => null), 4200, null),
+    runWithTimeoutFallback(() => fetchOpenMeteoSoilSignals(resolved.lat, resolved.lon).catch(() => null), 4200, null)
+  ]);
+  if (!forecastPack?.days?.length) {
+    return {
+      updatedAt: new Date().toISOString(),
+      available: false,
+      error: "irrigation_forecast_unavailable",
+      scope
+    };
+  }
+  const soilGridLive = Boolean(soilPack && hasSoilGridSignal(soilPack));
+  const soilSignalsLive = Boolean(
+    soilSignals?.summary &&
+      (Number.isFinite(soilSignals.summary.moistureTopAvg) ||
+        Number.isFinite(soilSignals.summary.moistureMidAvg) ||
+        Number.isFinite(soilSignals.summary.evapotranspirationAvg))
+  );
+  if (strictLive && !soilGridLive && !soilSignalsLive) {
+    return {
+      updatedAt: new Date().toISOString(),
+      available: false,
+      error: "irrigation_soil_unavailable",
+      scope
+    };
+  }
+
+  const climateNormals = buildWideDailyClimateNormals();
+  const seasonLengthDays = Number(cropConfig.seasonLengthDays || 0);
+  const plantingTs = new Date(requestedPlantingDate);
+  const firstForecastDate = String(forecastPack.days[0]?.date || "");
+  const forecastStartDate = new Date(`${firstForecastDate}T00:00:00Z`);
+  const campaignDayStart =
+    Number.isFinite(plantingTs.getTime()) && Number.isFinite(forecastStartDate.getTime())
+      ? Math.floor((forecastStartDate - plantingTs) / 86400000) + 1
+      : null;
+  const remainingSeasonDays =
+    seasonLengthDays && campaignDayStart != null ? Math.max(0, seasonLengthDays - campaignDayStart + 1) : 0;
+  const canExtend =
+    Boolean(seasonPlan) &&
+    Boolean(climateNormals?.available) &&
+    Number.isFinite(remainingSeasonDays) &&
+    remainingSeasonDays > forecastPack.days.length;
+  const totalScheduleDays = canExtend ? remainingSeasonDays : forecastPack.days.length;
+  const extendedClimateRows = [];
+  for (let idx = 0; idx < totalScheduleDays; idx += 1) {
+    if (idx < forecastPack.days.length) {
+      extendedClimateRows.push({ ...forecastPack.days[idx], climateSource: "forecast" });
+      continue;
+    }
+    const dateObj = new Date(forecastStartDate);
+    dateObj.setUTCDate(dateObj.getUTCDate() + idx);
+    const monthDay = `${String(dateObj.getUTCMonth() + 1).padStart(2, "0")}-${String(dateObj.getUTCDate()).padStart(2, "0")}`;
+    const normal = climateNormals?.normals?.get(monthDay) || null;
+    if (!normal) break;
+    extendedClimateRows.push({
+      date: dateObj.toISOString().slice(0, 10),
+      et0Mm: Number(normal.et0Mean || 0),
+      et0Source: "climatology",
+      precipitationMm: Number(normal.precipMean || 0),
+      precipProbMax: Number(normal.rainyDayRate || 0),
+      tempMin: Number(normal.tempP25 || normal.tempMean || 0),
+      tempMax: Number(normal.tempP75 || normal.tempMean || 0),
+      tempMean: Number(normal.tempMean || 0),
+      humidityMean: Number(normal.rhMean || 0),
+      windMaxKmh: null,
+      shortwaveMjM2: null,
+      climateSource: "normal"
+    });
+  }
+
+  const soilProfile = inferSoilWaterHoldingProfile({
+    soilType: classifySoilTexture(soilPack || {}),
+    sand: soilPack?.sand,
+    clay: soilPack?.clay,
+    silt: soilPack?.silt
+  });
+  const tawMm = Number((soilProfile.awcMmPerM * Number(cropConfig.rootDepthM || 1)).toFixed(1));
+  const rawMm = Number((tawMm * Number(cropConfig.depletionFraction || 0.5)).toFixed(1));
+  const initialDepletionMm = estimateInitialDepletionMm({
+    topMoisture: soilSignals?.summary?.moistureTopAvg,
+    midMoisture: soilSignals?.summary?.moistureMidAvg,
+    tawMm,
+    soilProfile
+  });
+  let depletionMm = initialDepletionMm;
+  const refillResidualMm = Number((tawMm * 0.12).toFixed(1));
+  const scheduleRows = [];
+  const irrigationEvents = [];
+
+  extendedClimateRows.forEach((row, idx) => {
+    const date = String(row.date || "");
+    const dateObj = new Date(date);
+    const dayAfterPlant = Math.floor((dateObj - plantingTs) / 86400000) + 1;
+    const stage = getIrrigationStage(dayAfterPlant, cropConfig);
+    const et0Mm = Number.isFinite(Number(row.et0Mm)) ? Number(row.et0Mm) : 0;
+    const etcMm = stage.inSeason ? Number((et0Mm * stage.kc).toFixed(2)) : 0;
+    const precipitationMm = Number.isFinite(Number(row.precipitationMm)) ? Number(row.precipitationMm) : 0;
+    const precipProb = Number.isFinite(Number(row.precipProbMax)) ? Number(row.precipProbMax) : null;
+    let rainEffFactor = 0.8;
+    if (precipProb != null) {
+      if (precipProb < 30) rainEffFactor = 0.45;
+      else if (precipProb < 55) rainEffFactor = 0.65;
+      else if (precipProb < 80) rainEffFactor = 0.8;
+      else rainEffFactor = 0.9;
+    }
+    const effectiveRainMm =
+      stage.inSeason && precipitationMm > 0.2 ? Number((Math.max(0, precipitationMm * rainEffFactor)).toFixed(2)) : 0;
+    const depletionBeforeMm = depletionMm;
+    const depletionAfterClimateMm = Number(
+      Math.max(0, Math.min(tawMm, depletionBeforeMm + etcMm - effectiveRainMm)).toFixed(2)
+    );
+    let irrigationNetMm = 0;
+    let irrigationGrossMm = 0;
+    let eventType = "izle";
+    let reason = stage.inSeason ? "Toprak su acigi izleniyor" : "Kampanya henuz aktif degil";
+    if (stage.inSeason && depletionAfterClimateMm >= rawMm) {
+      irrigationNetMm = Number(Math.max(0, depletionAfterClimateMm - refillResidualMm).toFixed(2));
+      irrigationGrossMm = Number((irrigationNetMm / numericEfficiency).toFixed(2));
+      depletionMm = Number(Math.max(0, depletionAfterClimateMm - irrigationNetMm).toFixed(2));
+      eventType = "sula";
+      reason = `RAW esigi asildi (${depletionAfterClimateMm.toFixed(1)} / ${rawMm.toFixed(1)} mm)`;
+      irrigationEvents.push({
+        id: `evt-${date}-${idx}`,
+        date,
+        window: irrigationMethod.window,
+        netMm: irrigationNetMm,
+        grossMm: irrigationGrossMm,
+        grossM3: Number((irrigationGrossMm * numericAreaHa * 10).toFixed(0)),
+        stage: stage.label,
+        reason
+      });
+    } else {
+      depletionMm = depletionAfterClimateMm;
+      if (stage.inSeason && effectiveRainMm > 0) {
+        reason = `Yagis etkisi ${effectiveRainMm.toFixed(1)} mm`;
+      } else if (stage.inSeason) {
+        reason = `Esik alti; kalan depolama ${Math.max(0, rawMm - depletionAfterClimateMm).toFixed(1)} mm`;
+      }
+    }
+    scheduleRows.push({
+      id: `day-${date}-${idx}`,
+      date,
+      dayLabel: idx === 0 ? "Bugun" : idx === 1 ? "Yarin" : `${idx + 1}. gun`,
+      isoWeek: getIsoWeekLabel(date),
+      dayAfterPlant,
+      stage: stage.label,
+      stageKey: stage.id,
+      inSeason: stage.inSeason,
+      kc: Number(stage.kc.toFixed(3)),
+      et0Mm: Number(et0Mm.toFixed(2)),
+      et0Source: row.et0Source || (row.climateSource === "normal" ? "climatology" : "forecast"),
+      etcMm,
+      precipitationMm: Number(precipitationMm.toFixed(2)),
+      precipProbMax: precipProb,
+      effectiveRainMm,
+      tempMin: Number.isFinite(Number(row.tempMin)) ? Number(Number(row.tempMin).toFixed(1)) : null,
+      tempMax: Number.isFinite(Number(row.tempMax)) ? Number(Number(row.tempMax).toFixed(1)) : null,
+      tempMean: Number.isFinite(Number(row.tempMean)) ? Number(Number(row.tempMean).toFixed(1)) : null,
+      shortwaveMjM2: Number.isFinite(Number(row.shortwaveMjM2)) ? Number(Number(row.shortwaveMjM2).toFixed(1)) : null,
+      depletionBeforeMm: Number(depletionBeforeMm.toFixed(2)),
+      depletionAfterMm: Number(depletionMm.toFixed(2)),
+      rawThresholdMm: rawMm,
+      irrigationNetMm,
+      irrigationGrossMm,
+      irrigationGrossM3: Number((irrigationGrossMm * numericAreaHa * 10).toFixed(0)),
+      tempBand:
+        Number.isFinite(Number(row.tempMin)) && Number.isFinite(Number(row.tempMax))
+          ? `${Number(row.tempMin).toFixed(0)} / ${Number(row.tempMax).toFixed(0)} C`
+          : "-",
+      humidityMean: Number.isFinite(Number(row.humidityMean)) ? Number(Number(row.humidityMean).toFixed(0)) : null,
+      windMaxKmh: Number.isFinite(Number(row.windMaxKmh)) ? Number(Number(row.windMaxKmh).toFixed(0)) : null,
+      eventType,
+      reason,
+      climateSource: row.climateSource || "forecast"
+    });
+  });
+
+  const weeklyMap = new Map();
+  scheduleRows.forEach((row) => {
+    const existing = weeklyMap.get(row.isoWeek) || {
+      weekLabel: row.isoWeek,
+      grossMm: 0,
+      netMm: 0,
+      etcMm: 0,
+      effectiveRainMm: 0,
+      grossM3: 0,
+      irrigationEvents: 0
+    };
+    existing.grossMm += row.irrigationGrossMm;
+    existing.netMm += row.irrigationNetMm;
+    existing.etcMm += row.etcMm;
+    existing.effectiveRainMm += row.effectiveRainMm;
+    existing.grossM3 += row.irrigationGrossM3;
+    existing.irrigationEvents += row.eventType === "sula" ? 1 : 0;
+    weeklyMap.set(row.isoWeek, existing);
+  });
+  const weekly = Array.from(weeklyMap.values()).map((row) => ({
+    ...row,
+    grossMm: Number(row.grossMm.toFixed(1)),
+    netMm: Number(row.netMm.toFixed(1)),
+    etcMm: Number(row.etcMm.toFixed(1)),
+    effectiveRainMm: Number(row.effectiveRainMm.toFixed(1)),
+    grossM3: Number(row.grossM3.toFixed(0))
+  }));
+
+  const normalDays = scheduleRows.filter((row) => row.climateSource === "normal").length;
+  const multiYearReference = buildWideIrrigationReference(cropConfig.key, requestedPlantingDate, numericAreaHa, numericEfficiency);
+  const historical1987 = buildHackhatonIrrigationHistoricalExample(cropConfig.key, requestedPlantingDate);
+  const nextEvent = irrigationEvents[0] || null;
+  const campaignDay =
+    Number.isFinite(plantingTs.getTime()) ? Math.floor((new Date(forecastPack.days[0].date) - plantingTs) / 86400000) + 1 : null;
+  const campaignStatus =
+    campaignDay == null
+      ? "bilinmiyor"
+      : campaignDay < 1
+        ? "planlama"
+        : campaignDay > Number(cropConfig.seasonLengthDays || 0)
+          ? "tamamlandi"
+          : "aktif";
+  const anomaly = buildForecastIrrigationAnomaly(scheduleRows, climateNormals);
+  const summary = {
+    campaignStatus,
+    campaignDay,
+    currentStage: scheduleRows[0]?.stage || "Sezon disi",
+    nextIrrigationDate: nextEvent?.date || null,
+    nextIrrigationGrossMm: nextEvent?.grossMm || 0,
+    nextIrrigationGrossM3: nextEvent?.grossM3 || 0,
+    horizonEtcMm: Number(scheduleRows.reduce((sum, row) => sum + row.etcMm, 0).toFixed(1)),
+    horizonEffectiveRainMm: Number(scheduleRows.reduce((sum, row) => sum + row.effectiveRainMm, 0).toFixed(1)),
+    horizonGrossMm: Number(scheduleRows.reduce((sum, row) => sum + row.irrigationGrossMm, 0).toFixed(1)),
+    irrigationEventCount: irrigationEvents.length,
+    horizonDays: scheduleRows.length,
+    forecastDays: forecastPack.days.length,
+    normalDays,
+    horizonMode: canExtend ? "season" : "forecast"
+  };
+  const referenceCampaign = multiYearReference
+    ? {
+        ...multiYearReference,
+        validation: historical1987?.validation || null,
+        slides: historical1987?.slides || [],
+        historical1987
+      }
+    : historical1987
+      ? {
+          periodLabel: "1987 historical example",
+          sampleYears: 1,
+          summary: historical1987.summary,
+          weekly: historical1987.weekly,
+          validation: historical1987.validation,
+          slides: historical1987.slides,
+        historical1987
+      }
+      : null;
+  const waterSupplyAdvisor = buildIrrigationWaterSupplyAdvisor({
+    city: resolved.city || city,
+    waterSource: irrigationWaterSource,
+    irrigationMethod,
+    crop: cropConfig,
+    summary,
+    anomaly,
+    scheduleRows,
+    weekly,
+    referenceCampaign
+  });
+  const actionPlan = buildIrrigationActionPlan({
+    summary,
+    anomaly,
+    irrigationMethod,
+    crop: cropConfig,
+    waterSupplyAdvisor
+  });
+  const stageBoard = buildIrrigationStageBoard(scheduleRows);
+  const taskBoard = buildIrrigationTaskBoard({
+    scheduleRows,
+    summary,
+    anomaly,
+    irrigationMethod,
+    crop: cropConfig
+  });
+  const plantingShiftBoard = buildIrrigationPlantingShiftBoard({
+    climate: climateNormals,
+    crop: cropConfig,
+    plantingDate: requestedPlantingDate,
+    areaHa: numericAreaHa,
+    efficiency: numericEfficiency
+  });
+  const depletionTrace = buildIrrigationDepletionTrace(scheduleRows, tawMm, rawMm);
+  const evapotranspirationProfile = buildEvapotranspirationProfile({
+    scheduleRows,
+    climate: climateNormals,
+    crop: cropConfig
+  });
+  const hourlyEvapoCommand = buildHourlyEvapoCommand({
+    forecastPack,
+    irrigationMethod,
+    waterSupplyAdvisor
+  });
+  const et0ResearchPack = buildEt0PresentationResearchPack({
+    climate: climateNormals,
+    evapotranspirationProfile,
+    summary,
+    anomaly,
+    waterSupplyAdvisor,
+    irrigationMethod,
+    waterSource: irrigationWaterSource,
+    referenceCampaign
+  });
+  const priorityBoard = buildIrrigationPriorityBoard({
+    summary,
+    anomaly,
+    hourlyEvapoCommand,
+    evapotranspirationProfile,
+    waterSupplyAdvisor,
+    et0ResearchPack,
+    irrigationMethod,
+    crop: cropConfig
+  });
+  const alertBundle = buildIrrigationAlertBundle({
+    summary,
+    anomaly,
+    hourlyEvapoCommand,
+    waterSupplyAdvisor,
+    priorityBoard
+  });
+  const taskDrafts = buildIrrigationTaskDrafts({
+    summary,
+    hourlyEvapoCommand,
+    waterSupplyAdvisor,
+    priorityBoard
+  });
+  const agrobotGuide = buildIrrigationAgrobotGuide({
+    scheduleRows,
+    summary,
+    anomaly,
+    crop: cropConfig,
+    irrigationMethod,
+    soilProfile: {
+      ...soilProfile,
+      tawMm,
+      rawMm,
+      initialDepletionMm
+    },
+    referenceCampaign,
+    waterSupplyAdvisor
+  });
+
+  return {
+    updatedAt: new Date().toISOString(),
+    available: true,
+    live: true,
+    source: "open-meteo-et0+fao56-kc+hackhaton-reference",
+    dataQuality: {
+      strictLive: Boolean(strictLive),
+      forecastLive: true,
+      soilGridLive,
+      soilSignalsLive,
+      et0Source: Array.from(new Set((forecastPack.days || []).map((item) => item.et0Source).filter(Boolean)))
+    },
+    scope: {
+      city: resolved.city || city,
+      district: resolved.district || district || null,
+      neighborhood: resolved.neighborhood || neighborhood || null,
+      locationLabel:
+        buildLocationSearchQuery(resolved.city || city, resolved.district || district, resolved.neighborhood || neighborhood) ||
+        scope.locationLabel,
+      coords: `${resolved.lat}, ${resolved.lon}`,
+      geoSource: resolved.geoSource || "open-meteo-geocode"
+    },
+    crop: {
+      key: cropConfig.key,
+      label: cropConfig.label,
+      plantingDate: requestedPlantingDate,
+      seasonLengthDays: cropConfig.seasonLengthDays,
+      rootDepthM: cropConfig.rootDepthM,
+      depletionFraction: cropConfig.depletionFraction,
+      kc: cropConfig.kc,
+      stageLengths: cropConfig.stageLengths
+    },
+    irrigationMethod: {
+      key: irrigationMethod.key,
+      label: irrigationMethod.label,
+      efficiency: Number(numericEfficiency.toFixed(2)),
+      window: irrigationMethod.window
+    },
+    waterSource: {
+      key: irrigationWaterSource.key,
+      label: irrigationWaterSource.label
+    },
+    soilProfile: {
+      texture: classifySoilTexture(soilPack || {}),
+      bucket: soilProfile.bucket,
+      label: soilProfile.label,
+      tawMm,
+      rawMm,
+      initialDepletionMm,
+      moistureTopAvg: toFiniteNumber(soilSignals?.summary?.moistureTopAvg),
+      moistureMidAvg: toFiniteNumber(soilSignals?.summary?.moistureMidAvg)
+    },
+    summary,
+    calendar: scheduleRows,
+    weekly,
+    events: irrigationEvents,
+    anomaly,
+    actionPlan,
+    waterSupplyAdvisor,
+    stageBoard,
+    taskBoard,
+    plantingShiftBoard,
+    depletionTrace,
+    evapotranspirationProfile,
+    hourlyEvapoCommand,
+    et0ResearchPack,
+    priorityBoard,
+    alertBundle,
+    taskDrafts,
+    agrobotGuide,
+    referenceCampaign,
+    assumptions: [
+      { label: "Formul", value: "ETc = Kc x ET0" },
+      { label: "Esik", value: "RAW = p x TAW" },
+      { label: "Etkin yagis", value: "Olasiliga gore 0.45-0.9 x gunluk yagis" },
+      { label: "Alan", value: `${numericAreaHa.toFixed(2)} ha` }
+    ],
+    researchRefs: IRRIGATION_RESEARCH_REFS,
+    dataSources: [
+      { id: "open-meteo", title: "Open-Meteo Forecast", url: forecastPack.url, type: "daily-et0-forecast" },
+      { id: "soilgrids", title: "ISRIC SoilGrids", url: SOILGRIDS_QUERY, type: "soil-capacity" },
+      { id: "hackhaton", title: "Hackhaton irrigation bundle", url: "/api/hackhaton/dashboard", type: "reference-campaign" }
+    ]
+  };
+}
+
 async function geocodeCity(city, district = "", neighborhood = "") {
+  const exactScopeLookup =
+    (neighborhood || district)
+      ? await fetchNominatimGeocode(city, district, neighborhood).catch(() => null)
+      : null;
+  if (exactScopeLookup) {
+    return {
+      name: exactScopeLookup.city || city || exactScopeLookup.name || null,
+      lat: exactScopeLookup.lat,
+      lon: exactScopeLookup.lon,
+      city: exactScopeLookup.city || city || null,
+      district: exactScopeLookup.district || district || null,
+      neighborhood: exactScopeLookup.neighborhood || neighborhood || null,
+      geoSource: exactScopeLookup.geoSource || "nominatim-geocode",
+      displayName: exactScopeLookup.displayName || null
+    };
+  }
+  const directDistrictCentroid = district ? getDistrictCentroid(city, district) : null;
+  if (directDistrictCentroid) {
+    return {
+      name: city || null,
+      lat: directDistrictCentroid.lat,
+      lon: directDistrictCentroid.lon,
+      city: city ? toTurkishTitleCase(city) : null,
+      district: district ? toTurkishTitleCase(district) : null,
+      neighborhood: neighborhood || null,
+      geoSource: "district-centroid"
+    };
+  }
   const queryCandidates = [
     buildLocationSearchQuery(city, district, neighborhood),
     buildLocationSearchQuery(city, district, ""),
@@ -3109,9 +10414,10 @@ async function geocodeCity(city, district = "", neighborhood = "") {
       name: result.name || city,
       lat: result.latitude,
       lon: result.longitude,
-      city: city || result.name || null,
-      district: district || null,
-      neighborhood: neighborhood || null
+      city: city ? toTurkishTitleCase(city) : result.name || null,
+      district: district ? toTurkishTitleCase(district) : null,
+      neighborhood: neighborhood || null,
+      geoSource: "open-meteo-geocode"
     };
     geoCache.set(key, { ts: Date.now(), value: payload });
     return payload;
@@ -3123,7 +10429,7 @@ async function fetchOpenMeteoWeather(lat, lon) {
   const url =
     `${OPEN_METEO_FORECAST}?latitude=${encodeURIComponent(lat)}` +
     `&longitude=${encodeURIComponent(lon)}` +
-    "&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code" +
+    "&current=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_gusts_10m,weather_code,cloud_cover" +
     "&daily=temperature_2m_min,temperature_2m_max,precipitation_sum,weather_code,wind_gusts_10m_max" +
     "&forecast_days=1&timezone=auto";
   let data = null;
@@ -3145,6 +10451,7 @@ async function fetchOpenMeteoWeather(lat, lon) {
     windKmh: data.current?.wind_speed_10m ?? null,
     windGustKmh: typeof gust === "number" ? Math.round(gust) : null,
     precipitationMm: typeof precipitation === "number" ? Number(precipitation.toFixed(1)) : null,
+    cloudCoverPct: typeof data.current?.cloud_cover === "number" ? Math.round(data.current.cloud_cover) : null,
     condition: weatherCodeToText(currentCode),
     frostRisk: typeof tempMin === "number" ? tempMin <= 0 : false,
     localTime: data.current?.time || null,
@@ -3214,19 +10521,393 @@ const MARKET_SOURCES = {
   mersin: "https://www.mersin.plus/gunluk-sebze-ve-meyve-resmi-hal-fiyatlari-mersin/"
 };
 
-async function fetchMarketPrices(city) {
-  const key = city.toLowerCase();
+const LIVE_HAL_MARKET_SOURCES = [
+  { id: "bursa-hal", title: "Bursa Hali", url: MARKET_SOURCES.bursa },
+  { id: "konya-hal", title: "Konya Hali", url: MARKET_SOURCES.konya },
+  { id: "kayseri-hal", title: "Kayseri Hali", url: MARKET_SOURCES.kayseri }
+];
+
+const FARM_PRICE_TARGETS = [
+  { key: "domates", label: "Domates", aliases: ["domates", "salkim domates", "domates cherry"] },
+  { key: "biber", label: "Biber", aliases: ["biber", "kapya biber", "sivri biber", "carliston biber"] },
+  { key: "patates", label: "Patates", aliases: ["patates"] },
+  { key: "sogan", label: "Sogan", aliases: ["sogan", "kuru sogan"] },
+  { key: "salatalik", label: "Salatalik", aliases: ["salatalik", "hiyar", "silor"] },
+  { key: "kabak", label: "Kabak", aliases: ["kabak", "sakiz kabak"] },
+  { key: "patlican", label: "Patlican", aliases: ["patlican"] },
+  { key: "elma", label: "Elma", aliases: ["elma"] },
+  { key: "limon", label: "Limon", aliases: ["limon"] },
+  { key: "portakal", label: "Portakal", aliases: ["portakal"] },
+  { key: "bugday", label: "Bugday", aliases: ["bugday"] },
+  { key: "arpa", label: "Arpa", aliases: ["arpa"] },
+  { key: "misir", label: "Misir", aliases: ["misir"] }
+];
+
+const FUEL_SOURCE_TEMPLATES = [
+  {
+    key: "motorin",
+    label: "Mazot",
+    unit: "TL/L",
+    priceColumnIndex: 2,
+    url: (citySlug) => `https://www.aytemiz.com.tr/akaryakit-fiyatlari/motorin-fiyatlari/${citySlug}-motorin-fiyati`
+  },
+  {
+    key: "benzin",
+    label: "Benzin",
+    unit: "TL/L",
+    priceColumnIndex: 0,
+    url: (citySlug) => `https://www.aytemiz.com.tr/akaryakit-fiyatlari/benzin-fiyatlari/${citySlug}-benzin-fiyati`
+  }
+];
+
+function stripHtmlTags(input = "") {
+  return decodeXmlEntities(
+    String(input || "")
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<br\s*\/?>/gi, " ")
+      .replace(/<\/(p|div|li|section|article|h[1-6])>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+  )
+    .replace(/[<>]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function ensureAbsoluteUrl(url = "", baseUrl = "") {
+  const raw = String(url || "").trim();
+  if (!raw) return "";
+  try {
+    return new URL(raw, baseUrl).toString();
+  } catch (_) {
+    return raw;
+  }
+}
+
+function parseTrNumber(input) {
+  const raw = String(input || "").trim();
+  if (!raw) return null;
+  const normalized = raw
+    .replace(/\./g, "")
+    .replace(/,/g, ".")
+    .replace(/[^0-9.\-]/g, "");
+  const value = Number(normalized);
+  return Number.isFinite(value) ? value : null;
+}
+
+function extractHtmlRows(html = "") {
+  return Array.from(String(html || "").matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)).map((match) => match[1]);
+}
+
+function extractHtmlCells(rowHtml = "") {
+  return Array.from(String(rowHtml || "").matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi))
+    .map((match) => stripHtmlTags(match[1]))
+    .filter(Boolean);
+}
+
+function toSlugTr(value = "") {
+  return normalizeTrText(value)
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function pickMarketTarget(label = "", preferredCrop = "") {
+  const labelNorm = normalizeTrText(label);
+  if (!labelNorm) return null;
+  const preferredKey = cityKey(preferredCrop || "");
+  const orderedTargets = FARM_PRICE_TARGETS.slice().sort((a, b) => {
+    if (a.key === preferredKey) return -1;
+    if (b.key === preferredKey) return 1;
+    return 0;
+  });
+  for (const item of orderedTargets) {
+    if (item.aliases.some((alias) => labelNorm.includes(normalizeTrText(alias)))) {
+      return item;
+    }
+  }
+  return null;
+}
+
+function parseHalRowsFromHtml(html = "", source = {}, preferredCrop = "") {
+  const rows = extractHtmlRows(html);
+  const items = [];
+  rows.forEach((rowHtml) => {
+    const cells = extractHtmlCells(rowHtml);
+    if (cells.length < 2) return;
+    const rawLabel = String(cells[0] || "").trim();
+    const rawKey = normalizeTrText(rawLabel);
+    if (!rawLabel || rawKey.includes("urun") || rawKey.includes("cins") || rawKey.includes("kategori")) return;
+    const unitCell = normalizeTrText(String(cells[1] || ""));
+    if (unitCell && !/(kg|kğ|adet|ad|bag|bağ|demet)/.test(unitCell)) return;
+    const target = pickMarketTarget(rawLabel, preferredCrop);
+    if (!target) return;
+    const numbers = cells
+      .slice(1)
+      .flatMap((cell) => (String(cell).match(/\d{1,3}(?:\.\d{3})*(?:,\d+)?|\d+(?:,\d+)?/g) || []).map(parseTrNumber))
+      .filter((value) => Number.isFinite(value) && value > 0 && value < 5000);
+    if (!numbers.length) return;
+    const minTlKg = Number(Math.min(...numbers).toFixed(2));
+    const maxTlKg = Number(Math.max(...numbers).toFixed(2));
+    const priceTlKg = Number(((minTlKg + maxTlKg) / 2).toFixed(2));
+    items.push({
+      key: target.key,
+      label: target.label,
+      rawLabel,
+      sourceId: source.id || "",
+      sourceTitle: source.title || "",
+      sourceUrl: source.url || "",
+      minTlKg,
+      maxTlKg,
+      priceTlKg,
+      unit: "TL/kg"
+    });
+  });
+  return items;
+}
+
+function buildLiveProduceBoard(items = [], preferredCrop = "") {
+  const grouped = new Map();
+  items.forEach((item) => {
+    const key = cityKey(item?.key || item?.label || "");
+    if (!key) return;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(item);
+  });
+  const preferredKeys = [
+    cityKey(preferredCrop || ""),
+    "domates",
+    "biber",
+    "patates",
+    "sogan",
+    "salatalik",
+    "kabak",
+    "patlican"
+  ].filter(Boolean);
+  const orderedKeys = Array.from(
+    new Set([...preferredKeys, ...Array.from(grouped.keys()).sort((a, b) => (grouped.get(b)?.length || 0) - (grouped.get(a)?.length || 0))])
+  );
+  return orderedKeys
+    .map((key) => {
+      const rows = grouped.get(key) || [];
+      if (!rows.length) return null;
+      const prices = rows.map((row) => Number(row.priceTlKg)).filter((value) => Number.isFinite(value) && value > 0);
+      if (!prices.length) return null;
+      const first = rows[0];
+      const minTlKg = Number(Math.min(...rows.map((row) => Number(row.minTlKg || row.priceTlKg || 0)).filter((v) => v > 0)).toFixed(2));
+      const maxTlKg = Number(Math.max(...rows.map((row) => Number(row.maxTlKg || row.priceTlKg || 0)).filter((v) => v > 0)).toFixed(2));
+      const priceTlKg = Number(medianOf(prices).toFixed(2));
+      const bandPct = priceTlKg > 0 ? Number((((maxTlKg - minTlKg) / priceTlKg) * 100).toFixed(1)) : 0;
+      return {
+        key,
+        label: first.label || first.rawLabel || key,
+        symbol: toTurkishAscii(first.label || first.rawLabel || key).toUpperCase().replace(/[^A-Z0-9]+/g, ""),
+        priceTlKg,
+        minTlKg,
+        maxTlKg,
+        bandPct,
+        sourceCount: rows.length,
+        markets: Array.from(new Set(rows.map((row) => row.sourceTitle).filter(Boolean))).slice(0, 4),
+        unit: "TL/kg"
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 8);
+}
+
+async function fetchLiveHalBoard(preferredCrop = "") {
+  const key = `produce:${cityKey(preferredCrop || "all")}`;
   const cached = marketCache.get(key);
   if (cached && Date.now() - cached.ts < MARKET_CACHE_TTL_MS) return cached.value;
+
+  const results = await Promise.allSettled(
+    LIVE_HAL_MARKET_SOURCES.map(async (source) => {
+      const html = await fetchTextWithRetry(source.url, {}, 1, Math.max(MARKET_FETCH_TIMEOUT_MS, 5000));
+      return { source, items: parseHalRowsFromHtml(html, source, preferredCrop) };
+    })
+  );
+
+  const rawItems = [];
+  const failedSources = [];
+  results.forEach((result, idx) => {
+    if (result.status === "fulfilled") {
+      rawItems.push(...(result.value.items || []));
+    } else {
+      failedSources.push({
+        id: LIVE_HAL_MARKET_SOURCES[idx].id,
+        title: LIVE_HAL_MARKET_SOURCES[idx].title,
+        url: LIVE_HAL_MARKET_SOURCES[idx].url
+      });
+    }
+  });
+
+  const payload = {
+    source: "official-hal-pages",
+    items: buildLiveProduceBoard(rawItems, preferredCrop),
+    rawItems,
+    failedSources,
+    sources: LIVE_HAL_MARKET_SOURCES
+  };
+  marketCache.set(key, { ts: Date.now(), value: payload });
+  return payload;
+}
+
+function pickFuelRow(cells = [], district = "") {
+  const label = String(cells[0] || "").trim();
+  const labelKey = cityKey(label);
+  if (!labelKey || labelKey.includes("ilce") || labelKey.includes("sube")) return null;
+  const prices = cells
+    .slice(1)
+    .flatMap((cell) => (String(cell).match(/\d{1,3}(?:\.\d{3})*(?:,\d+)?|\d+(?:,\d+)?/g) || []).map(parseTrNumber))
+    .filter((value) => Number.isFinite(value) && value > 0 && value < 1000);
+  if (!prices.length) return null;
+  const districtKey = cityKey(district || "");
+  const score = districtKey && labelKey === districtKey ? 3 : districtKey && labelKey.includes(districtKey) ? 2 : 1;
+  return {
+    label,
+    priceTlL: Number(prices[0].toFixed(2)),
+    prices: prices.map((value) => Number(value.toFixed(2))),
+    altPrices: prices.slice(1).map((value) => Number(value.toFixed(2))),
+    score
+  };
+}
+
+function extractAytemizFuelRows(html = "", district = "") {
+  const tableHtml =
+    String(html || "").match(/<table[^>]*id=fuel-price-table[\s\S]*?<\/table>/i)?.[0] || String(html || "");
+  return Array.from(tableHtml.matchAll(/<tr\b[^>]*>([\s\S]*?)(?=<tr\b|<\/table>)/gi))
+    .map((match) => {
+      const rowHtml = String(match[1] || "").replace(/&#\d+;/g, " ");
+      const label =
+        stripHtmlTags(rowHtml.match(/<div[^>]*>([\s\S]*?)<\/div>/i)?.[1] || rowHtml.match(/<td[^>]*>([\s\S]*?)(?=<td|$)/i)?.[1] || "");
+      const rowTextWithoutLabel = stripHtmlTags(rowHtml.replace(/<td[^>]*>\s*(?:<div[^>]*>)?[\s\S]*?(?:<\/div>)?(?=<td|$)/i, " "));
+      const numericMatches = rowTextWithoutLabel.match(/\d{1,3}(?:\.\d{3})*(?:,\d+)?|\d+(?:,\d+)?/g) || [];
+      const pseudoCells = [label, ...numericMatches];
+      return pickFuelRow(pseudoCells, district);
+    })
+    .filter(Boolean)
+    .sort((a, b) => (b.score || 0) - (a.score || 0));
+}
+
+async function fetchAytemizFuelPrices(city = "", district = "") {
+  const citySlug = toSlugTr(city);
+  if (!citySlug) {
+    return { source: "aytemiz", items: [], warnings: ["fuel_city_missing"] };
+  }
+  const results = await Promise.allSettled(
+    FUEL_SOURCE_TEMPLATES.map(async (fuelType) => {
+      const url = fuelType.url(citySlug);
+      const html = await fetchTextWithRetry(url, {}, 1, 6500);
+      const rows = extractAytemizFuelRows(html, district);
+      const best = rows[0];
+      if (!best) return null;
+      const prices = Array.isArray(best.prices) ? best.prices : [best.priceTlL, ...(best.altPrices || [])];
+      const pickedPrice = Number(
+        prices[fuelType.priceColumnIndex] || prices[0] || best.priceTlL || 0
+      );
+      return {
+        key: fuelType.key,
+        label: fuelType.label,
+        unit: fuelType.unit,
+        priceTlL: Number(pickedPrice.toFixed(2)),
+        district: best.label,
+        city,
+        source: "aytemiz",
+        sourceTitle: "Aytemiz Akaryakit Fiyatlari",
+        sourceUrl: url
+      };
+    })
+  );
+  const items = [];
+  const warnings = [];
+  results.forEach((result, idx) => {
+    if (result.status === "fulfilled" && result.value) {
+      items.push(result.value);
+    } else {
+      warnings.push(`fuel_${FUEL_SOURCE_TEMPLATES[idx].key}_unavailable`);
+    }
+  });
+  return { source: "aytemiz", items, warnings };
+}
+
+async function fetchMarketLiveIntel({ city = "Malatya", district = "", crop = "" } = {}) {
+  const cacheKey = `live:${cityKey(city)}:${cityKey(district)}:${cityKey(crop)}`;
+  const cached = marketCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < MARKET_CACHE_TTL_MS) return cached.value;
+
+  const [produceResult, fuelResult] = await Promise.allSettled([
+    fetchLiveHalBoard(crop),
+    fetchAytemizFuelPrices(city, district)
+  ]);
+  const produce = produceResult.status === "fulfilled"
+    ? produceResult.value
+    : { source: "official-hal-pages", items: [], failedSources: LIVE_HAL_MARKET_SOURCES, sources: LIVE_HAL_MARKET_SOURCES };
+  const fuel = fuelResult.status === "fulfilled"
+    ? fuelResult.value
+    : { source: "aytemiz", items: [], warnings: ["fuel_fetch_failed"] };
+  const warnings = [
+    ...(Array.isArray(produce?.failedSources) && produce.failedSources.length ? ["produce_sources_partial"] : []),
+    ...(fuel?.warnings || [])
+  ];
+  const payload = {
+    updatedAt: new Date().toISOString(),
+    city,
+    district: district || null,
+    crop: crop || null,
+    live: Boolean((Array.isArray(produce?.items) && produce.items.length) || (Array.isArray(fuel?.items) && fuel.items.length)),
+    board: Array.isArray(produce?.items) ? produce.items : [],
+    produce: {
+      items: Array.isArray(produce?.items) ? produce.items : [],
+      source: produce?.source || "official-hal-pages",
+      failedSources: produce?.failedSources || []
+    },
+    fuel: {
+      items: Array.isArray(fuel?.items) ? fuel.items : [],
+      source: fuel?.source || "aytemiz"
+    },
+    sources: [
+      ...LIVE_HAL_MARKET_SOURCES.map((source) => ({ id: source.id, title: source.title, url: source.url })),
+      { id: "aytemiz-fuel", title: "Aytemiz Akaryakit Fiyatlari", url: "https://www.aytemiz.com.tr/akaryakit-fiyatlari" }
+    ],
+    warnings
+  };
+  marketCache.set(cacheKey, { ts: Date.now(), value: payload });
+  return payload;
+}
+
+async function fetchMarketPrices(city, crop = "") {
+  const key = `${city.toLowerCase()}|${cityKey(crop)}`;
+  const cached = marketCache.get(key);
+  if (cached && Date.now() - cached.ts < MARKET_CACHE_TTL_MS) return cached.value;
+
+  try {
+    const live = await fetchLiveHalBoard(crop);
+    if (Array.isArray(live?.items) && live.items.length) {
+      const payload = {
+        source: live.source,
+        items: live.items.map((item) => ({
+          crop: item.key,
+          label: item.label,
+          unit: item.unit,
+          price: `${Number(item.minTlKg || item.priceTlKg || 0).toFixed(2)} - ${Number(item.maxTlKg || item.priceTlKg || 0).toFixed(2)}`
+        }))
+      };
+      marketCache.set(key, { ts: Date.now(), value: payload });
+      return payload;
+    }
+  } catch (_) {
+    // fall through to legacy city scraping
+  }
 
   const url = MARKET_SOURCES[key];
   if (!url) return { source: "none", items: [] };
 
   let html = "";
   try {
-    html = await fetch(url).then((r) => r.text());
+    html = await fetchTextWithRetry(url, {}, 0, MARKET_FETCH_TIMEOUT_MS);
   } catch (err) {
-    return { source: "error", items: [] };
+    const fallback = { source: "error", items: [] };
+    marketCache.set(key, { ts: Date.now(), value: fallback });
+    return fallback;
   }
 
   const items = [];
@@ -3594,6 +11275,43 @@ function cityKey(value = "") {
     .replace(/ü/g, "u")
     .replace(/[^a-z0-9]+/g, "")
     .trim();
+}
+
+function toTurkishAscii(value = "") {
+  return String(value || "")
+    .trim()
+    .replace(/Ç/g, "C")
+    .replace(/Ğ/g, "G")
+    .replace(/İ/g, "I")
+    .replace(/I/g, "I")
+    .replace(/Ö/g, "O")
+    .replace(/Ş/g, "S")
+    .replace(/Ü/g, "U")
+    .replace(/ç/g, "c")
+    .replace(/ğ/g, "g")
+    .replace(/ı/g, "i")
+    .replace(/i̇/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ş/g, "s")
+    .replace(/ü/g, "u");
+}
+
+function toTurkishTitleCase(value = "") {
+  return String(value || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) =>
+      part
+        .split("-")
+        .map((token) => {
+          const lower = token.toLocaleLowerCase("tr-TR");
+          if (!lower) return "";
+          return lower.charAt(0).toLocaleUpperCase("tr-TR") + lower.slice(1);
+        })
+        .join("-")
+    )
+    .join(" ");
 }
 
 function cropFactorFromKey(crop = "") {
@@ -4016,10 +11734,23 @@ function trainLandPriceLinearModel(samples = [], featureSize = 0, options = {}) 
 function trainLandPriceModelAuto(samples = [], featureSize = 0, options = {}) {
   const rows = cleanLandTrainingRows(samples, { strict: Boolean(options?.strict) });
   if (!rows.length) return null;
-  const candidates = [
-    { name: "stable", epochs: 1800, lr: 0.016, lambda: 0.0016, huberDelta: 0.09, patience: 280, valRatio: 0.2 },
-    { name: "balanced", epochs: 2200, lr: 0.014, lambda: 0.0019, huberDelta: 0.1, patience: 340, valRatio: 0.22 }
-  ];
+  const quick = Boolean(options?.quick);
+  const candidates = quick
+    ? [
+        {
+          name: "fast",
+          epochs: 420,
+          lr: 0.02,
+          lambda: 0.0015,
+          huberDelta: 0.1,
+          patience: 90,
+          valRatio: 0.18
+        }
+      ]
+    : [
+        { name: "stable", epochs: 1800, lr: 0.016, lambda: 0.0016, huberDelta: 0.09, patience: 280, valRatio: 0.2 },
+        { name: "balanced", epochs: 2200, lr: 0.014, lambda: 0.0019, huberDelta: 0.1, patience: 340, valRatio: 0.22 }
+      ];
   let best = null;
   candidates.forEach((cfg) => {
     const trained = trainLandPriceLinearModel(rows, featureSize, cfg);
@@ -5207,14 +12938,21 @@ function normalizeTradeListing(item = {}) {
     return allowed.includes(val) ? val : fallback;
   };
   const id = String(item.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+  const categoryRaw = String(item.category || (item.areaDa || item.zoning || item.parcel ? "land" : "crop")).toLowerCase();
+  const category = categoryRaw === "land" ? "land" : "crop";
   const typeRaw = String(item.type || "sell").toLowerCase();
   const type = typeRaw === "buy" ? "buy" : "sell";
   const statusRaw = String(item.status || "open").toLowerCase();
   const status = ["open", "closed", "paused"].includes(statusRaw) ? statusRaw : "open";
-  const quantityKg = Number(item.quantityKg || 0);
-  const priceTlKg = Number(item.priceTlKg || 0);
+  const areaDa = Number(item.areaDa || 0);
+  const priceTlDa = Number(item.priceTlDa || 0);
+  const quantityKg = Number(item.quantityKg || (category === "land" ? areaDa : 0));
+  const priceTlKg = Number(item.priceTlKg || (category === "land" ? priceTlDa : 0));
+  const zoning = String(item.zoning || "").trim() || null;
+  const parcel = String(item.parcel || "").trim() || null;
   return {
     id,
+    category,
     type,
     status,
     city: String(item.city || "").trim(),
@@ -5223,6 +12961,10 @@ function normalizeTradeListing(item = {}) {
     title: String(item.title || "").trim() || null,
     quantityKg: Number.isFinite(quantityKg) && quantityKg > 0 ? Number(quantityKg.toFixed(2)) : 0,
     priceTlKg: Number.isFinite(priceTlKg) && priceTlKg > 0 ? Number(priceTlKg.toFixed(2)) : 0,
+    areaDa: Number.isFinite(areaDa) && areaDa > 0 ? Number(areaDa.toFixed(2)) : 0,
+    priceTlDa: Number.isFinite(priceTlDa) && priceTlDa > 0 ? Number(priceTlDa.toFixed(2)) : 0,
+    zoning,
+    parcel,
     deliveryType: normEnum(item.deliveryType, ["pickup", "seller_delivery", "cargo", "broker"], "pickup"),
     paymentType: normEnum(item.paymentType, ["cash", "transfer", "term", "escrow", "card"], "transfer"),
     qualityGrade: normEnum(item.qualityGrade, ["premium", "standard", "mixed", "processing"], "standard"),
@@ -6572,9 +14314,34 @@ function getLiveListingUrls({ city, district, neighborhood, crop }) {
   return Array.from(new Set(urls)).slice(0, Math.max(1, LAND_DISCOVERY_MAX_SOURCES));
 }
 
-async function fetchLiveLandListings({ city, district, neighborhood, crop, source = "" }) {
-  let urls = getLiveListingUrls({ city, district, neighborhood, crop });
-  const discoveryUrls = getLandInternetSearchUrls({ city, district, neighborhood, crop });
+async function fetchLiveLandListings({
+  city,
+  district,
+  neighborhood,
+  crop,
+  source = "",
+  fastMode = false,
+  timeoutMs = LAND_DISCOVERY_TIMEOUT_MS,
+  maxSources = LAND_DISCOVERY_MAX_SOURCES,
+  allowDeepScan = true
+}) {
+  const perSourceTimeoutMs = Math.max(1200, Number(timeoutMs || LAND_DISCOVERY_TIMEOUT_MS));
+  const retries = fastMode ? 0 : 1;
+  const sourceCap = Math.max(
+    1,
+    Math.min(
+      20,
+      Number(
+        maxSources ||
+          (fastMode ? LAND_DISCOVERY_FAST_MAX_SOURCES : LAND_DISCOVERY_MAX_SOURCES)
+      )
+    )
+  );
+  let urls = getLiveListingUrls({ city, district, neighborhood, crop }).slice(0, sourceCap);
+  const discoveryUrls = getLandInternetSearchUrls({ city, district, neighborhood, crop }).slice(
+    0,
+    sourceCap
+  );
   if (source) {
     const src = String(source).toLowerCase();
     urls = urls.filter((url) => url.toLowerCase().includes(src));
@@ -6593,8 +14360,8 @@ async function fetchLiveLandListings({ city, district, neighborhood, crop, sourc
             Referer: "https://www.google.com/"
           }
         },
-        1,
-        LAND_DISCOVERY_TIMEOUT_MS
+        retries,
+        perSourceTimeoutMs
       ).then((text) => ({ url, text }))
     )
   );
@@ -6617,7 +14384,13 @@ async function fetchLiveLandListings({ city, district, neighborhood, crop, sourc
   });
 
   const firstPass = dedupeListingSignals(items);
-  if (firstPass.length >= 8 || !discoveryUrls.length) {
+  if (firstPass.length >= (fastMode ? 3 : 8) || !discoveryUrls.length) {
+    return {
+      items: firstPass.slice(0, 120),
+      scannedSources
+    };
+  }
+  if (!allowDeepScan) {
     return {
       items: firstPass.slice(0, 120),
       scannedSources
@@ -6637,8 +14410,8 @@ async function fetchLiveLandListings({ city, district, neighborhood, crop, sourc
             Referer: "https://www.google.com/"
           }
         },
-        1,
-        LAND_DISCOVERY_TIMEOUT_MS
+        retries,
+        perSourceTimeoutMs
       ).then((text) => ({ url, text }))
     )
   );
@@ -6654,8 +14427,10 @@ async function fetchLiveLandListings({ city, district, neighborhood, crop, sourc
   });
 
   let deduped = dedupeListingSignals(items);
-  if (deduped.length < 6) {
-    const docs = await fetchSearchResultDocuments({ city, district, neighborhood, crop }, 12).catch(() => []);
+  if (!fastMode && deduped.length < 6) {
+    const docs = await fetchSearchResultDocuments({ city, district, neighborhood, crop }, 12).catch(
+      () => []
+    );
     docs.forEach(({ url, text }) => {
       const extracted = dedupeListingSignals(
         (url.includes("emlakjet.com") ? extractEmlakjetListingsFromText(text, url) : [])
@@ -6960,11 +14735,31 @@ function summarizeMoneySignals(signals) {
   };
 }
 
-async function fetchLandPriceFromInternet({ city, district, neighborhood, crop }) {
+async function fetchLandPriceFromInternet({
+  city,
+  district,
+  neighborhood,
+  crop,
+  fastMode = LAND_PRICE_FAST_MODE_DEFAULT
+}) {
   if (!LAND_DISCOVERY_ENABLED) return null;
   let liveListings = null;
   try {
-    liveListings = await fetchLiveLandListings({ city, district, neighborhood, crop });
+    liveListings = await runWithTimeoutFallback(
+      () =>
+        fetchLiveLandListings({
+          city,
+          district,
+          neighborhood,
+          crop,
+          fastMode: Boolean(fastMode),
+          timeoutMs: fastMode ? LAND_DISCOVERY_FAST_TIMEOUT_MS : LAND_DISCOVERY_TIMEOUT_MS,
+          maxSources: fastMode ? LAND_DISCOVERY_FAST_MAX_SOURCES : LAND_DISCOVERY_MAX_SOURCES,
+          allowDeepScan: !fastMode
+        }),
+      LAND_PRICE_INTERNET_BUDGET_MS,
+      null
+    );
   } catch (err) {
     liveListings = null;
   }
@@ -6988,6 +14783,7 @@ async function fetchLandPriceFromInternet({ city, district, neighborhood, crop }
       confidenceScore: Number(conf.toFixed(3))
     };
   }
+  if (fastMode) return null;
 
   const urls = getLandInternetSearchUrls({ city, district, neighborhood, crop });
   if (!urls.length) return null;
@@ -7240,8 +15036,16 @@ async function buildLandMlPrediction({
     plantedCrop,
     plantedValueTlDa
   });
-  const remotePromise = fetchLandPriceFromApis({ city, district, neighborhood, crop, lat: lat || "", lon: lon || "" });
-  const internetPromise = fetchLandPriceFromInternet({ city, district, neighborhood, crop });
+  const remotePromise = runWithTimeoutFallback(
+    () => fetchLandPriceFromApis({ city, district, neighborhood, crop, lat: lat || "", lon: lon || "" }),
+    LAND_PRICE_REMOTE_BUDGET_MS,
+    null
+  );
+  const internetPromise = runWithTimeoutFallback(
+    () => fetchLandPriceFromInternet({ city, district, neighborhood, crop, fastMode: true }),
+    LAND_PRICE_INTERNET_BUDGET_MS,
+    null
+  );
   const modelPromise = estimateLandPrice({ city, district, neighborhood, crop });
   const manualSummary = buildManualLandSignal({ city, district, neighborhood, crop });
   const comparableSummary = buildComparableLandSignal({ city, district, neighborhood, crop });
@@ -7259,7 +15063,10 @@ async function buildLandMlPrediction({
 
   const manualScoped = queryLandListings({ city, district, neighborhood, crop });
   const manualCityCrop = queryLandListings({ city, district: "", neighborhood: "", crop });
-  const manualPoolMax = Math.max(1500, Math.min(9000, Number(process.env.LAND_ML_MANUAL_POOL_MAX || 6000)));
+  const manualPoolMax = Math.max(
+    350,
+    Math.min(2400, Number(process.env.LAND_ML_MANUAL_POOL_MAX || 1200))
+  );
   const manualAll = buildBalancedManualTrainingPool(landManualListings, manualPoolMax);
   const manualRowsScoped = listingRowsToTrainingRows(
     manualScoped,
@@ -7410,13 +15217,38 @@ async function buildLandMlPrediction({
     };
   }
 
-  const featureSize = allRows[0].x.length;
-  const trained = trainLandPriceModelAuto(allRows, featureSize);
+  const inferTrainCap = Math.max(
+    350,
+    Math.min(2600, Number(process.env.LAND_ML_INFER_MAX_ROWS || 1200))
+  );
+  const sourcePriority = (source = "") => {
+    const key = String(source || "").toLowerCase();
+    if (key === "geoKnn" || key === "geoknn") return 9;
+    if (key === "manual-scoped") return 8;
+    if (key === "remote" || key === "api-consensus") return 7;
+    if (key === "comparable") return 6;
+    if (key === "internet" || key === "live-listings") return 5;
+    if (key === "manual-city-crop") return 4;
+    if (key === "manual-all") return 3;
+    if (key === "synthetic" || key === "synthetic-augment-v2") return 1;
+    return 2;
+  };
+  const trainRows = allRows
+    .slice()
+    .sort(
+      (a, b) =>
+        sourcePriority(b?.source) - sourcePriority(a?.source) ||
+        Number(b?.weight || 0) - Number(a?.weight || 0)
+    )
+    .slice(0, inferTrainCap);
+  const featureSize = trainRows[0].x.length;
+  const trained = trainLandPriceModelAuto(trainRows, featureSize, { quick: true });
   if (!trained?.weights) {
     return {
       ml: null,
       training: {
-        sampleCount: allRows.length,
+        sampleCount: trainRows.length,
+        rawSampleCount: allRows.length,
         cleanedCount: allRowsClean.length,
         droppedOutliers: allRowsPruned.dropped
       },
@@ -7434,19 +15266,22 @@ async function buildLandMlPrediction({
   }
   const inputFeatures = buildLandFeatureVector(input);
   let predTlDa = Math.exp(dot(trained?.weights || [], inputFeatures.vector));
-  const trainMin = Math.min(...allRows.map((x) => x.price));
-  const trainMax = Math.max(...allRows.map((x) => x.price));
+  const trainMin = Math.min(...trainRows.map((x) => x.price));
+  const trainMax = Math.max(...trainRows.map((x) => x.price));
   predTlDa = Math.max(trainMin * 0.7, Math.min(trainMax * 1.25, predTlDa));
   const rmse = Number(trained?.metrics?.rmse || 0);
   const mae = Number(trained?.metrics?.mae || 0);
   const r2 = Number(trained?.metrics?.r2 || 0);
-  const meanTrain = allRows.reduce((acc, x) => acc + x.price, 0) / allRows.length;
+  const meanTrain = trainRows.reduce((acc, x) => acc + x.price, 0) / trainRows.length;
   const relErr = meanTrain > 0 ? rmse / meanTrain : 1;
   const confidenceScore = Math.max(
     0.35,
     Math.min(
-      0.93,
-      0.74 - relErr * 0.9 + Math.min(0.12, Math.log10(allRows.length + 1) * 0.06) + (localSignalRows.length >= 2 ? 0.06 : 0)
+      0.92,
+      0.72 -
+        relErr * 0.9 +
+        Math.min(0.1, Math.log10(trainRows.length + 1) * 0.05) +
+        (localSignalRows.length >= 2 ? 0.06 : 0)
     )
   );
   const minTlDa = Math.round(predTlDa * (1 - Math.min(0.22, relErr + 0.06)));
@@ -7471,7 +15306,8 @@ async function buildLandMlPrediction({
       trendSignal: trendSignal || null
     },
     training: {
-      sampleCount: allRows.length,
+      sampleCount: trainRows.length,
+      rawSampleCount: allRows.length,
       cleanedCount: allRowsClean.length,
       droppedOutliers: allRowsPruned.dropped,
       manualCount: manualRows.length,
@@ -7954,12 +15790,12 @@ app.get("/api/weather", async (req, res) => {
   const neighborhood = (req.query.neighborhood || "").toString().trim();
   const requestLocationLabel = buildLocationSearchQuery(city, district, neighborhood) || city;
   const coords = (req.query.coords || "").toString();
-  const buildWeatherFallback = (reason, coordsValue = coords || null) => ({
-    ...buildDemoWeather(city, coordsValue, reason),
-    district: district || null,
-    neighborhood: neighborhood || null,
-    locationLabel: requestLocationLabel
-  });
+  const buildWeatherFallback = (reason, coordsValue = coords || null) =>
+    buildUnavailableWeather(city, coordsValue, reason, {
+      district: district || null,
+      neighborhood: neighborhood || null,
+      locationLabel: requestLocationLabel
+    });
   const [lat, lon] = coords.split(",").map((item) => item.trim());
   const apiKey = process.env.OPENWEATHER_API_KEY;
   const cacheKey = coords ? coords : buildLocationSearchQuery(city, district, neighborhood).toLowerCase();
@@ -7985,8 +15821,7 @@ app.get("/api/weather", async (req, res) => {
       if (!weather) {
         const stale = getAnyCacheEntry(weatherCache, cacheKey);
         if (stale) return res.json({ ...stale, source: "stale-cache", warning: "weather_fetch_failed" });
-        return res.json({
-          ...buildDemoWeather(resolved.name || city, `${resolved.lat}, ${resolved.lon}`, "weather_fetch_failed"),
+        return res.json(buildUnavailableWeather(resolved.name || city, `${resolved.lat}, ${resolved.lon}`, "weather_fetch_failed", {
           district: resolved.district || district || null,
           neighborhood: resolved.neighborhood || neighborhood || null,
           locationLabel:
@@ -7995,12 +15830,15 @@ app.get("/api/weather", async (req, res) => {
               resolved.district || district,
               resolved.neighborhood || neighborhood
             ) || requestLocationLabel
-        });
+        }));
       }
       const payload = {
         city: resolved.name || city,
         district: resolved.district || district || null,
         neighborhood: resolved.neighborhood || neighborhood || null,
+        live: true,
+        geoSource: resolved.geoSource || "open-meteo-geocode",
+        scopeLevel: resolved.neighborhood || neighborhood ? "neighborhood" : resolved.district || district ? "district" : "city",
         locationLabel:
           buildLocationSearchQuery(
             resolved.name || city,
@@ -8033,6 +15871,8 @@ app.get("/api/weather", async (req, res) => {
       city: data.name || city,
       district: district || null,
       neighborhood: neighborhood || null,
+      geoSource: lat && lon ? "query" : "openweather-city",
+      scopeLevel: district ? "district" : "city",
       locationLabel: requestLocationLabel,
       coords: lat && lon ? `${lat}, ${lon}` : null,
       temp: data.main?.temp ?? null,
@@ -8040,6 +15880,7 @@ app.get("/api/weather", async (req, res) => {
       tempMax: data.main?.temp_max ?? null,
       humidity: data.main?.humidity ?? null,
       windKmh: data.wind?.speed ? Math.round(data.wind.speed * 3.6) : null,
+      cloudCoverPct: typeof data.clouds?.all === "number" ? Number(data.clouds.all) : null,
       condition: data.weather?.[0]?.description || "unknown",
       frostRisk: typeof tempMin === "number" ? tempMin <= 0 : false,
       localTime: data.dt ? new Date((data.dt + (data.timezone || 0)) * 1000).toISOString() : null,
@@ -8219,9 +16060,26 @@ const referenceSources = [
 ];
 
 const AGRI_NEWS_FEEDS = [
-  { id: "tarimorman", title: "Tarim ve Orman Bakanligi Haberleri", url: "https://www.tarimorman.gov.tr/Sayfalar/RSS.aspx" },
-  { id: "tarimorman-duyurular", title: "Tarim ve Orman Bakanligi Duyurular", url: "https://www.tarimorman.gov.tr/Sayfalar/DuyuruArsiv.aspx?Liste=1" },
-  { id: "dunya-tarim", title: "Dunya Tarim", url: "https://www.dunya.com/rss/tarim" }
+  {
+    id: "trt-ekonomi-rss",
+    title: "TRT Haber Ekonomi",
+    type: "rss",
+    url: "https://www.trthaber.com/ekonomi_articles.rss"
+  },
+  {
+    id: "aa-yesilhat-tarim",
+    title: "AA Yesilhat Tarim",
+    type: "html",
+    parser: "aa-yesilhat",
+    url: "https://www.aa.com.tr/tr/yesilhat/tarim"
+  },
+  {
+    id: "tarim-istatistik",
+    title: "Tarim ve Orman Istatistik Portali",
+    type: "html",
+    parser: "tarim-istatistik",
+    url: "https://istatistik.tarimorman.gov.tr/"
+  }
 ];
 
 const AGRI_NEWS_KEYWORDS = [
@@ -8241,6 +16099,11 @@ const AGRI_NEWS_KEYWORDS = [
   "kuraklik",
   "toprak",
   "uretim",
+  "destek",
+  "hibe",
+  "mazot",
+  "motorin",
+  "akaryakit",
   "hal fiyat",
   "piyasa",
   "hububat",
@@ -8270,9 +16133,11 @@ function computeAgriNewsScore(item = {}) {
   AGRI_NEWS_KEYWORDS.forEach((kw) => {
     if (text.includes(normalizeTrText(kw))) score += 1;
   });
-  if (item.feedId === "tarimorman") score += 3;
-  if (item.feedId === "dunya-tarim") score += 2;
-  if (item.feedId === "tarimorman-duyurular") score += 2;
+  if (item.feedId === "aa-yesilhat-tarim") score += 4;
+  if (item.feedId === "tarim-istatistik") score += 4;
+  if (item.feedId === "trt-ekonomi-rss") score += 2;
+  if (text.includes("tarim")) score += 2;
+  if (text.includes("ciftci") || text.includes("uretici")) score += 2;
   return score;
 }
 
@@ -8282,7 +16147,15 @@ function decodeXmlEntities(text = "") {
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
+    .replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (_, code) => {
+      const value = Number(code);
+      return Number.isFinite(value) ? String.fromCharCode(value) : _;
+    })
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => {
+      const value = Number.parseInt(code, 16);
+      return Number.isFinite(value) ? String.fromCharCode(value) : _;
+    });
 }
 
 function parseRssItems(xml = "", limit = 12) {
@@ -8326,6 +16199,107 @@ function parseFeedItems(xml = "", limit = 12) {
   const rss = parseRssItems(xml, limit);
   if (rss.length) return rss;
   return parseAtomItems(xml, limit);
+}
+
+function getNewsTimestamp(item = {}) {
+  const ts = new Date(item.pubDate || item.observedAt || 0).getTime();
+  return Number.isFinite(ts) ? ts : 0;
+}
+
+function extractHtmlAnchors(html = "") {
+  return Array.from(String(html || "").matchAll(/<a\b[^>]*href=(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi)).map((match) => ({
+    href: match[2],
+    text: stripHtmlTags(match[3]),
+    index: match.index || 0
+  }));
+}
+
+function parseAaYesilhatItems(html = "", limit = 8) {
+  const observedAt = new Date().toISOString();
+  const unique = new Map();
+  extractHtmlAnchors(html)
+    .filter((item) => String(item.href || "").includes("/tr/yesilhat/tarim/"))
+    .forEach((item) => {
+      const title = stripHtmlTags(item.text || "");
+      if (!title || title.length < 20) return;
+      const link = ensureAbsoluteUrl(item.href, "https://www.aa.com.tr");
+      const context = String(html || "").slice(item.index, item.index + 900);
+      const description = stripHtmlTags(context).replace(title, "").slice(0, 220).trim();
+      const key = `${link}|${title}`;
+      if (!unique.has(key)) {
+        unique.set(key, {
+          title,
+          link,
+          description,
+          observedAt
+        });
+      }
+    });
+  return Array.from(unique.values()).slice(0, limit);
+}
+
+function parseTarimStatsItems(html = "", limit = 8) {
+  const observedAt = new Date().toISOString();
+  const unique = new Map();
+  const keywords = [
+    "tarim",
+    "istatistik",
+    "rapor",
+    "bulten",
+    "bitkisel",
+    "hayvansal",
+    "uretim",
+    "destek",
+    "fiyat",
+    "endeks"
+  ];
+  extractHtmlAnchors(html).forEach((item) => {
+    const title = stripHtmlTags(item.text || "");
+    const titleNorm = normalizeTrText(title);
+    if (!title || title.length < 12) return;
+    if (!keywords.some((kw) => titleNorm.includes(kw))) return;
+    const link = ensureAbsoluteUrl(item.href, "https://istatistik.tarimorman.gov.tr/");
+    const context = String(html || "").slice(item.index, item.index + 700);
+    const description = stripHtmlTags(context).replace(title, "").slice(0, 220).trim();
+    const key = `${link}|${title}`;
+    if (!unique.has(key)) {
+      unique.set(key, {
+        title,
+        link,
+        description,
+        observedAt
+      });
+    }
+  });
+  return Array.from(unique.values()).slice(0, limit);
+}
+
+async function fetchAgriNewsFeedItems(feed, limit) {
+  const text = await fetchTextWithRetry(
+    feed.url,
+    {
+      headers:
+        feed.type === "rss"
+          ? { accept: "application/rss+xml,application/xml,text/xml,*/*" }
+          : { accept: "text/html,application/xhtml+xml,*/*" }
+    },
+    1,
+    7000
+  );
+  let items = [];
+  if (feed.type === "rss") {
+    items = parseFeedItems(text, limit);
+  } else if (feed.parser === "aa-yesilhat") {
+    items = parseAaYesilhatItems(text, limit);
+  } else if (feed.parser === "tarim-istatistik") {
+    items = parseTarimStatsItems(text, limit);
+  }
+  return items.map((item) => ({
+    ...item,
+    feedId: feed.id,
+    feedTitle: feed.title,
+    observedAt: item.observedAt || new Date().toISOString()
+  }));
 }
 
 async function probeIntegrationUrl({ id, title, url, timeoutMs = 6500 }) {
@@ -8404,6 +16378,138 @@ app.get("/api/integrations/health", async (req, res) => {
   return res.json(payload);
 });
 
+app.get("/api/hackhaton/model-suite", (req, res) => {
+  const city = String(req.query.city || "Malatya").trim();
+  const district = String(req.query.district || "").trim();
+  const neighborhood = String(req.query.neighborhood || req.query.mahalle || "").trim();
+  const payload = buildHackhatonModelSuitePayload({ city, district, neighborhood });
+  if (!payload?.available) {
+    return res.status(404).json(payload);
+  }
+  return res.json(payload);
+});
+
+app.get("/api/hackhaton/dashboard", (req, res) => {
+  const city = String(req.query.city || "Malatya").trim();
+  const district = String(req.query.district || "").trim();
+  const neighborhood = String(req.query.neighborhood || req.query.mahalle || "").trim();
+  const payload = buildHackhatonDashboardPayload({ city, district, neighborhood });
+  if (!payload?.available) {
+    return res.status(404).json(payload);
+  }
+  return res.json(payload);
+});
+
+app.get("/api/irrigation/calendar", async (req, res) => {
+  const city = String(req.query.city || "Malatya").trim();
+  const district = String(req.query.district || "").trim();
+  const neighborhood = String(req.query.neighborhood || req.query.mahalle || "").trim();
+  const coords = String(req.query.coords || "").trim();
+  const crop = String(req.query.crop || "domates").trim();
+  const plantingDate = String(req.query.plantingDate || "").trim();
+  const areaHa = Number(req.query.areaHa || 1);
+  const efficiency = req.query.efficiency == null ? null : Number(req.query.efficiency);
+  const method = String(req.query.method || "damla").trim();
+  const waterSource = String(req.query.waterSource || "baraj_kanal").trim();
+  const horizonDays = Number(req.query.horizonDays || 14);
+  const strictLive = String(req.query.strictLive || "1").toLowerCase() !== "0";
+  const seasonPlan = String(req.query.seasonPlan || "1").toLowerCase() !== "0";
+
+  const payload = await buildIrrigationCalendarPayload({
+    city,
+    district,
+    neighborhood,
+    coords,
+    crop,
+    plantingDate,
+    areaHa,
+    efficiency,
+    method,
+    waterSource,
+    horizonDays,
+    strictLive,
+    seasonPlan
+  });
+  if (!payload?.available) {
+    return res.status(404).json(payload);
+  }
+  return res.json(payload);
+});
+
+app.get("/api/climate/anomaly-intel", async (req, res) => {
+  const city = String(req.query.city || "Malatya").trim();
+  const district = String(req.query.district || "").trim();
+  const neighborhood = String(req.query.neighborhood || req.query.mahalle || "").trim();
+  const variable = String(req.query.variable || "all").trim();
+  const date = String(req.query.date || "").trim();
+  const crop = String(req.query.crop || "domates").trim();
+  const limit = Number(req.query.limit || 10);
+  const payload = await buildClimateAnomalyIntelPayload({
+    city,
+    district,
+    neighborhood,
+    variable,
+    date,
+    crop,
+    limit
+  });
+  if (!payload?.available) {
+    return res.status(404).json(payload);
+  }
+  return res.json(payload);
+});
+
+app.post("/api/agrobot/chat", async (req, res) => {
+  const body = req.body && typeof req.body === "object" ? req.body : {};
+  const message = String(body.message || "").trim();
+  if (!message) {
+    return res.status(400).json({ error: "message_required" });
+  }
+  const city = String(body.city || "Malatya").trim() || "Malatya";
+  const district = String(body.district || "").trim();
+  const neighborhood = String(body.neighborhood || body.mahalle || "").trim();
+  const plant = String(body.plant || body.selectedPlant || "").trim();
+  const crop = String(body.crop || "").trim();
+  try {
+    const payload = await buildAgrobotChatPayload({
+      message,
+      city,
+      district,
+      neighborhood,
+      plant,
+      crop,
+      weather: body.weather && typeof body.weather === "object" ? body.weather : null,
+      soilReport: body.soilReport && typeof body.soilReport === "object" ? body.soilReport : null,
+      diagnosisPack: body.diagnosis && typeof body.diagnosis === "object" ? body.diagnosis : null,
+      actionPlan: body.actionPlan && typeof body.actionPlan === "object" ? body.actionPlan : null
+    });
+    return res.json(payload);
+  } catch (err) {
+    return res.status(500).json({
+      error: "agrobot_chat_failed",
+      detail: String(err?.message || err || "unknown_error")
+    });
+  }
+});
+
+app.get("/api/hackhaton/file", (req, res) => {
+  const file = String(req.query.file || "").trim();
+  const absPath = resolveHackhatonOutputFile(file);
+  if (!absPath) {
+    return res.status(404).json({ error: "hackhaton_file_not_found" });
+  }
+  return res.sendFile(absPath);
+});
+
+app.get("/api/hackhaton/root-file", (req, res) => {
+  const file = String(req.query.file || "").trim();
+  const absPath = resolveHackhatonRootFile(file);
+  if (!absPath) {
+    return res.status(404).json({ error: "hackhaton_root_file_not_found" });
+  }
+  return res.sendFile(absPath);
+});
+
 app.get("/api/news", async (req, res) => {
   const perFeed = Math.max(3, Math.min(15, Number(req.query.perFeed || 6)));
   const limit = Math.max(5, Math.min(40, Number(req.query.limit || 20)));
@@ -8414,15 +16520,7 @@ app.get("/api/news", async (req, res) => {
     return res.json({ ...cached.value, source: "cache" });
   }
   const responses = await Promise.allSettled(
-    AGRI_NEWS_FEEDS.map(async (feed) => {
-      const xml = await fetchTextWithRetry(feed.url, {}, 1, 7000);
-      const items = parseFeedItems(xml, perFeed).map((item) => ({
-        ...item,
-        feedId: feed.id,
-        feedTitle: feed.title
-      }));
-      return { feed, items };
-    })
+    AGRI_NEWS_FEEDS.map(async (feed) => ({ feed, items: await fetchAgriNewsFeedItems(feed, perFeed) }))
   );
   const items = [];
   const failedFeeds = [];
@@ -8438,21 +16536,28 @@ app.get("/api/news", async (req, res) => {
   });
   const unique = new Map();
   items.forEach((item) => {
-    const k = `${item.link || ""}|${item.title || ""}`.trim();
+    const k = `${item.link || item.title || ""}`.trim();
     if (!k) return;
-    if (!unique.has(k)) unique.set(k, item);
+    if (!unique.has(k)) {
+      unique.set(k, item);
+      return;
+    }
+    const existing = unique.get(k);
+    const existingScore = String(existing?.title || "").length + String(existing?.description || "").length;
+    const nextScore = String(item?.title || "").length + String(item?.description || "").length;
+    if (nextScore > existingScore) unique.set(k, item);
   });
   const sorted = Array.from(unique.values()).sort((a, b) => {
-    const ta = new Date(a.pubDate || 0).getTime();
-    const tb = new Date(b.pubDate || 0).getTime();
+    const ta = getNewsTimestamp(a);
+    const tb = getNewsTimestamp(b);
     return tb - ta;
   });
   const scored = sorted
     .map((item) => ({ ...item, agriScore: computeAgriNewsScore(item) }))
     .sort((a, b) => {
       if ((b.agriScore || 0) !== (a.agriScore || 0)) return (b.agriScore || 0) - (a.agriScore || 0);
-      const ta = new Date(a.pubDate || 0).getTime();
-      const tb = new Date(b.pubDate || 0).getTime();
+      const ta = getNewsTimestamp(a);
+      const tb = getNewsTimestamp(b);
       return tb - ta;
     });
   const picked = scored
@@ -8464,44 +16569,12 @@ app.get("/api/news", async (req, res) => {
     droppedCount: Math.max(0, sorted.length - picked.length),
     items: picked.filter((item) => item.title && item.link),
     feeds: AGRI_NEWS_FEEDS,
-    failedFeeds
+    failedFeeds,
+    live: true
   };
   if (!payload.items.length) {
-    payload.items = [
-      {
-        title: "TarimAsistan guncel pazar izleme notu",
-        link: "https://www.tarimorman.gov.tr/",
-        pubDate: new Date().toISOString(),
-        description: "Canli RSS kaynaklari gecici ulasilamaz durumda. Yerel ozet akisi gosteriliyor.",
-        feedId: "fallback",
-        feedTitle: "Yerel fallback"
-      },
-      {
-        title: "Bitki hastalik yonetimi: saha kontrol listesi",
-        link: "https://www.fao.org/pest-and-pesticide-management/ipm/integrated-pest-management/en/",
-        pubDate: new Date().toISOString(),
-        description: "IPM odakli saha kontrol adimlari ve sezonluk takip basliklari.",
-        feedId: "fallback",
-        feedTitle: "Yerel fallback"
-      },
-      {
-        title: "Sulama plani: toprak nemine gore haftalik kontrol",
-        link: "https://www.fao.org/land-water/water/water-management/en/",
-        pubDate: new Date().toISOString(),
-        description: "Toprak nem sinyallerine dayali sulama rutini ve tasarruf adimlari.",
-        feedId: "fallback",
-        feedTitle: "Yerel fallback"
-      },
-      {
-        title: "Tarim piyasasi: urun bazli fiyat bandi takibi",
-        link: "https://www.tarimorman.gov.tr/",
-        pubDate: new Date().toISOString(),
-        description: "Hal fiyatlari ve bolgesel alis-satis bandini gunluk takip etmek icin ozet.",
-        feedId: "fallback",
-        feedTitle: "Yerel fallback"
-      }
-    ];
-    payload.count = payload.items.length;
+    payload.live = false;
+    payload.warning = failedFeeds.length ? "news_live_sources_unavailable" : "news_filtered_empty";
   }
   newsCache.set(cacheKey, { ts: Date.now(), value: payload });
   return res.json(payload);
@@ -8513,12 +16586,12 @@ app.get("/api/forecast", async (req, res) => {
   const neighborhood = (req.query.neighborhood || "").toString().trim();
   const requestLocationLabel = buildLocationSearchQuery(city, district, neighborhood) || city;
   const coords = (req.query.coords || "").toString();
-  const buildForecastFallback = (reason, coordsValue = coords || null) => ({
-    ...buildDemoForecast(city, coordsValue, reason),
-    district: district || null,
-    neighborhood: neighborhood || null,
-    locationLabel: requestLocationLabel
-  });
+  const buildForecastFallback = (reason, coordsValue = coords || null) =>
+    buildUnavailableForecast(city, coordsValue, reason, {
+      district: district || null,
+      neighborhood: neighborhood || null,
+      locationLabel: requestLocationLabel
+    });
   const [lat, lon] = coords.split(",").map((item) => item.trim());
   const apiKey = process.env.OPENWEATHER_API_KEY;
   const cacheKey = coords ? coords : buildLocationSearchQuery(city, district, neighborhood).toLowerCase();
@@ -8544,8 +16617,7 @@ app.get("/api/forecast", async (req, res) => {
       if (!forecastData) {
         const stale = getAnyCacheEntry(forecastCache, cacheKey);
         if (stale) return res.json({ ...stale, source: "stale-cache", warning: "forecast_fetch_failed" });
-        return res.json({
-          ...buildDemoForecast(resolved.name || city, `${resolved.lat}, ${resolved.lon}`, "forecast_fetch_failed"),
+        return res.json(buildUnavailableForecast(resolved.name || city, `${resolved.lat}, ${resolved.lon}`, "forecast_fetch_failed", {
           district: resolved.district || district || null,
           neighborhood: resolved.neighborhood || neighborhood || null,
           locationLabel:
@@ -8554,12 +16626,15 @@ app.get("/api/forecast", async (req, res) => {
               resolved.district || district,
               resolved.neighborhood || neighborhood
             ) || requestLocationLabel
-        });
+        }));
       }
       const payload = {
         city: resolved.name || city,
         district: resolved.district || district || null,
         neighborhood: resolved.neighborhood || neighborhood || null,
+        live: true,
+        geoSource: resolved.geoSource || "open-meteo-geocode",
+        scopeLevel: resolved.neighborhood || neighborhood ? "neighborhood" : resolved.district || district ? "district" : "city",
         locationLabel:
           buildLocationSearchQuery(
             resolved.name || city,
@@ -8615,6 +16690,8 @@ app.get("/api/forecast", async (req, res) => {
       city,
       district: district || null,
       neighborhood: neighborhood || null,
+      geoSource: lat && lon ? "query" : "openweather-city",
+      scopeLevel: district ? "district" : "city",
       locationLabel: requestLocationLabel,
       coords: lat && lon ? `${lat}, ${lon}` : null,
       days,
@@ -8631,16 +16708,27 @@ app.get("/api/forecast", async (req, res) => {
 
 app.get("/api/market", async (req, res) => {
   const city = (req.query.city || "Bursa").toString();
-  const data = await fetchMarketPrices(city);
+  const crop = (req.query.crop || "").toString();
+  const data = await fetchMarketPrices(city, crop);
   if (!data.items.length) {
     return res.json({
       city,
-      source: "demo-fallback",
+      crop: crop || null,
+      source: "unavailable",
+      live: false,
       warning: "market_live_source_unavailable",
-      items: buildDemoMarketItems(city)
+      items: []
     });
   }
-  return res.json({ city, source: data.source, items: data.items });
+  return res.json({ city, crop: crop || null, source: data.source, live: true, items: data.items });
+});
+
+app.get("/api/market/live", async (req, res) => {
+  const city = (req.query.city || "Malatya").toString().trim() || "Malatya";
+  const district = (req.query.district || "").toString().trim();
+  const crop = (req.query.crop || "").toString().trim();
+  const payload = await fetchMarketLiveIntel({ city, district, crop });
+  return res.json(payload);
 });
 
 app.get("/api/economy/planner", async (req, res) => {
@@ -8867,7 +16955,18 @@ app.get("/api/land-price/listings/live", async (req, res) => {
   const neighborhood = (req.query.neighborhood || req.query.mahalle || "").toString();
   const crop = (req.query.crop || "").toString();
   const source = (req.query.source || "").toString();
-  const data = await fetchLiveLandListings({ city, district, neighborhood, crop, source });
+  const fastMode = String(req.query.fast || "").toLowerCase() === "0" ? false : true;
+  const data = await fetchLiveLandListings({
+    city,
+    district,
+    neighborhood,
+    crop,
+    source,
+    fastMode,
+    timeoutMs: fastMode ? LAND_DISCOVERY_FAST_TIMEOUT_MS : LAND_DISCOVERY_TIMEOUT_MS,
+    maxSources: fastMode ? LAND_DISCOVERY_FAST_MAX_SOURCES : LAND_DISCOVERY_MAX_SOURCES,
+    allowDeepScan: !fastMode
+  });
   const summary = summarizeListingSignals(data?.items || []);
   return res.json({
     updatedAt: new Date().toISOString(),
@@ -9600,6 +17699,7 @@ app.get("/api/land-price", async (req, res) => {
   const district = (req.query.district || "").toString();
   const neighborhood = (req.query.neighborhood || req.query.mahalle || "").toString();
   const crop = (req.query.crop || "").toString();
+  const fastMode = String(req.query.fast || "").toLowerCase() === "0" ? false : LAND_PRICE_FAST_MODE_DEFAULT;
   const coords = (req.query.coords || "").toString();
   const zone = (req.query.zone || "gecis").toString();
   const irrigation = (req.query.irrigation || "var").toString();
@@ -9631,8 +17731,16 @@ app.get("/api/land-price", async (req, res) => {
   }
 
   const [remote, internet, estimate] = await Promise.all([
-    fetchLandPriceFromApis({ city, district, neighborhood, crop, lat, lon }),
-    fetchLandPriceFromInternet({ city, district, neighborhood, crop }),
+    runWithTimeoutFallback(
+      () => fetchLandPriceFromApis({ city, district, neighborhood, crop, lat, lon }),
+      LAND_PRICE_REMOTE_BUDGET_MS,
+      null
+    ),
+    runWithTimeoutFallback(
+      () => fetchLandPriceFromInternet({ city, district, neighborhood, crop, fastMode }),
+      LAND_PRICE_INTERNET_BUDGET_MS,
+      null
+    ),
     estimateLandPrice({ city, district, neighborhood, crop })
   ]);
   const manualSummary = buildManualLandSignal({ city, district, neighborhood, crop });
@@ -9823,12 +17931,22 @@ app.get("/api/land-price/compare", async (req, res) => {
     minReliability: req.query.blendMinReliability ?? req.query.minReliability
   });
   const [lat, lon] = coords.split(",").map((item) => item.trim());
-  const remote = await fetchLandPriceFromApis({ city, district, neighborhood, crop, lat, lon });
   const manual = buildManualLandSignal({ city, district, neighborhood, crop });
   const comparable = buildComparableLandSignal({ city, district, neighborhood, crop });
   const geoKnn = buildGeoKnnLandSignal({ city, district, neighborhood, crop, lat, lon });
-  const internet = await fetchLandPriceFromInternet({ city, district, neighborhood, crop });
-  const model = await estimateLandPrice({ city, district, neighborhood, crop });
+  const [remote, internet, model] = await Promise.all([
+    runWithTimeoutFallback(
+      () => fetchLandPriceFromApis({ city, district, neighborhood, crop, lat, lon }),
+      LAND_PRICE_REMOTE_BUDGET_MS,
+      null
+    ),
+    runWithTimeoutFallback(
+      () => fetchLandPriceFromInternet({ city, district, neighborhood, crop, fastMode: true }),
+      LAND_PRICE_INTERNET_BUDGET_MS,
+      null
+    ),
+    estimateLandPrice({ city, district, neighborhood, crop })
+  ]);
   const trendSignal = buildLandTrendSignal({ city, district, neighborhood, crop });
   const trendModel = applyTrendToEstimate(model, trendSignal);
   const compareCandidates = buildLandEnsembleCandidates({
@@ -9909,6 +18027,7 @@ app.get("/api/land-price/compare", async (req, res) => {
 app.get("/api/trade/listings", (req, res) => {
   const city = (req.query.city || "").toString();
   const crop = (req.query.crop || "").toString();
+  const category = (req.query.category || "").toString().toLowerCase();
   const q = (req.query.q || "").toString().trim();
   const type = (req.query.type || "").toString().toLowerCase();
   const status = (req.query.status || "open").toString().toLowerCase();
@@ -9926,6 +18045,7 @@ app.get("/api/trade/listings", (req, res) => {
     .filter((item) => {
       if (city && cityKey(item.city) !== cityKey(city)) return false;
       if (crop && cityKey(item.crop) !== cityKey(crop)) return false;
+      if (category && String(item.category || "").toLowerCase() !== category) return false;
       if (type && item.type !== type) return false;
       if (statusFilter && item.status !== statusFilter) return false;
       if (deliveryType && item.deliveryType !== deliveryType) return false;
@@ -9975,7 +18095,10 @@ app.post("/api/trade/listings", (req, res) => {
       incoming.title ||
       `${incoming.city || "Malatya"} ${incoming.crop || "domates"} ${String(incoming.type || "sell").toLowerCase() === "buy" ? "alim" : "satilik"}`
   });
-  if (!listing.city || !listing.crop || listing.quantityKg <= 0 || listing.priceTlKg <= 0) {
+  const isLandListing = listing.category === "land";
+  const qtyOk = isLandListing ? listing.areaDa > 0 : listing.quantityKg > 0;
+  const priceOk = isLandListing ? listing.priceTlDa > 0 : listing.priceTlKg > 0;
+  if (!listing.city || !listing.crop || !qtyOk || !priceOk) {
     return res.status(400).json({ error: "city_crop_quantity_price_required" });
   }
   if (!listing.owner && listing.contact) {
@@ -11042,7 +19165,19 @@ app.get("/api/soil/sources", async (req, res) => {
   const city = (req.query.city || "Malatya").toString();
   const district = (req.query.district || "").toString().trim();
   const neighborhood = (req.query.neighborhood || req.query.mahalle || "").toString().trim();
-  const geocode = await geocodeCity(city, district, neighborhood).catch(() => null);
+  const districtCentroid = district ? getDistrictCentroid(city, district) : null;
+  const geocode =
+    (await geocodeCity(city, district, neighborhood).catch(() => null)) ||
+    (districtCentroid
+      ? {
+          lat: districtCentroid.lat,
+          lon: districtCentroid.lon,
+          city: toTurkishTitleCase(city),
+          district: toTurkishTitleCase(district),
+          neighborhood: neighborhood || null,
+          geoSource: "district-centroid-fallback"
+        }
+      : null);
   const coords = geocode ? `${geocode.lat}, ${geocode.lon}` : null;
   const locationLabel = buildLocationSearchQuery(
     geocode?.city || city,
@@ -11054,6 +19189,7 @@ app.get("/api/soil/sources", async (req, res) => {
     city: geocode?.city || city,
     district: geocode?.district || district || null,
     neighborhood: geocode?.neighborhood || neighborhood || null,
+    scopeLevel: geocode?.neighborhood || neighborhood ? "neighborhood" : geocode?.district || district ? "district" : "city",
     locationLabel: locationLabel || city,
     coords,
     sources: [
@@ -11076,6 +19212,7 @@ app.get("/api/soil", async (req, res) => {
   const city = (req.query.city || "Malatya").toString();
   const district = (req.query.district || "").toString().trim();
   const neighborhood = (req.query.neighborhood || req.query.mahalle || "").toString().trim();
+  const fastMode = String(req.query.fast || "").toLowerCase() === "0" ? false : true;
   const coords = (req.query.coords || "").toString();
   const requestedPlant = (req.query.plant || "").toString().trim().toLowerCase();
   const [latRaw, lonRaw] = coords.split(",").map((item) => item.trim());
@@ -11088,11 +19225,15 @@ app.get("/api/soil", async (req, res) => {
   let locationLabel = buildLocationSearchQuery(resolvedCity, resolvedDistrict, resolvedNeighborhood) || city;
 
   if ((!latRaw || !lonRaw || Number.isNaN(latNum) || Number.isNaN(lonNum)) && city) {
-    const geocode = await geocodeCity(city, district, neighborhood).catch(() => null);
+    const geocode = await runWithTimeoutFallback(
+      () => geocodeCity(city, district, neighborhood),
+      fastMode ? SOIL_GEO_TIMEOUT_MS : Math.max(3600, SOIL_GEO_TIMEOUT_MS),
+      null
+    );
     if (geocode) {
       latNum = geocode.lat;
       lonNum = geocode.lon;
-      geoSource = "open-meteo-geocode";
+      geoSource = geocode.geoSource || "open-meteo-geocode";
       resolvedCity = geocode.city || geocode.name || city;
       resolvedDistrict = geocode.district || district || null;
       resolvedNeighborhood = geocode.neighborhood || neighborhood || null;
@@ -11103,13 +19244,49 @@ app.get("/api/soil", async (req, res) => {
     }
   }
 
+  if ((Number.isNaN(latNum) || Number.isNaN(lonNum)) && city && district) {
+    const districtCentroid = getDistrictCentroid(city, district);
+    if (districtCentroid) {
+      latNum = districtCentroid.lat;
+      lonNum = districtCentroid.lon;
+      geoSource = "district-centroid-fallback";
+      resolvedCity = toTurkishTitleCase(city);
+      resolvedDistrict = toTurkishTitleCase(district);
+      resolvedNeighborhood = neighborhood || null;
+      locationLabel =
+        buildLocationSearchQuery(resolvedCity, resolvedDistrict, resolvedNeighborhood) ||
+        resolvedCity ||
+        city;
+    }
+  }
+
   if (!Number.isNaN(latNum) && !Number.isNaN(lonNum)) {
     const [soil, mtaSoil, mtaMineral, meteoSoil, trSoilWms] = await Promise.all([
-      fetchSoilGrids(latNum, lonNum).catch(() => null),
-      fetchMtaLayer(MTA_SOIL_URL, latNum, lonNum),
-      fetchMtaLayer(MTA_MINERAL_URL, latNum, lonNum),
-      fetchOpenMeteoSoilSignals(latNum, lonNum).catch(() => null),
-      fetchTrSoilFromWms(latNum, lonNum).catch(() => null)
+      runWithTimeoutFallback(
+        () => fetchSoilGrids(latNum, lonNum).catch(() => null),
+        fastMode ? SOIL_SOURCE_TIMEOUT_MS : Math.max(4200, SOIL_SOURCE_TIMEOUT_MS),
+        null
+      ),
+      runWithTimeoutFallback(
+        () => fetchMtaLayer(MTA_SOIL_URL, latNum, lonNum),
+        fastMode ? SOIL_SOURCE_TIMEOUT_MS : Math.max(4200, SOIL_SOURCE_TIMEOUT_MS),
+        null
+      ),
+      runWithTimeoutFallback(
+        () => fetchMtaLayer(MTA_MINERAL_URL, latNum, lonNum),
+        fastMode ? SOIL_SOURCE_TIMEOUT_MS : Math.max(4200, SOIL_SOURCE_TIMEOUT_MS),
+        null
+      ),
+      runWithTimeoutFallback(
+        () => fetchOpenMeteoSoilSignals(latNum, lonNum).catch(() => null),
+        fastMode ? SOIL_SOURCE_TIMEOUT_MS : Math.max(4200, SOIL_SOURCE_TIMEOUT_MS),
+        null
+      ),
+      runWithTimeoutFallback(
+        () => fetchTrSoilFromWms(latNum, lonNum).catch(() => null),
+        fastMode ? SOIL_SOURCE_TIMEOUT_MS : Math.max(4200, SOIL_SOURCE_TIMEOUT_MS),
+        null
+      )
     ]);
     const mtaSummary = summarizeMtaData(mtaSoil, mtaMineral);
     const internetSources = [
@@ -11146,6 +19323,8 @@ app.get("/api/soil", async (req, res) => {
         city: resolvedCity,
         district: resolvedDistrict,
         neighborhood: resolvedNeighborhood,
+        live: true,
+        scopeLevel: resolvedNeighborhood ? "neighborhood" : resolvedDistrict ? "district" : "city",
         locationLabel,
         coords: `${latNum}, ${lonNum}`,
         requestedPlant,
@@ -11175,12 +19354,15 @@ app.get("/api/soil", async (req, res) => {
         trSoil: trSoilWms || null,
         internetSignals: meteoSoil?.summary || null,
         internetMeta: meteoSoil?.rawMeta || null,
+        samplePoint: soil?.samplePoint || null,
         internetSources,
         note: trSoilWms
           ? "Toprak verisi SoilGrids + Turkiye toprak haritasi (WMS) ile zenginlestirildi."
+          : soil?.samplePoint?.distanceKm > 0
+            ? `SoilGrids tam nokta yerine en yakin veri hucresinden (${soil.samplePoint.distanceKm} km) okundu.`
           : mtaSummary
             ? "Toprak verisi SoilGrids + MTA katman ozetinden uretildi."
-          : meteoSoil
+            : meteoSoil
             ? "Toprak verisi SoilGrids, internet iklim sinyalleri ile zenginlestirildi."
             : "Toprak verisi SoilGrids kaynagindan cekildi."
       }));
@@ -11191,6 +19373,8 @@ app.get("/api/soil", async (req, res) => {
         city: resolvedCity,
         district: resolvedDistrict,
         neighborhood: resolvedNeighborhood,
+        live: true,
+        scopeLevel: resolvedNeighborhood ? "neighborhood" : resolvedDistrict ? "district" : "city",
         locationLabel,
         coords: `${latNum}, ${lonNum}`,
         requestedPlant,
@@ -11235,80 +19419,16 @@ app.get("/api/soil", async (req, res) => {
     }
   }
 
-  const presets = {
-    Malatya: {
-      soilType: "Tinali-killi",
-      ph: "7.4",
-      organic: "Orta",
-      drainage: "Orta",
-      salinity: "Dusuk",
-      climate: "Karasal",
-      recommended: ["Kayisi", "Bugday", "Arpa", "Mercimek", "Aci biber"],
-      risky: ["Cok nem isteyen marul", "Pirinç"],
-      diseaseRisk: ["Koku curuklugu", "Mantar lekeleri"],
-      note: "Gosterim verisi. Canli toprak verisi eklenince guncellenir."
-    },
-    Ankara: {
-      soilType: "Kirecli-tinali",
-      ph: "7.8",
-      organic: "Dusuk-orta",
-      drainage: "Iyi",
-      salinity: "Dusuk",
-      climate: "Karasal",
-      recommended: ["Bugday", "Arpa", "Nohut", "Aspir"],
-      risky: ["Nem isteyen sebzeler"],
-      diseaseRisk: ["Kuru yaprak yanigi", "Root stress"],
-      note: "Gosterim verisi."
-    },
-    Istanbul: {
-      soilType: "Tinali",
-      ph: "6.8",
-      organic: "Orta",
-      drainage: "Orta",
-      salinity: "Dusuk",
-      climate: "Iliman-nemli",
-      recommended: ["Lahana", "Marul", "Ispanak", "Biber"],
-      risky: ["Don hassas fideler"],
-      diseaseRisk: ["Mantar hastaliklari", "Kulleme"],
-      note: "Gosterim verisi."
-    },
-    Izmir: {
-      soilType: "Tinali-kumlu",
-      ph: "7.2",
-      organic: "Orta",
-      drainage: "Iyi",
-      salinity: "Orta",
-      climate: "Akdeniz",
-      recommended: ["Domates", "Biber", "Zeytin", "Uzum"],
-      risky: ["Cok soguk isteyen turler"],
-      diseaseRisk: ["Tuz stresi", "Yaprak biti"],
-      note: "Gosterim verisi."
-    }
-  };
-
-  const demo = presets[city] || {
-    soilType: "Tinali",
-    ph: "7.0",
-    organic: "Orta",
-    drainage: "Orta",
-    salinity: "Dusuk",
-    climate: "Karisik",
-    recommended: ["Domates", "Biber", "Sogan"],
-    risky: ["Cok nem isteyen urunler"],
-    diseaseRisk: ["Mantar lekeleri"],
-    note: "Gosterim verisi."
-  };
-
-  return res.json(enrichSoilResponse({
-    city: resolvedCity,
-    district: resolvedDistrict,
-    neighborhood: resolvedNeighborhood,
-    locationLabel,
-    coords: latRaw && lonRaw ? `${latRaw}, ${lonRaw}` : null,
-    requestedPlant,
-    source: "demo",
-    ...demo
-  }));
+  return res.json(
+    buildUnavailableSoil(city, latRaw && lonRaw ? `${latRaw}, ${lonRaw}` : null, "soil_live_sources_unavailable", {
+      city: resolvedCity,
+      district: resolvedDistrict,
+      neighborhood: resolvedNeighborhood,
+      scopeLevel: resolvedNeighborhood ? "neighborhood" : resolvedDistrict ? "district" : "city",
+      locationLabel,
+      requestedPlant
+    })
+  );
 });
 
 app.post("/api/diagnose", upload.single("image"), async (req, res) => {
@@ -11742,6 +19862,7 @@ app.post("/api/diagnose", upload.single("image"), async (req, res) => {
   let filterApplied = false;
   let filterMatched = false;
   let filterBlocked = false;
+  let healthyIssueResolution = null;
 
   // Guard against false "healthy" when the second-best non-healthy class is too close.
   let healthyGuard = null;
@@ -11847,6 +19968,22 @@ app.post("/api/diagnose", upload.single("image"), async (req, res) => {
         },
         ...(topPredictions || []).filter((item) => item.label !== label).slice(0, 2)
       ];
+    }
+  }
+
+  if (!filterBlocked && Array.isArray(effectiveSorted) && effectiveSorted.length >= 2) {
+    healthyIssueResolution = resolveHealthyIssueConflict(effectiveSorted, {
+      plant,
+      source
+    });
+    if (healthyIssueResolution?.applied && Array.isArray(healthyIssueResolution.sorted)) {
+      effectiveSorted = healthyIssueResolution.sorted;
+      label = effectiveSorted[0]?.label || label;
+      confidence = Number(effectiveSorted[0]?.val || confidence || 0);
+      topPredictions = effectiveSorted.slice(0, 3).map((item) => ({
+        label: item.label,
+        confidence: Number(item.val.toFixed(4))
+      }));
     }
   }
 
@@ -12119,7 +20256,7 @@ app.post("/api/diagnose", upload.single("image"), async (req, res) => {
     warnings.push("Fotograf kalitesi dusuk. Yeniden cekim onerilir.");
   }
 
-  const retrySuggested =
+  const retrySuggestedBase =
     filterBlocked ||
     (confidence !== null && confidence < effectiveMinConf) ||
     (quality?.warnings?.length ?? 0) > 0 ||
@@ -12142,6 +20279,33 @@ app.post("/api/diagnose", upload.single("image"), async (req, res) => {
   if (reliability.unstable) {
     warnings.push(`Sonuc guvenilirligi dusuk (${reliability.score}/100). Yeniden cekim onerilir.`);
   }
+  const confidenceProfile = buildConfidenceProfile({
+    top1,
+    top2,
+    margin,
+    entropy,
+    uncertaintyScore,
+    reliabilityScore: reliability.score,
+    qualityScore: quality?.score,
+    plantScore: safePlantScore,
+    source,
+    lowConfidence,
+    uncertaintyHigh,
+    ambiguityHigh: ambiguity.highRisk,
+    classConflict: classConflict.healthyIssueConflict || classConflict.issueHealthyConflict,
+    plantMismatch
+  });
+  if (healthyIssueResolution?.applied) {
+    warnings.push("Healthy sonuc issue sinif catismasi nedeniyle tekrar degerlendirildi.");
+  }
+  if (confidenceProfile.band === "weak") {
+    warnings.push("Guven profili zayif: ek cekim ve uzman kontrolu onerilir.");
+  }
+  if (confidenceProfile.blockers.length) {
+    warnings.push(...confidenceProfile.blockers.slice(0, 2));
+  }
+  const warningsUnique = Array.from(new Set(warnings));
+  const retrySuggested = retrySuggestedBase || confidenceProfile.band === "weak";
   const decision = (() => {
     const flags = [];
     if (filterBlocked) flags.push("plant_filter_no_match");
@@ -12157,6 +20321,8 @@ app.post("/api/diagnose", upload.single("image"), async (req, res) => {
     if (plantMismatch) flags.push("plant_mismatch");
     if (uncertaintyHigh) flags.push("high_uncertainty");
     if (reliability.unstable) flags.push("low_reliability");
+    if (confidenceProfile.band === "weak") flags.push("confidence_profile_weak");
+    if (healthyIssueResolution?.applied) flags.push("healthy_issue_override");
     let status = "ok";
     if (filterBlocked) status = "blocked";
     else if (flags.length) status = "review";
@@ -12210,6 +20376,12 @@ app.post("/api/diagnose", upload.single("image"), async (req, res) => {
   if (diagnosisStatus === "healthy" && reliability.unstable) {
     diagnosisStatus = "review";
   }
+  if (diagnosisStatus === "healthy" && confidenceProfile.band === "weak") {
+    diagnosisStatus = "review";
+  }
+  if (diagnosisStatus === "issue" && confidenceProfile.band === "weak" && uncertaintyHigh) {
+    diagnosisStatus = "review";
+  }
 
   const response = {
     id: crypto.randomUUID(),
@@ -12245,6 +20417,18 @@ app.post("/api/diagnose", upload.single("image"), async (req, res) => {
       fallbackUsed: source.includes("fallback"),
       rescue: rescueInfo,
       healthyGuard,
+      healthyIssueResolution: healthyIssueResolution
+        ? {
+            applied: Boolean(healthyIssueResolution.applied),
+            reason: healthyIssueResolution.reason || null,
+            originalTopLabel: healthyIssueResolution.originalTopLabel || null,
+            overrideLabel: healthyIssueResolution.overrideLabel || null,
+            issueMass: Number(healthyIssueResolution.issueMass || 0),
+            issueTop: Number(healthyIssueResolution.issueTop || 0),
+            margin: Number(healthyIssueResolution.margin || 0),
+            thresholds: healthyIssueResolution.thresholds || null
+          }
+        : null,
       error: inferenceError
     },
     modelMetrics: {
@@ -12265,7 +20449,9 @@ app.post("/api/diagnose", upload.single("image"), async (req, res) => {
       ensembleAvgTopStd: Number(ensembleDisagreementStats?.avgTopStd || 0),
       ensembleMaxTopStd: Number(ensembleDisagreementStats?.maxTopStd || 0),
       uncertaintyScore,
-      uncertaintyHigh
+      uncertaintyHigh,
+      confidenceProfileScore: confidenceProfile.score,
+      confidenceProfileBand: confidenceProfile.band
     },
     filter: {
       applied: filterApplied,
@@ -12289,7 +20475,8 @@ app.post("/api/diagnose", upload.single("image"), async (req, res) => {
       status: diagnosisStatus,
       problemArea: inferProblemArea(label)
     },
-    warnings,
+    confidenceProfile,
+    warnings: warningsUnique,
     retrySuggested: retrySuggested || reliability.unstable,
     retryTips,
     retryPlan,
@@ -12326,6 +20513,88 @@ app.post("/api/diagnose", upload.single("image"), async (req, res) => {
   setCache(cacheKey, response);
   markStage(req, "response");
   res.json(response);
+});
+
+app.get("/api/superapp/modules", (req, res) => {
+  if (!superAppRuntimeState) superAppRuntimeState = buildDefaultSuperAppRuntime();
+  const items = SUPERAPP_MODULE_CATALOG.map((item) => {
+    const runtime = superAppRuntimeState.modules[item.id] || {};
+    return {
+      id: item.id,
+      title: item.title,
+      status: runtime.status || "ready",
+      runCount: Number(runtime.runCount || 0),
+      lastRunAt: runtime.lastRunAt || null,
+      lastResult: runtime.lastResult || null
+    };
+  });
+  res.json({
+    updatedAt: superAppRuntimeState.updatedAt || new Date().toISOString(),
+    count: items.length,
+    items
+  });
+});
+
+app.get("/api/superapp/overview", (req, res) => {
+  if (!superAppRuntimeState) superAppRuntimeState = buildDefaultSuperAppRuntime();
+  const items = SUPERAPP_MODULE_CATALOG.map((item) => superAppRuntimeState.modules[item.id] || {});
+  const active = items.filter((row) => row.lastRunAt).length;
+  const idle = items.length - active;
+  res.json({
+    updatedAt: new Date().toISOString(),
+    total: items.length,
+    active,
+    idle
+  });
+});
+
+app.post("/api/superapp/modules/:id/run", (req, res) => {
+  const id = String(req.params.id || "").trim();
+  const exists = SUPERAPP_MODULE_CATALOG.some((item) => item.id === id);
+  if (!exists) {
+    return res.status(404).json({ ok: false, error: "module_not_found" });
+  }
+  if (!superAppRuntimeState) superAppRuntimeState = buildDefaultSuperAppRuntime();
+  const result = runSuperAppModuleSimulation(id, req.body || {});
+  const prev = superAppRuntimeState.modules[id] || { id, title: id, runCount: 0 };
+  superAppRuntimeState.modules[id] = {
+    ...prev,
+    status: "ready",
+    runCount: Number(prev.runCount || 0) + 1,
+    lastRunAt: result.ranAt,
+    lastResult: result
+  };
+  superAppRuntimeState.updatedAt = result.ranAt;
+  saveSuperAppRuntimeToDisk();
+  return res.json({
+    ok: true,
+    module: superAppRuntimeState.modules[id]
+  });
+});
+
+app.post("/api/superapp/run-all", (req, res) => {
+  if (!superAppRuntimeState) superAppRuntimeState = buildDefaultSuperAppRuntime();
+  const out = [];
+  SUPERAPP_MODULE_CATALOG.forEach((item) => {
+    const result = runSuperAppModuleSimulation(item.id, req.body || {});
+    const prev = superAppRuntimeState.modules[item.id] || { id: item.id, title: item.title, runCount: 0 };
+    superAppRuntimeState.modules[item.id] = {
+      ...prev,
+      status: "ready",
+      runCount: Number(prev.runCount || 0) + 1,
+      lastRunAt: result.ranAt,
+      lastResult: result
+    };
+    out.push({ id: item.id, ranAt: result.ranAt });
+  });
+  superAppRuntimeState.updatedAt = new Date().toISOString();
+  saveSuperAppRuntimeToDisk();
+  return res.json({
+    ok: true,
+    updatedAt: superAppRuntimeState.updatedAt,
+    count: out.length,
+    items: out
+  });
 });
 
 app.post("/api/contact", upload.single("attachment"), async (req, res) => {
@@ -12368,6 +20637,7 @@ loadCacheFromDisk();
 loadLandListingsFromDisk();
 loadLandCustomModelFromDisk();
 loadTradeMarketFromDisk();
+loadSuperAppRuntimeFromDisk();
 loadModel();
 
 setInterval(() => {
@@ -12379,6 +20649,41 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000);
 
-app.listen(PORT, HOST, () => {
-  console.log(`API server running on http://${HOST}:${PORT}`);
-});
+const startApiServer = (hostCandidates) => {
+  const queue = Array.isArray(hostCandidates)
+    ? hostCandidates.map((item) => String(item || "").trim()).filter(Boolean)
+    : [];
+  const seen = new Set();
+  const hosts = queue.filter((item) => {
+    if (seen.has(item)) return false;
+    seen.add(item);
+    return true;
+  });
+  if (!hosts.length) hosts.push("127.0.0.1");
+
+  const tryListen = (idx) => {
+    const host = hosts[idx];
+    const server = app.listen(PORT, host, () => {
+      console.log(`API server running on http://${host}:${PORT}`);
+      if (idx > 0) {
+        console.warn(`[api] requested host \"${HOST}\" unavailable, fallback host \"${host}\" aktif.`);
+      }
+    });
+    server.on("error", (err) => {
+      const fallbackable = (err?.code === "EPERM" || err?.code === "EACCES") && idx + 1 < hosts.length;
+      if (fallbackable) {
+        console.warn(
+          `[api] ${host}:${PORT} icin ${err.code} alindi. ${hosts[idx + 1]} hostu deneniyor.`
+        );
+        tryListen(idx + 1);
+        return;
+      }
+      console.error(`[api] listen failed on ${host}:${PORT}`, err);
+      process.exit(1);
+    });
+  };
+
+  tryListen(0);
+};
+
+startApiServer([HOST, "127.0.0.1"]);

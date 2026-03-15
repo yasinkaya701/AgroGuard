@@ -9,9 +9,9 @@ export const cropYieldKgDa = {
       Nigde: 9680
     },
     source: {
-      title: "TEPGE Domates Urun Raporu 2024",
+      title: "TEPGE Domates Ürün Raporu 2024",
       url: "https://arastirma.tarimorman.gov.tr/tepge/Belgeler/PDF%20%C3%9Cr%C3%BCn%20Raporlar%C4%B1/2024%20%C3%9Cr%C3%BCn%20Raporlar%C4%B1/Domates%20%C3%9Cr%C3%BCn%20Raporu%202024-396%20TEPGE.pdf",
-      note: "Verimler ton/ha tablosundan kg/da'ya cevrildi (1 ha = 10 da)."
+      note: "Verimler ton/ha tablosundan kg/da'ya çevrildi (1 ha = 10 da)."
     }
   },
   patates: {
@@ -24,7 +24,7 @@ export const cropYieldKgDa = {
       Adana: 4054
     },
     source: {
-      title: "TEPGE Patates Urun Raporu 2025",
+      title: "TEPGE Patates Ürün Raporu 2025",
       url: "https://arastirma.tarimorman.gov.tr/tepge/Belgeler/PDF%20%C3%9Cr%C3%BCn%20Raporlar%C4%B1/2025%20%C3%9Cr%C3%BCn%20Raporu/Patates%20%C3%9Cr%C3%BCn%20Raporu%202025-415%20TEPGE.pdf",
       note: "Rapor verileri kg/da olarak verilir."
     }
@@ -35,12 +35,12 @@ export const cropLabelMap = {
   domates: "Domates",
   patates: "Patates",
   biber: "Biber",
-  bugday: "Bugday",
+  bugday: "Buğday",
   arpa: "Arpa",
-  misir: "Misir",
-  aycicegi: "Aycicegi",
+  misir: "Mısır",
+  aycicegi: "Ayçiçeği",
   pamuk: "Pamuk",
-  sekerpancari: "Seker pancari"
+  sekerpancari: "Şeker pancarı"
 };
 
 export const cropPriceTlKg = {
@@ -73,7 +73,7 @@ export const landDemoBenchmarks = {
       gecis: 1.0,
       yamaç: 0.92
     },
-    notes: "Kayisi odakli pazarda ova parselleri primli seyreder."
+    notes: "Kayısı odaklı pazarda ova parselleri primli seyreder."
   },
   konya: {
     zonePremium: {
@@ -81,7 +81,7 @@ export const landDemoBenchmarks = {
       gecis: 1.0,
       yamaç: 0.9
     },
-    notes: "Sulama altyapisina yakin alanlar daha hizli degerlenir."
+    notes: "Sulama altyapısına yakın alanlar daha hızlı değerlenir."
   },
   antalya: {
     zonePremium: {
@@ -89,6 +89,6 @@ export const landDemoBenchmarks = {
       gecis: 1.0,
       yamaç: 0.9
     },
-    notes: "Sebze-sera koridorunda ova segmenti yuksek talep gorur."
+    notes: "Sebze-sera koridorunda ova segmenti yüksek talep görür."
   }
 };

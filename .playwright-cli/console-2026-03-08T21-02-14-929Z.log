@@ -1,0 +1,3 @@
+[   40054ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://staticmap.openstreetmap.de/staticmap.php?center=39.92,32.85&zoom=11&size=800x400&maptype=mapnik:0
+[   44060ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://staticmap.openstreetmap.de/staticmap.php?center=39.92,32.85&zoom=11&size=800x400&maptype=mapnik:0
+[   44369ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://staticmap.openstreetmap.de/staticmap.php?center=38.35018,38.31667&zoom=11&size=800x400&maptype=mapnik:0

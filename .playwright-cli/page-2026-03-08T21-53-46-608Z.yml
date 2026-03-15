@@ -1,0 +1,293 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - img [ref=e8]
+          - generic [ref=e11]:
+            - generic [ref=e12]:
+              - text: agroguard
+              - generic "neural monitoring active" [ref=e13]
+            - generic [ref=e15]: system ready
+        - generic [ref=e16]:
+          - generic [ref=e17]: tarim el kilavuzu + teshis
+          - generic [ref=e18]:
+            - generic [ref=e19]: api
+            - strong [ref=e20]: hazir
+          - button "1" [ref=e21] [cursor=pointer]:
+            - img [ref=e22]
+            - generic [ref=e25]: "1"
+          - button "sunum" [ref=e26] [cursor=pointer]
+    - main [ref=e27]:
+      - generic [ref=e1889]:
+        - generic [ref=e1893]:
+          - generic [ref=e1894]:
+            - generic [ref=e1895]: domates
+            - generic [ref=e1896]: 50,00 tl/kg
+            - generic [ref=e1897]:
+              - img [ref=e1898]
+              - text: bant 222.0% • 20 kaynak
+            - img [ref=e1905]
+          - generic [ref=e1908]:
+            - generic [ref=e1909]: biber
+            - generic [ref=e1910]: 80,00 tl/kg
+            - generic [ref=e1911]:
+              - img [ref=e1912]
+              - text: bant 237.5% • 22 kaynak
+            - img [ref=e1919]
+          - generic [ref=e1922]:
+            - generic [ref=e1923]: patates
+            - generic [ref=e1924]: 15,00 tl/kg
+            - generic [ref=e1925]:
+              - img [ref=e1926]
+              - text: bant 133.3% • 6 kaynak
+            - img [ref=e1933]
+          - generic [ref=e1936]:
+            - generic [ref=e1937]: sogan
+            - generic [ref=e1938]: 35,00 tl/kg
+            - generic [ref=e1939]:
+              - img [ref=e1940]
+              - text: bant 305.7% • 15 kaynak
+            - img [ref=e1947]
+          - generic [ref=e1950]:
+            - generic [ref=e1951]: salatalik
+            - generic [ref=e1952]: 85,00 tl/kg
+            - generic [ref=e1953]:
+              - img [ref=e1954]
+              - text: bant 158.8% • 6 kaynak
+            - img [ref=e1961]
+          - generic [ref=e1964]:
+            - generic [ref=e1965]: kabak
+            - generic [ref=e1966]: 70,00 tl/kg
+            - generic [ref=e1967]:
+              - img [ref=e1968]
+              - text: bant 171.4% • 7 kaynak
+            - img [ref=e1975]
+          - generic [ref=e1978]:
+            - generic [ref=e1979]: patlican
+            - generic [ref=e1980]: 105,00 tl/kg
+            - generic [ref=e1981]:
+              - img [ref=e1982]
+              - text: bant 136.2% • 6 kaynak
+            - img [ref=e1989]
+          - generic [ref=e1992]:
+            - generic [ref=e1993]: elma
+            - generic [ref=e1994]: 70,00 tl/kg
+            - generic [ref=e1995]:
+              - img [ref=e1996]
+              - text: bant 202.9% • 22 kaynak
+            - img [ref=e2003]
+          - generic [ref=e2006]:
+            - generic [ref=e2007]: domates
+            - generic [ref=e2008]: 50,00 tl/kg
+            - generic [ref=e2009]:
+              - img [ref=e2010]
+              - text: bant 222.0% • 20 kaynak
+            - img [ref=e2017]
+          - generic [ref=e2020]:
+            - generic [ref=e2021]: biber
+            - generic [ref=e2022]: 80,00 tl/kg
+            - generic [ref=e2023]:
+              - img [ref=e2024]
+              - text: bant 237.5% • 22 kaynak
+            - img [ref=e2031]
+          - generic [ref=e2034]:
+            - generic [ref=e2035]: patates
+            - generic [ref=e2036]: 15,00 tl/kg
+            - generic [ref=e2037]:
+              - img [ref=e2038]
+              - text: bant 133.3% • 6 kaynak
+            - img [ref=e2045]
+          - generic [ref=e2048]:
+            - generic [ref=e2049]: sogan
+            - generic [ref=e2050]: 35,00 tl/kg
+            - generic [ref=e2051]:
+              - img [ref=e2052]
+              - text: bant 305.7% • 15 kaynak
+            - img [ref=e2059]
+          - generic [ref=e2062]:
+            - generic [ref=e2063]: salatalik
+            - generic [ref=e2064]: 85,00 tl/kg
+            - generic [ref=e2065]:
+              - img [ref=e2066]
+              - text: bant 158.8% • 6 kaynak
+            - img [ref=e2073]
+          - generic [ref=e2076]:
+            - generic [ref=e2077]: kabak
+            - generic [ref=e2078]: 70,00 tl/kg
+            - generic [ref=e2079]:
+              - img [ref=e2080]
+              - text: bant 171.4% • 7 kaynak
+            - img [ref=e2087]
+          - generic [ref=e2090]:
+            - generic [ref=e2091]: patlican
+            - generic [ref=e2092]: 105,00 tl/kg
+            - generic [ref=e2093]:
+              - img [ref=e2094]
+              - text: bant 136.2% • 6 kaynak
+            - img [ref=e2101]
+          - generic [ref=e2104]:
+            - generic [ref=e2105]: elma
+            - generic [ref=e2106]: 70,00 tl/kg
+            - generic [ref=e2107]:
+              - img [ref=e2108]
+              - text: bant 202.9% • 22 kaynak
+            - img [ref=e2115]
+        - generic [ref=e2118]:
+          - generic [ref=e2119]:
+            - img "exchange" [ref=e2120]
+            - generic [ref=e2121]:
+              - generic [ref=e2122]:
+                - img [ref=e2123]
+                - generic [ref=e2125]: system live
+              - heading "ticaret terminali" [level=1] [ref=e2126]:
+                - text: ticaret
+                - emphasis [ref=e2127]: terminali
+              - paragraph [ref=e2128]: malatya odakli canli emtia, arazi ve girdi terminali. domates akisinda alim-satim baskisi, mazot maliyeti ve teklif derinligi ayni ekranda.
+          - generic [ref=e2129]:
+            - generic [ref=e2130]:
+              - generic [ref=e2132]: cuzdan
+              - generic [ref=e2134]: 25.000 tl
+            - generic [ref=e2135]:
+              - generic [ref=e2136]:
+                - generic [ref=e2137]: market pulse
+                - img [ref=e2138]
+              - generic [ref=e2141]:
+                - generic [ref=e2142]:
+                  - generic [ref=e2143]: alim
+                  - generic [ref=e2144]: 18,24 tl
+                - generic [ref=e2145]:
+                  - generic [ref=e2146]: satim
+                  - generic [ref=e2147]: 18,35 tl
+                - img [ref=e2148]
+            - generic [ref=e2151]:
+              - generic [ref=e2152]:
+                - generic [ref=e2153]: 24s hacim
+                - img [ref=e2154]
+              - generic [ref=e2156]:
+                - generic [ref=e2157]: 654.500 tl
+                - img [ref=e2158]
+        - generic [ref=e2162]:
+          - generic [ref=e2163]:
+            - generic [ref=e2164]:
+              - generic [ref=e2165]: trade floor
+              - heading "pazar komuta ozeti" [level=3] [ref=e2166]:
+                - text: pazar
+                - emphasis [ref=e2167]: komuta ozeti
+              - paragraph [ref=e2168]: fiyat baskisi, likidite, canli mazot maliyeti ve firsat radarini ust katmanda topla; sonra workspace icinde detay akisina in.
+            - generic [ref=e2169]:
+              - button "analitigi ac" [ref=e2170] [cursor=pointer]
+              - button "yeni ilan" [ref=e2171] [cursor=pointer]
+          - generic [ref=e2172]:
+            - generic [ref=e2173]:
+              - generic [ref=e2174]: likidite
+              - strong [ref=e2175]: 49/100
+              - generic [ref=e2176]: 3 kademe aktif
+            - generic [ref=e2177]:
+              - generic [ref=e2178]: spread
+              - strong [ref=e2179]: 0.00 tl
+              - generic [ref=e2180]: 0 kg alis • 2.000 kg satis
+            - generic [ref=e2181]:
+              - generic [ref=e2182]: piyasa baskisi
+              - strong [ref=e2183]: satici baskin
+              - generic [ref=e2184]: "arz yuksek: fiyat esnekligi gerekli."
+            - generic [ref=e2185]:
+              - generic [ref=e2186]: mazot bandi
+              - strong [ref=e2187]: 66,97 tl/l
+              - generic [ref=e2188]: akcadag
+            - generic [ref=e2189]:
+              - generic [ref=e2190]: terminal hacmi
+              - strong [ref=e2191]: 654.500 tl
+              - generic [ref=e2192]: 3 dk once
+          - generic [ref=e2193]:
+            - generic [ref=e2194]:
+              - generic [ref=e2195]:
+                - generic [ref=e2196]: "radar #1"
+                - img [ref=e2197]
+              - generic [ref=e2199]: sogan
+              - generic [ref=e2200]: 35,00 tl/kg
+              - generic [ref=e2201]: 305.7% bant • 15 kaynak
+            - generic [ref=e2202]:
+              - generic [ref=e2203]:
+                - generic [ref=e2204]: "radar #2"
+                - img [ref=e2205]
+              - generic [ref=e2207]: biber
+              - generic [ref=e2208]: 80,00 tl/kg
+              - generic [ref=e2209]: 237.5% bant • 22 kaynak
+            - generic [ref=e2210]:
+              - generic [ref=e2211]:
+                - generic [ref=e2212]: "radar #3"
+                - img [ref=e2213]
+              - generic [ref=e2215]: domates
+              - generic [ref=e2216]: 50,00 tl/kg
+              - generic [ref=e2217]: 222.0% bant • 20 kaynak
+        - generic [ref=e2218]:
+          - button "kesfet" [ref=e2219] [cursor=pointer]:
+            - img [ref=e2220]
+            - text: kesfet
+          - button "analitik" [ref=e2223] [cursor=pointer]:
+            - img [ref=e2224]
+            - text: analitik
+          - button "ilan ver" [ref=e2227] [cursor=pointer]:
+            - img [ref=e2228]
+            - text: ilan ver
+          - button "ilanlarim" [ref=e2229] [cursor=pointer]:
+            - img [ref=e2230]
+            - text: ilanlarim
+          - button "teklifler" [ref=e2233] [cursor=pointer]:
+            - img [ref=e2234]
+            - text: teklifler
+          - button "siparisler" [ref=e2236] [cursor=pointer]:
+            - img [ref=e2237]
+            - text: siparisler
+        - generic [ref=e2241]:
+          - generic [ref=e2242]:
+            - generic [ref=e2243]:
+              - generic [ref=e2244]: pazar workspace
+              - heading "kesfet akisi" [level=3] [ref=e2245]:
+                - text: kesfet
+                - emphasis [ref=e2246]: akisi
+              - paragraph [ref=e2247]: acik mahsul ve arazi ilanlarini tarayip teklif akisini izle.
+            - generic [ref=e2248]:
+              - button "yenile" [ref=e2249] [cursor=pointer]:
+                - img [ref=e2250]
+                - text: yenile
+              - button "filtreyi temizle" [ref=e2255] [cursor=pointer]
+              - button "ilan ver" [ref=e2256] [cursor=pointer]
+          - generic [ref=e2257]:
+            - generic [ref=e2258]:
+              - generic [ref=e2259]: acik ilan
+              - strong [ref=e2260]: "45"
+            - generic [ref=e2261]:
+              - generic [ref=e2262]: favoriler
+              - strong [ref=e2263]: "0"
+            - generic [ref=e2264]:
+              - generic [ref=e2265]: aktif filtre
+              - strong [ref=e2266]: tumu
+            - generic [ref=e2267]:
+              - generic [ref=e2268]: pazar derinligi
+              - strong [ref=e2269]: "3"
+          - generic [ref=e2270]: "canli piyasa guncellemesi: 3 dk once"
+  - navigation "ana gezinti" [ref=e402]:
+    - button "teshis" [ref=e403] [cursor=pointer]:
+      - img [ref=e404]
+      - generic [ref=e406]: teshis
+    - button "arazi" [ref=e407] [cursor=pointer]:
+      - img [ref=e408]
+      - generic [ref=e410]: arazi
+    - button "pazar" [active] [ref=e411] [cursor=pointer]:
+      - img [ref=e412]
+      - generic [ref=e415]: pazar
+    - button "iklim" [ref=e416] [cursor=pointer]:
+      - img [ref=e417]
+      - generic [ref=e423]: iklim
+    - button "demos" [ref=e424] [cursor=pointer]:
+      - img [ref=e425]
+      - generic [ref=e428]: demos
+  - generic [ref=e430]:
+    - generic [ref=e431]:
+      - heading "gelistirici" [level=2] [ref=e432]
+      - paragraph [ref=e433]: mehmet yasin kaya • bogazici bilgisayar
+    - generic [ref=e434]: "e-posta: gs7016903@gmail.com"
+  - button [ref=e436] [cursor=pointer]:
+    - img [ref=e437]

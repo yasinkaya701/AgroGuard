@@ -1,0 +1,2 @@
+[    4587ms] [ERROR] Failed to load resource: the server responded with a status of 429 (Too Many Requests) @ https://api.open-meteo.com/v1/forecast?latitude=38.3302&longitude=38.3217&current=temperature_2m,relative_humidity_2m:0
+[    4588ms] [ERROR] Failed to load resource: the server responded with a status of 429 (Too Many Requests) @ https://api.open-meteo.com/v1/forecast?latitude=38.3552&longitude=38.3317&current=temperature_2m,relative_humidity_2m:0

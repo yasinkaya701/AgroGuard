@@ -1,0 +1,282 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - img [ref=e8]
+          - generic [ref=e11]:
+            - generic [ref=e12]:
+              - text: agroguard
+              - generic "neural monitoring active" [ref=e13]
+            - generic [ref=e15]: system ready
+        - generic [ref=e16]:
+          - generic [ref=e17]: tarim el kilavuzu + teshis
+          - generic [ref=e18]:
+            - generic [ref=e19]: api
+            - strong [ref=e20]: hazir
+          - button "1" [ref=e21] [cursor=pointer]:
+            - img [ref=e22]
+            - generic [ref=e25]: "1"
+          - button "standart" [ref=e482] [cursor=pointer]
+    - main [ref=e27]:
+      - generic [ref=e484]:
+        - generic [ref=e486]:
+          - generic [ref=e487]:
+            - generic [ref=e488]:
+              - generic [ref=e489]: agroguard_labs
+              - heading "demo studio" [level=2] [ref=e490]:
+                - text: demo
+                - emphasis [ref=e491]: studio
+              - paragraph [ref=e492]: bug fix, yatirimci sunumu, model gozlemi ve demo operasyonlarini tek workspace icinde yonet.
+            - generic [ref=e493]:
+              - generic [ref=e494]:
+                - img [ref=e495]
+                - text: "risk: yuksek"
+              - generic [ref=e497]:
+                - img [ref=e498]
+                - text: hazir
+              - generic [ref=e500]:
+                - img [ref=e501]
+                - text: strict
+          - generic [ref=e504]:
+            - button "studio" [ref=e505] [cursor=pointer]:
+              - img [ref=e506]
+              - text: studio
+            - button "operasyon" [ref=e511] [cursor=pointer]:
+              - img [ref=e512]
+              - text: operasyon
+            - button "sandbox" [ref=e517] [cursor=pointer]:
+              - img [ref=e518]
+              - text: sandbox
+            - button "yatirimci" [ref=e519] [cursor=pointer]:
+              - img [ref=e520]
+              - text: yatirimci
+            - button "model" [ref=e523] [cursor=pointer]:
+              - img [ref=e524]
+              - text: model
+            - button "sistem" [ref=e527] [cursor=pointer]:
+              - img [ref=e528]
+              - text: sistem
+          - generic [ref=e532]:
+            - generic [ref=e533]:
+              - text: moduller
+              - strong [ref=e534]: 5/5
+              - generic [ref=e535]: hazir
+            - generic [ref=e536]:
+              - text: run score
+              - strong [ref=e537]: 100/100
+              - generic [ref=e538]: yuksek
+            - generic [ref=e539]:
+              - text: model
+              - strong [ref=e540]: healthy
+              - generic [ref=e541]: diagnostics
+            - generic [ref=e542]:
+              - text: aktif istasyon
+              - strong [ref=e543]: rekolte
+              - generic [ref=e544]: strict model aktif
+        - generic [ref=e545]:
+          - generic [ref=e546]:
+            - generic [ref=e547]:
+              - generic [ref=e548]: workspace
+              - heading "demo orkestrasyon merkezi" [level=3] [ref=e549]
+              - paragraph [ref=e550]: autopilot, smoke ve akis testlerini hizli calistir.
+            - generic [ref=e551]:
+              - img [ref=e552]
+              - text: "dock: rekolte"
+          - generic [ref=e555]:
+            - button "tum" [ref=e556] [cursor=pointer]:
+              - img [ref=e557]
+              - text: tum
+            - button "core" [ref=e559] [cursor=pointer]:
+              - img [ref=e560]
+              - text: core
+            - button "ops" [ref=e562] [cursor=pointer]:
+              - img [ref=e563]
+              - text: ops
+            - button "ai" [ref=e565] [cursor=pointer]:
+              - img [ref=e566]
+              - text: ai
+            - button "pazar" [ref=e568] [cursor=pointer]:
+              - img [ref=e569]
+              - text: pazar
+            - button "uygunluk" [ref=e571] [cursor=pointer]:
+              - img [ref=e572]
+              - text: uygunluk
+            - button "bilgi" [ref=e574] [cursor=pointer]:
+              - img [ref=e575]
+              - text: bilgi
+          - generic [ref=e577]:
+            - generic [ref=e578]:
+              - text: teshis
+              - strong [ref=e579]: gorsel analiz + plan
+            - generic [ref=e580]:
+              - text: guven
+              - strong [ref=e581]: top3 tahmin
+            - generic [ref=e582]:
+              - text: aksiyon
+              - strong [ref=e583]: bugun/bu hafta
+          - generic [ref=e584]:
+            - generic [ref=e585]:
+              - generic [ref=e586]:
+                - strong [ref=e587]: demo hazirlik skoru
+                - generic [ref=e588]: 100/100
+              - generic [ref=e589]: moduller, smoke ve akis gecmisi tek bakista.
+            - generic [ref=e590]:
+              - generic [ref=e591]:
+                - strong [ref=e592]: autopilot
+                - generic [ref=e593]: hazir
+              - generic [ref=e594]: tek tusla reset, seed ve smoke senaryolari.
+            - generic [ref=e595]:
+              - generic [ref=e596]:
+                - strong [ref=e597]: demo akis laboratuvari
+                - generic [ref=e598]: 0 kosu
+              - generic [ref=e599]: model, pazar ve finans senaryolarini hizli dogrula.
+          - generic [ref=e600]:
+            - generic [ref=e601]:
+              - text: demo skoru
+              - strong [ref=e602]: 100/100
+              - generic [ref=e603]: modul hazirlik
+            - generic [ref=e604]:
+              - text: smoke
+              - strong [ref=e605]: 5/5
+              - generic [ref=e606]: son kosu
+            - generic [ref=e607]:
+              - text: akis
+              - strong [ref=e608]: "0"
+              - generic [ref=e609]: toplam kosu
+            - generic [ref=e610]:
+              - text: autopilot
+              - strong [ref=e611]: hazir
+              - generic [ref=e612]: durum
+          - generic [ref=e613]:
+            - generic [ref=e614]: "api: hazir"
+            - generic [ref=e615]: "teshis: bekleniyor"
+            - generic [ref=e616]: "bitki: secilmedi"
+            - generic [ref=e617]: "risk: don riski var"
+        - generic [ref=e618]:
+          - generic [ref=e620]:
+            - generic [ref=e621]: storyline
+            - heading "sunum ve demo akisi" [level=3] [ref=e622]
+            - paragraph [ref=e623]: hizli hikaye akisini yatirimci ve demo diliyle toparlar.
+          - generic [ref=e624]:
+            - generic [ref=e625]:
+              - generic [ref=e626]: adim 1
+              - strong [ref=e627]: gorsel yukle
+              - generic [ref=e628]: yaprak veya govdeye odaklan.
+            - generic [ref=e629]:
+              - generic [ref=e630]: adim 2
+              - strong [ref=e631]: hizli analiz
+              - generic [ref=e632]: bulut servisimiz saniyeler icinde.
+            - generic [ref=e633]:
+              - generic [ref=e634]: adim 3
+              - strong [ref=e635]: bakim plani
+              - generic [ref=e636]: adim adim uygulama adimlari.
+          - generic [ref=e637]:
+            - generic [ref=e638]:
+              - strong [ref=e639]: kritik surec penceresi
+              - generic [ref=e640]: ilaclama oncesi 36 saatlik sakin ruzgar penceresi yakalandi.
+            - generic [ref=e641]:
+              - strong [ref=e642]: toprak risk dengesi
+              - generic [ref=e643]: organik madde dusuk, sulama ve besin destegi oncelikli.
+            - generic [ref=e644]:
+              - strong [ref=e645]: verim etkisi
+              - generic [ref=e646]: erken mudahale ile tahmini verim +%12 artiyor.
+            - generic [ref=e647]:
+              - strong [ref=e648]: saha ilerleme
+              - generic [ref=e649]: haftalik gorevlerin %78'i tamamlandi.
+        - generic [ref=e650]:
+          - generic [ref=e652]:
+            - generic [ref=e653]: asset library
+            - heading "icerik ve gorsel havuzu" [level=3] [ref=e654]
+            - paragraph [ref=e655]: yatirimci sunumu ve demo icin hazir veri kutuphaneleri.
+          - generic [ref=e656]:
+            - generic [ref=e657]:
+              - strong [ref=e658]: canli video + sesli asistan
+              - generic [ref=e659]: mobil kamerada canli analiz, sesli soru-cevap ve seans raporu.
+            - generic [ref=e660]:
+              - strong [ref=e661]: hastalik risk haritasi
+              - generic [ref=e662]: parsel bazli risk skorlarini tek ekranda gosterir.
+            - generic [ref=e663]:
+              - strong [ref=e664]: parsel arsivi
+              - generic [ref=e665]: gecmis teshisler, uygulamalar ve trend notlari.
+            - generic [ref=e666]:
+              - strong [ref=e667]: verim tahminleme
+              - generic [ref=e668]: sezon ortasi aralik tahminleri ve trend karsilastirma.
+            - generic [ref=e669]:
+              - strong [ref=e670]: gunluk saha brifingi
+              - generic [ref=e671]: sabah-oglen-aksam operasyon akisi.
+            - generic [ref=e672]:
+              - strong [ref=e673]: girdi ve stok yonetimi
+              - generic [ref=e674]: tohum, gubre, ilac stoklari ve planlanan kullanim.
+          - generic [ref=e675]:
+            - generic [ref=e676]:
+              - text: bakim protokolleri
+              - strong [ref=e677]: "3"
+              - generic [ref=e678]: erken belirti taramasi
+            - generic [ref=e679]:
+              - text: sera riskleri
+              - strong [ref=e680]: "5"
+              - generic [ref=e681]: yuksek nem
+            - generic [ref=e682]:
+              - text: sulama metotlari
+              - strong [ref=e683]: "5"
+              - generic [ref=e684]: damla
+            - generic [ref=e685]:
+              - text: sezonsal planlayici
+              - strong [ref=e686]: "3"
+              - generic [ref=e687]: "-"
+            - generic [ref=e688]:
+              - text: besin rehberi
+              - strong [ref=e689]: "4"
+              - generic [ref=e690]: azot (n)
+            - generic [ref=e691]:
+              - text: organik pratikler
+              - strong [ref=e692]: "4"
+              - generic [ref=e693]: kompost
+            - generic [ref=e694]:
+              - text: gubre takvimi
+              - strong [ref=e695]: "3"
+              - generic [ref=e696]: dusuk doz dengeli gubre
+            - generic [ref=e697]:
+              - text: hasat rehberi
+              - strong [ref=e698]: "4"
+              - generic [ref=e699]: olgunluk
+          - generic [ref=e700]:
+            - generic [ref=e701]:
+              - img "tarla akisi" [ref=e703]
+              - strong [ref=e705]: tarla akisi
+            - generic [ref=e706]:
+              - img "yaprak analizi" [ref=e708]
+              - strong [ref=e710]: yaprak analizi
+            - generic [ref=e711]:
+              - img "pazar vitrini" [ref=e713]
+              - strong [ref=e715]: pazar vitrini
+            - generic [ref=e716]:
+              - img "iklim zekasi" [ref=e718]
+              - strong [ref=e720]: iklim zekasi
+            - generic [ref=e721]:
+              - img "bilgi bankasi" [ref=e723]
+              - strong [ref=e725]: bilgi bankasi
+  - navigation "ana gezinti" [ref=e443]:
+    - button "teshis" [ref=e444] [cursor=pointer]:
+      - img [ref=e445]
+      - generic [ref=e447]: teshis
+    - button "arazi" [ref=e448] [cursor=pointer]:
+      - img [ref=e449]
+      - generic [ref=e451]: arazi
+    - button "pazar" [ref=e452] [cursor=pointer]:
+      - img [ref=e453]
+      - generic [ref=e456]: pazar
+    - button "iklim" [ref=e457] [cursor=pointer]:
+      - img [ref=e458]
+      - generic [ref=e464]: iklim
+    - button "demos" [active] [ref=e465] [cursor=pointer]:
+      - img [ref=e466]
+      - generic [ref=e469]: demos
+  - generic [ref=e471]:
+    - generic [ref=e472]:
+      - heading "gelistirici" [level=2] [ref=e473]
+      - paragraph [ref=e474]: mehmet yasin kaya • bogazici bilgisayar
+    - generic [ref=e475]: "e-posta: gs7016903@gmail.com"
+  - button [ref=e477] [cursor=pointer]:
+    - img [ref=e478]

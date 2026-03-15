@@ -1,0 +1,1 @@
+[ 1030060ms] [WARNING] Capacitor plugin "LocalNotifications" already registered. Cannot register plugins twice. @ http://127.0.0.1:3002/static/js/bundle.js:162

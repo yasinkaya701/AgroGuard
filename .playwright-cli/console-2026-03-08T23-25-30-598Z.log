@@ -1,0 +1,7 @@
+[    3251ms] Uncaught TypeError: e.indexOf is not a function
+    at S.fn.load (https://cdnassets.aa.com.tr/assets/greenline/js/jquery.min.js:1:84931)
+    at <anonymous> (https://cdnassets.aa.com.tr/assets/greenline/js/jquery.mCustomScrollbar.concat.min.js:4:5303)
+    at <anonymous> (https://cdnassets.aa.com.tr/assets/greenline/js/jquery.mCustomScrollbar.concat.min.js:3:496)
+    at <anonymous> (https://cdnassets.aa.com.tr/assets/greenline/js/jquery.mCustomScrollbar.concat.min.js:3:500)
+    at <anonymous> (https://cdnassets.aa.com.tr/assets/greenline/js/jquery.mCustomScrollbar.concat.min.js:3:73)
+    at <anonymous> (https://cdnassets.aa.com.tr/assets/greenline/js/jquery.mCustomScrollbar.concat.min.js:3:99)

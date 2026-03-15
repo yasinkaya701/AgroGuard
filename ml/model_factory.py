@@ -8,6 +8,7 @@ from torchvision import models
 MODEL_CHOICES: List[str] = [
     "agro_cnn_s",
     "agro_cnn",
+    "agro_cnn_v2",
     "agro_cnn_l",
     "mobilenet_v3_small",
     "efficientnet_v2_s",
@@ -169,6 +170,8 @@ def build_model(name: str, num_classes: int, pretrained: bool):
         return AgroCNN(num_classes=num_classes, width=0.85, depth_mult=0.9, dropout=0.2, drop_path_rate=0.08)
     if name == "agro_cnn":
         return AgroCNN(num_classes=num_classes, width=1.0, depth_mult=1.0, dropout=0.25, drop_path_rate=0.12)
+    if name == "agro_cnn_v2":
+        return AgroCNN(num_classes=num_classes, width=1.1, depth_mult=1.1, dropout=0.3, drop_path_rate=0.2)
     if name == "agro_cnn_l":
         return AgroCNN(num_classes=num_classes, width=1.2, depth_mult=1.2, dropout=0.3, drop_path_rate=0.15)
     if name.startswith("efficientnet_v2_"):

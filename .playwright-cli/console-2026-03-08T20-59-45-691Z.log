@@ -1,0 +1,40 @@
+[    2160ms] TypeError: (0 , _data_mockData__WEBPACK_IMPORTED_MODULE_24__.mockHash)(...).slice is not a function
+    at http://127.0.0.1:3000/static/js/bundle.js:67804:99
+    at Array.map (<anonymous>)
+    at http://127.0.0.1:3000/static/js/bundle.js:67797:129
+    at mountMemo (http://127.0.0.1:3000/static/js/bundle.js:37405:23)
+    at Object.useMemo (http://127.0.0.1:3000/static/js/bundle.js:37790:20)
+    at useMemo (http://127.0.0.1:3000/static/js/bundle.js:52453:25)
+    at App (http://127.0.0.1:3000/static/js/bundle.js:67788:74)
+    at renderWithHooks (http://127.0.0.1:3000/static/js/bundle.js:36633:22)
+    at mountIndeterminateComponent (http://127.0.0.1:3000/static/js/bundle.js:40605:17)
+    at beginWork (http://127.0.0.1:3000/static/js/bundle.js:41908:20)
+[    3090ms] TypeError: (0 , _data_mockData__WEBPACK_IMPORTED_MODULE_24__.mockHash)(...).slice is not a function
+    at http://127.0.0.1:3000/static/js/bundle.js:67804:99
+    at Array.map (<anonymous>)
+    at http://127.0.0.1:3000/static/js/bundle.js:67797:129
+    at mountMemo (http://127.0.0.1:3000/static/js/bundle.js:37405:23)
+    at Object.useMemo (http://127.0.0.1:3000/static/js/bundle.js:37790:20)
+    at useMemo (http://127.0.0.1:3000/static/js/bundle.js:52453:25)
+    at App (http://127.0.0.1:3000/static/js/bundle.js:67788:74)
+    at renderWithHooks (http://127.0.0.1:3000/static/js/bundle.js:36633:22)
+    at mountIndeterminateComponent (http://127.0.0.1:3000/static/js/bundle.js:40605:17)
+    at beginWork (http://127.0.0.1:3000/static/js/bundle.js:41908:20)
+[    3089ms] [ERROR] The above error occurred in the <App> component:
+
+    at App (http://127.0.0.1:3000/static/js/bundle.js:59017:69)
+    at RootErrorBoundary (http://127.0.0.1:3000/static/js/bundle.js:101267:5)
+
+React will try to recreate this component tree from scratch using the error boundary you provided, RootErrorBoundary. @ http://127.0.0.1:3000/static/js/bundle.js:39413
+[    3090ms] [ERROR] Root render failed: TypeError: (0 , _data_mockData__WEBPACK_IMPORTED_MODULE_24__.mockHash)(...).slice is not a function
+    at http://127.0.0.1:3000/static/js/bundle.js:67804:99
+    at Array.map (<anonymous>)
+    at http://127.0.0.1:3000/static/js/bundle.js:67797:129
+    at mountMemo (http://127.0.0.1:3000/static/js/bundle.js:37405:23)
+    at Object.useMemo (http://127.0.0.1:3000/static/js/bundle.js:37790:20)
+    at useMemo (http://127.0.0.1:3000/static/js/bundle.js:52453:25)
+    at App (http://127.0.0.1:3000/static/js/bundle.js:67788:74)
+    at renderWithHooks (http://127.0.0.1:3000/static/js/bundle.js:36633:22)
+    at mountIndeterminateComponent (http://127.0.0.1:3000/static/js/bundle.js:40605:17)
+    at beginWork (http://127.0.0.1:3000/static/js/bundle.js:41908:20) @ http://127.0.0.1:3000/static/js/bundle.js:101286
+[   36000ms] [WARNING] Capacitor plugin "LocalNotifications" already registered. Cannot register plugins twice. @ http://127.0.0.1:3000/static/js/bundle.js:162

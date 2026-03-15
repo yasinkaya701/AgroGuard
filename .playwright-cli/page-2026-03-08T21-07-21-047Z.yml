@@ -1,0 +1,234 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - img [ref=e8]
+          - generic [ref=e11]:
+            - generic [ref=e12]:
+              - text: agroguard
+              - generic "neural monitoring active" [ref=e13]
+            - generic [ref=e15]: system ready
+        - generic [ref=e16]:
+          - generic [ref=e17]: tarim el kilavuzu + teshis
+          - generic [ref=e18]:
+            - generic [ref=e19]: api
+            - strong [ref=e20]: hazir
+          - button "1" [ref=e21] [cursor=pointer]:
+            - img [ref=e22]
+            - generic [ref=e25]: "1"
+          - button "standart" [ref=e482] [cursor=pointer]
+    - main [ref=e27]:
+      - generic [ref=e484]:
+        - generic [ref=e486]:
+          - generic [ref=e487]:
+            - generic [ref=e488]:
+              - generic [ref=e489]: agroguard_labs
+              - heading "demo studio" [level=2] [ref=e490]:
+                - text: demo
+                - emphasis [ref=e491]: studio
+              - paragraph [ref=e492]: bug fix, yatirimci sunumu, model gozlemi ve demo operasyonlarini tek workspace icinde yonet.
+            - generic [ref=e493]:
+              - generic [ref=e494]:
+                - img [ref=e495]
+                - text: "risk: yuksek"
+              - generic [ref=e497]:
+                - img [ref=e498]
+                - text: hazir
+              - generic [ref=e500]:
+                - img [ref=e501]
+                - text: strict
+          - generic [ref=e504]:
+            - button "studio" [ref=e505] [cursor=pointer]:
+              - img [ref=e506]
+              - text: studio
+            - button "operasyon" [ref=e511] [cursor=pointer]:
+              - img [ref=e512]
+              - text: operasyon
+            - button "sandbox" [ref=e517] [cursor=pointer]:
+              - img [ref=e518]
+              - text: sandbox
+            - button "yatirimci" [active] [ref=e519] [cursor=pointer]:
+              - img [ref=e520]
+              - text: yatirimci
+            - button "model" [ref=e523] [cursor=pointer]:
+              - img [ref=e524]
+              - text: model
+            - button "sistem" [ref=e527] [cursor=pointer]:
+              - img [ref=e528]
+              - text: sistem
+          - generic [ref=e532]:
+            - generic [ref=e533]:
+              - text: moduller
+              - strong [ref=e534]: 5/5
+              - generic [ref=e535]: hazir
+            - generic [ref=e536]:
+              - text: run score
+              - strong [ref=e537]: 100/100
+              - generic [ref=e538]: yuksek
+            - generic [ref=e539]:
+              - text: model
+              - strong [ref=e540]: healthy
+              - generic [ref=e541]: diagnostics
+            - generic [ref=e542]:
+              - text: aktif istasyon
+              - strong [ref=e543]: rekolte
+              - generic [ref=e544]: strict model aktif
+        - generic [ref=e726]:
+          - generic [ref=e727]:
+            - generic [ref=e728]:
+              - generic [ref=e729]: investor room
+              - heading "yatirimci sunum merkezi" [level=3] [ref=e730]
+              - paragraph [ref=e731]: sunum yapilabilir, risk kartlari acik anlatilmali.
+            - generic [ref=e732]:
+              - img [ref=e733]
+              - text: conditional go
+          - generic [ref=e736]:
+            - button "preflight" [ref=e737] [cursor=pointer]:
+              - img [ref=e738]
+              - text: preflight
+            - button "dry run" [ref=e740] [cursor=pointer]:
+              - img [ref=e741]
+              - text: dry run
+            - button "showcase" [ref=e743] [cursor=pointer]:
+              - img [ref=e744]
+              - text: showcase
+            - button "sunum acik" [ref=e749] [cursor=pointer]:
+              - img [ref=e750]
+              - text: sunum acik
+            - button "snapshot" [ref=e753] [cursor=pointer]:
+              - img [ref=e754]
+              - text: snapshot
+            - button "script kopyala" [ref=e757] [cursor=pointer]:
+              - img [ref=e758]
+              - text: script kopyala
+            - button "brief json" [ref=e761] [cursor=pointer]:
+              - img [ref=e762]
+              - text: brief json
+            - button "one pager" [ref=e765] [cursor=pointer]:
+              - img [ref=e766]
+              - text: one pager
+            - button "deck html" [ref=e769] [cursor=pointer]:
+              - img [ref=e770]
+              - text: deck html
+        - generic [ref=e773]:
+          - generic [ref=e775]:
+            - generic [ref=e776]: pitch control
+            - heading "sunum timer ve sahne yonetimi" [level=3] [ref=e777]
+            - paragraph [ref=e778]: sunum modunu ayni ekranda prova et.
+          - generic [ref=e779]:
+            - generic [ref=e780]:
+              - text: sahne
+              - strong [ref=e781]: 1/4
+              - generic [ref=e782]: windowed
+            - generic [ref=e783]:
+              - text: pitch timer
+              - strong [ref=e784]: 90 sn
+              - generic [ref=e785]: toplam 90 sn
+            - generic [ref=e786]:
+              - text: auto advance
+              - strong [ref=e787]: kapali
+              - generic [ref=e788]: slot 22 sn
+            - generic [ref=e789]:
+              - text: momentum
+              - strong [ref=e790]: "-"
+              - generic [ref=e791]: delta -
+          - generic [ref=e792]:
+            - generic [ref=e793]:
+              - text: sunum suresi
+              - slider [ref=e794]: "90"
+            - generic [ref=e795]:
+              - text: sahne gecis suresi
+              - slider [ref=e796]: "22"
+            - generic [ref=e797]:
+              - button "timer baslat" [ref=e798] [cursor=pointer]:
+                - img [ref=e799]
+                - text: timer baslat
+              - button "auto toggle" [ref=e801] [cursor=pointer]:
+                - img [ref=e802]
+                - text: auto toggle
+              - button "fullscreen" [ref=e807] [cursor=pointer]:
+                - img [ref=e808]
+                - text: fullscreen
+          - generic [ref=e811]:
+            - generic [ref=e812]:
+              - generic [ref=e813]:
+                - strong [ref=e814]: hazirlik
+                - generic [ref=e815]: sahne 1
+              - generic [ref=e816]: platform hazirlik 65/100, akis basari %0.
+            - generic [ref=e817]:
+              - generic [ref=e818]:
+                - strong [ref=e819]: pazar cekirdegi
+                - generic [ref=e820]: sahne 2
+              - generic [ref=e821]: 44 acik ilan, 42 aktif siparis, 0 kg hacim.
+            - generic [ref=e822]:
+              - generic [ref=e823]:
+                - strong [ref=e824]: arazi zeka motoru
+                - generic [ref=e825]: sahne 3
+              - generic [ref=e826]: model guveni %62, tahmin 419.646 tl/da.
+            - generic [ref=e827]:
+              - generic [ref=e828]:
+                - strong [ref=e829]: yatirim karari
+                - generic [ref=e830]: sahne 4
+              - generic [ref=e831]: "conditional go: sunum yapilabilir, risk kartlari anlatilmali."
+        - generic [ref=e832]:
+          - generic [ref=e834]:
+            - generic [ref=e835]: pitch content
+            - heading "preflight, risk ve veri odasi" [level=3] [ref=e836]
+            - paragraph [ref=e837]: sunumda kullanilacak cekirdek mesajlar ve risk kartlari.
+          - generic [ref=e838]:
+            - generic [ref=e839]:
+              - strong [ref=e840]: preflight kontrolleri
+              - text: preflight sonucu yok.
+            - generic [ref=e841]:
+              - strong [ref=e842]: highlights
+              - generic [ref=e843]: "- hazirlik seviyesi artiyor; smoke ve akis istikrari izlenmeli."
+              - generic [ref=e844]: "- pazar tarafinda 44 aktif ilan canli gorunuyor."
+              - generic [ref=e845]: "- siparis boru hatti aktif (42 aktif siparis)."
+              - generic [ref=e846]: "- arazi fiyat model guveni yatirim sunumu icin yeterli (%62)."
+            - generic [ref=e847]:
+              - strong [ref=e848]: bloker + risk
+              - generic [ref=e849]: "- akis basarisi"
+              - separator [ref=e850]
+              - generic [ref=e851]: "- teknik stabilite: smoke fail yok, canli demoda hata riski dusuk."
+              - generic [ref=e852]: "- pazar canliligi: 44 aktif ilan mevcut, pazar akis hikayesi guclu."
+              - generic [ref=e853]: "- model guveni: arazi model guveni %62."
+          - generic [ref=e854]:
+            - generic [ref=e855]:
+              - strong [ref=e856]: problem
+              - generic [ref=e857]: "- tarimda veri daginik; kararlar gec ve sezgisel aliniyor."
+              - generic [ref=e858]: "- hastalik, fiyat ve arazi riski ayni panelde yonetilemiyor."
+            - generic [ref=e859]:
+              - strong [ref=e860]: cozum
+              - generic [ref=e861]: "- teshis + pazar + arazi fiyat modelini tek uygulamada birlestirir."
+              - generic [ref=e862]: "- canli demo akislariyla teknik guvenilirlik olculur ve raporlanir."
+            - generic [ref=e863]:
+              - strong [ref=e864]: kanit
+              - generic [ref=e865]: "- hazirlik 65/100, akis basari %0."
+              - generic [ref=e866]: "- 44 acik ilan, 42 aktif siparis, 0 kg hacim."
+          - generic [ref=e867]:
+            - strong [ref=e868]: sunum scripti
+            - text: "agroguard 90 saniye sunum akisi 1) platform hazirlik skoru: 65/100. 2) operasyonel guvenilirlik: akis basari %0, smoke fail 0. 3) pazar motoru: 44 acik ilan, 42 aktif siparis, 0 kg hacim. 4) arazi modeli: guven %62, birim tahmin 419.646 tl/da. 5) tek tusla: pazar vitrini, arazi paneli ve canli demo akisi aciliyor."
+  - navigation "ana gezinti" [ref=e443]:
+    - button "teshis" [ref=e444] [cursor=pointer]:
+      - img [ref=e445]
+      - generic [ref=e447]: teshis
+    - button "arazi" [ref=e448] [cursor=pointer]:
+      - img [ref=e449]
+      - generic [ref=e451]: arazi
+    - button "pazar" [ref=e452] [cursor=pointer]:
+      - img [ref=e453]
+      - generic [ref=e456]: pazar
+    - button "iklim" [ref=e457] [cursor=pointer]:
+      - img [ref=e458]
+      - generic [ref=e464]: iklim
+    - button "demos" [ref=e465] [cursor=pointer]:
+      - img [ref=e466]
+      - generic [ref=e469]: demos
+  - generic [ref=e471]:
+    - generic [ref=e472]:
+      - heading "gelistirici" [level=2] [ref=e473]
+      - paragraph [ref=e474]: mehmet yasin kaya • bogazici bilgisayar
+    - generic [ref=e475]: "e-posta: gs7016903@gmail.com"
+  - button [ref=e477] [cursor=pointer]:
+    - img [ref=e478]

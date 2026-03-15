@@ -1,0 +1,329 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - img [ref=e8]
+          - generic [ref=e11]:
+            - generic [ref=e12]:
+              - text: agroguard
+              - generic "neural monitoring active" [ref=e13]
+            - generic [ref=e15]: system ready
+        - generic [ref=e16]:
+          - generic [ref=e17]: tarim el kilavuzu + teshis
+          - generic [ref=e18]:
+            - generic [ref=e19]: api
+            - strong [ref=e20]: hazir
+          - button "1" [ref=e21] [cursor=pointer]:
+            - img [ref=e22]
+            - generic [ref=e25]: "1"
+          - button "sunum" [ref=e26] [cursor=pointer]
+    - main [ref=e27]:
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - heading "malatya danismani" [level=2] [ref=e31] [cursor=pointer]:
+            - text: malatya
+            - img [ref=e32]
+            - emphasis [ref=e35]: danismani
+          - paragraph [ref=e36]:
+            - img [ref=e37]
+            - text: malatya'de don riski! hassas bitkileri koruma altina alin.
+        - generic [ref=e39]:
+          - generic [ref=e40]:
+            - img [ref=e41]
+            - text: "hazirlik: 3/5"
+          - generic [ref=e43]: "bitki: secilmedi"
+      - generic [ref=e44]:
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - generic [ref=e47]:
+              - generic [ref=e48]:
+                - generic [ref=e49]: neural sync
+                - img [ref=e50]
+              - generic [ref=e53]: 98.4%
+            - generic [ref=e56]:
+              - generic [ref=e57]:
+                - generic [ref=e58]: atmosphere
+                - img [ref=e59]
+              - generic [ref=e61]: 0.3°c
+              - generic [ref=e62]: signal acquired
+            - generic [ref=e63]:
+              - generic [ref=e64]:
+                - generic [ref=e65]: connectivity
+                - img [ref=e66]
+              - generic [ref=e70]: active
+              - generic [ref=e71]: ssl secured portal
+          - generic [ref=e72]:
+            - generic [ref=e73]:
+              - generic [ref=e74]:
+                - generic [ref=e75]: bilgi bankasi
+                - heading "el kilavuzu ve rehberler" [level=3] [ref=e76]
+                - paragraph [ref=e77]: hastalik, zararli, toprak ve uygulama rehberleri tek yerde.
+              - button "goruntule" [ref=e78] [cursor=pointer]
+            - generic [ref=e79]:
+              - generic [ref=e80]: hastalik
+              - generic [ref=e81]: toprak
+              - generic [ref=e82]: ipm
+              - generic [ref=e83]: sulama
+              - generic [ref=e84]: gubre
+              - generic [ref=e85]: zararli
+          - generic [ref=e86]:
+            - generic [ref=e87]:
+              - generic [ref=e88]:
+                - heading "global tarim bulteni" [level=3] [ref=e89]:
+                  - img [ref=e90]
+                  - text: global tarim bulteni
+                - paragraph [ref=e93]: internetten cekilen guncel tarim ve piyasa akisi • canli tarama
+              - generic [ref=e94]:
+                - button "yenile" [ref=e95] [cursor=pointer]:
+                  - img [ref=e96]
+                  - text: yenile
+                - img [ref=e101]
+                - generic [ref=e104]: canli
+            - generic [ref=e106]: su anda haber akisi bos. yenileyip tekrar dene.
+        - generic [ref=e107]:
+          - generic [ref=e108]:
+            - generic [ref=e109]:
+              - img [ref=e110]
+              - generic [ref=e112]: hava ongorusu
+            - paragraph [ref=e113]: kritik don riski saptandi. koruyucu onlemler gerekebilir.
+          - generic [ref=e114]:
+            - generic [ref=e115]:
+              - img [ref=e116]
+              - generic [ref=e118]: bitki koruma
+            - paragraph [ref=e119]: bolgesel sinyaller su an icin dusuk enfeksiyon riski gostermektedir.
+          - generic [ref=e120]:
+            - generic [ref=e121]:
+              - img [ref=e122]
+              - generic [ref=e124]: operasyonel verim
+            - paragraph [ref=e125]: hafif ruzgar, tozlasma ve dogal hava sirkulasyonu icin dengeli.
+        - generic [ref=e127]:
+          - generic [ref=e128]:
+            - generic [ref=e129]:
+              - generic [ref=e130]: hizli akis
+              - heading "ana kontrol seridi" [level=3] [ref=e131]:
+                - text: ana kontrol
+                - emphasis [ref=e132]: seridi
+              - paragraph [ref=e133]: hazirlik, teshis, sonuc ve bilgi bankasina tek satirdan gec.
+            - generic [ref=e134]:
+              - button "hazirlik" [ref=e135] [cursor=pointer]:
+                - img [ref=e136]
+                - text: hazirlik
+              - button "teshis" [ref=e138] [cursor=pointer]:
+                - img [ref=e139]
+                - text: teshis
+              - button "sonuc" [ref=e144] [cursor=pointer]:
+                - img [ref=e145]
+                - text: sonuc
+              - button "bilgi bankasi" [ref=e147] [cursor=pointer]:
+                - img [ref=e148]
+                - text: bilgi bankasi
+          - generic [ref=e150]:
+            - generic [ref=e151]:
+              - generic [ref=e152]: hazirlik
+              - strong [ref=e153]: 60%
+            - generic [ref=e154]:
+              - generic [ref=e155]: bitki hastalik listesi
+              - strong [ref=e156]: "-"
+            - generic [ref=e157]:
+              - generic [ref=e158]: son analiz
+              - strong [ref=e159]: "0"
+            - generic [ref=e160]:
+              - generic [ref=e161]: bilgi bankasi modulu
+              - strong [ref=e162]: "14"
+        - generic [ref=e163]:
+          - generic [ref=e164]:
+            - heading "hazirlik kontrolu" [level=3] [ref=e165]
+            - generic [ref=e166]: 60%
+          - generic [ref=e167]:
+            - generic [ref=e168]:
+              - generic [ref=e169]: backend baglantisi
+              - strong [ref=e170]: hazir
+            - generic [ref=e171]:
+              - generic [ref=e172]: model yuku
+              - strong [ref=e173]: hazir
+            - generic [ref=e174]:
+              - generic [ref=e175]: bitki secimi
+              - strong [ref=e176]: eksik
+            - generic [ref=e177]:
+              - generic [ref=e178]: bitki model destegi
+              - strong [ref=e179]: hazir
+            - generic [ref=e180]:
+              - generic [ref=e181]: gorsel yukleme
+              - strong [ref=e182]: eksik
+          - generic [ref=e183]:
+            - button "ilk bitkiyi sec" [ref=e184] [cursor=pointer]
+            - button "temizle" [ref=e185] [cursor=pointer]:
+              - img [ref=e186]
+              - text: temizle
+        - generic [ref=e191]:
+          - heading "teshis akisi ve analiz" [level=3] [ref=e193]:
+            - text: teshis akisi
+            - emphasis [ref=e194]: ve analiz
+          - generic [ref=e195]:
+            - generic [ref=e196]:
+              - generic [ref=e197]: 1) bitki sec
+              - combobox "1) bitki sec" [ref=e198]:
+                - option "bitki seciniz" [selected]
+                - option "elma"
+                - option "yaban mersini"
+                - option "kiraz"
+                - option "misir"
+                - option "uzum"
+                - option "portakal"
+                - option "seftali"
+                - option "biber"
+                - option "patates"
+                - option "ahududu"
+                - option "soya"
+                - option "kabak"
+                - option "cilek"
+                - option "domates"
+            - generic [ref=e199]:
+              - generic [ref=e200]: 2) goruntuyu yukle
+              - button "gorsel sec" [disabled] [ref=e201]:
+                - img [ref=e202]
+                - text: gorsel sec
+              - generic [ref=e205]:
+                - img [ref=e206]
+                - text: henuz gorsel secilmedi
+            - generic [ref=e209]:
+              - button "analizi baslat" [disabled] [ref=e210]:
+                - img [ref=e211]
+                - text: analizi baslat
+              - button "sifirla" [ref=e216] [cursor=pointer]:
+                - img [ref=e217]
+                - text: sifirla
+            - button "ilk bitkiyi sec" [ref=e222]
+        - generic [ref=e223]:
+          - generic [ref=e224]:
+            - generic [ref=e225]:
+              - img [ref=e227]
+              - generic [ref=e229]:
+                - heading "tarim bilgi bankasi" [level=3] [ref=e230]:
+                  - text: tarim
+                  - emphasis [ref=e231]: bilgi bankasi
+                - paragraph [ref=e232]: el kilavuzu • hastalik rehberi • ipm • toprak • zararlilar
+            - generic [ref=e233]:
+              - img [ref=e234]
+              - 'textbox "konu ara... (orn: mildiyo, sulama, toprak)" [ref=e237]'
+          - generic [ref=e238]:
+            - button "hastalik kutuphanesi 12 madde" [ref=e239] [cursor=pointer]:
+              - generic [ref=e240]:
+                - generic [ref=e241]:
+                  - img [ref=e243]
+                  - generic [ref=e245]: hastalik kutuphanesi
+                - generic [ref=e246]: 12 madde
+            - button "bitki ansiklopedisi 20 madde" [ref=e247] [cursor=pointer]:
+              - generic [ref=e248]:
+                - generic [ref=e249]:
+                  - img [ref=e251]
+                  - generic [ref=e254]: bitki ansiklopedisi
+                - generic [ref=e255]: 20 madde
+            - button "gubreleme takvimi 3 madde" [ref=e256] [cursor=pointer]:
+              - generic [ref=e257]:
+                - generic [ref=e258]:
+                  - img [ref=e260]
+                  - generic [ref=e262]: gubreleme takvimi
+                - generic [ref=e263]: 3 madde
+            - button "hasat rehberi 4 madde" [ref=e264] [cursor=pointer]:
+              - generic [ref=e265]:
+                - generic [ref=e266]:
+                  - img [ref=e268]
+                  - generic [ref=e270]: hasat rehberi
+                - generic [ref=e271]: 4 madde
+          - button "hastalik kutuphanesi 12 madde" [ref=e273] [cursor=pointer]:
+            - img [ref=e275]
+            - generic [ref=e277]:
+              - strong [ref=e278]: hastalik kutuphanesi
+              - generic [ref=e279]: 12 madde
+            - img [ref=e280]
+          - button "bitki ansiklopedisi 20 madde" [ref=e283] [cursor=pointer]:
+            - img [ref=e285]
+            - generic [ref=e288]:
+              - strong [ref=e289]: bitki ansiklopedisi
+              - generic [ref=e290]: 20 madde
+            - img [ref=e291]
+          - button "gubreleme takvimi 3 madde" [ref=e294] [cursor=pointer]:
+            - img [ref=e296]
+            - generic [ref=e298]:
+              - strong [ref=e299]: gubreleme takvimi
+              - generic [ref=e300]: 3 madde
+            - img [ref=e301]
+          - button "hasat rehberi 4 madde" [ref=e304] [cursor=pointer]:
+            - img [ref=e306]
+            - generic [ref=e308]:
+              - strong [ref=e309]: hasat rehberi
+              - generic [ref=e310]: 4 madde
+            - img [ref=e311]
+          - button "zararli rehberi 6 madde" [ref=e314] [cursor=pointer]:
+            - img [ref=e316]
+            - generic [ref=e325]:
+              - strong [ref=e326]: zararli rehberi
+              - generic [ref=e327]: 6 madde
+            - img [ref=e328]
+          - button "ipm adimlari 5 madde" [ref=e331] [cursor=pointer]:
+            - img [ref=e333]
+            - generic [ref=e335]:
+              - strong [ref=e336]: ipm adimlari
+              - generic [ref=e337]: 5 madde
+            - img [ref=e338]
+          - button "toprak testi rehberi 5 madde" [ref=e341] [cursor=pointer]:
+            - img [ref=e343]
+            - generic [ref=e345]:
+              - strong [ref=e346]: toprak testi rehberi
+              - generic [ref=e347]: 5 madde
+            - img [ref=e348]
+          - button "besin eksikligi rehberi 4 madde" [ref=e351] [cursor=pointer]:
+            - img [ref=e353]
+            - generic [ref=e356]:
+              - strong [ref=e357]: besin eksikligi rehberi
+              - generic [ref=e358]: 4 madde
+            - img [ref=e359]
+          - button "sulama ipuclari 5 madde" [ref=e362] [cursor=pointer]:
+            - img [ref=e364]
+            - generic [ref=e367]:
+              - strong [ref=e368]: sulama ipuclari
+              - generic [ref=e369]: 5 madde
+            - img [ref=e370]
+          - button "hava durumuna gore aksiyon 5 madde" [ref=e373] [cursor=pointer]:
+            - img [ref=e375]
+            - generic [ref=e377]:
+              - strong [ref=e378]: hava durumuna gore aksiyon
+              - generic [ref=e379]: 5 madde
+            - img [ref=e380]
+          - button "sorun giderme 5 madde" [ref=e383] [cursor=pointer]:
+            - img [ref=e385]
+            - generic [ref=e387]:
+              - strong [ref=e388]: sorun giderme
+              - generic [ref=e389]: 5 madde
+            - img [ref=e390]
+          - button "hastalik onleme 5 madde" [ref=e393] [cursor=pointer]:
+            - img [ref=e395]
+            - generic [ref=e397]:
+              - strong [ref=e398]: hastalik onleme
+              - generic [ref=e399]: 5 madde
+            - img [ref=e400]
+  - navigation "ana gezinti" [ref=e402]:
+    - button "teshis" [ref=e403] [cursor=pointer]:
+      - img [ref=e404]
+      - generic [ref=e406]: teshis
+    - button "arazi" [ref=e407] [cursor=pointer]:
+      - img [ref=e408]
+      - generic [ref=e410]: arazi
+    - button "pazar" [ref=e411] [cursor=pointer]:
+      - img [ref=e412]
+      - generic [ref=e415]: pazar
+    - button "iklim" [ref=e416] [cursor=pointer]:
+      - img [ref=e417]
+      - generic [ref=e423]: iklim
+    - button "demos" [ref=e424] [cursor=pointer]:
+      - img [ref=e425]
+      - generic [ref=e428]: demos
+  - generic [ref=e430]:
+    - generic [ref=e431]:
+      - heading "gelistirici" [level=2] [ref=e432]
+      - paragraph [ref=e433]: mehmet yasin kaya • bogazici bilgisayar
+    - generic [ref=e434]: "e-posta: gs7016903@gmail.com"
+  - button [ref=e436] [cursor=pointer]:
+    - img [ref=e437]

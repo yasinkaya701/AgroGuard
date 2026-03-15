@@ -27,7 +27,7 @@ export default function AppLite() {
       at: now,
       actions: [
         "Sabah saatlerinde yaprak alti kontrolu yapin.",
-        "Sulamayi kok bolgesine yonlendirin.",
+        "Sulamayi kok bölgesine yonlendirin.",
         "3 gun sonra tekrar fotograf cekin."
       ]
     });
@@ -45,13 +45,13 @@ export default function AppLite() {
         <div className="hero-grid">
           <div className="hero-copy">
             <h1>Uygulama acildi. Temel mod aktif.</h1>
-            <p>Stabil calisma icin sade mod acildi. Analiz ve rapor ekrani kullanima hazir.</p>
+            <p>Stabil calisma icin sade mod acildi. Analiz ve rapor ekrani kullanima hazır.</p>
           </div>
         </div>
       </header>
 
       <section className="panel">
-        <h2>Hizli Teshis</h2>
+        <h2>Hizli Teşhis</h2>
         <div className="panel-actions">
           <label className="plant-select">
             <span>Bitki</span>
@@ -70,7 +70,7 @@ export default function AppLite() {
               accept="image/*"
               onChange={(e) => setFileName(e.target.files?.[0]?.name || "")}
             />
-            <small className="muted">{fileName || "Dosya secilmedi"}</small>
+            <small className="muted">{fileName || "Dosya seçilmedi"}</small>
           </label>
           <button className="primary" onClick={analyzeDemo}>
             Demo analiz calistir

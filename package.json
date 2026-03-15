@@ -1,6 +1,7 @@
 {
   "name": "bitki-hastalik-app",
   "version": "0.1.0",
+  "homepage": ".",
   "private": true,
   "dependencies": {
     "@capacitor/android": "^6.2.1",
@@ -16,6 +17,7 @@
     "concurrently": "^9.1.2",
     "cors": "^2.8.5",
     "express": "^4.21.2",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.562.0",
     "multer": "^1.4.5-lts.2",
     "nodemailer": "^6.10.1",
@@ -23,6 +25,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.5.0",
+    "react-leaflet": "^4.2.1",
     "react-scripts": "5.0.1",
     "sharp": "^0.33.5",
     "web-vitals": "^2.1.4"
@@ -63,5 +66,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "typescript": "^4.9.5"
   }
 }

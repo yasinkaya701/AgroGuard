@@ -1,0 +1,555 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - img [ref=e8]
+          - generic [ref=e11]:
+            - generic [ref=e12]:
+              - text: agroguard
+              - generic "neural monitoring active" [ref=e13]
+            - generic [ref=e15]: system ready
+        - generic [ref=e16]:
+          - generic [ref=e17]: tarim el kilavuzu + teshis
+          - generic [ref=e18]:
+            - generic [ref=e19]: api
+            - strong [ref=e20]: degil
+          - button [ref=e21] [cursor=pointer]:
+            - img [ref=e22]
+          - button "sunum" [ref=e25] [cursor=pointer]
+    - main [ref=e26]:
+      - generic [ref=e407]:
+        - generic [ref=e408]:
+          - generic [ref=e410]:
+            - generic [ref=e411]:
+              - generic [ref=e412]: İKLİM_KOMUTA_SİSTEMİ v3.2
+              - heading "İklim İstihbaratı" [level=2] [ref=e413]:
+                - text: İklim
+                - emphasis [ref=e414]: İstihbaratı
+              - paragraph [ref=e415]: Uydu, sensör ağı ve yapay zeka destekli 30 günlük iklim projeksiyonu.
+            - generic [ref=e416]:
+              - generic [ref=e417]:
+                - generic [ref=e418]: SKOR
+                - generic [ref=e419]: "--"
+                - generic [ref=e420]: /100
+              - generic [ref=e421]:
+                - generic [ref=e422]: UYARI
+                - generic [ref=e423]: "0"
+                - generic [ref=e424]: aktif
+              - generic [ref=e425]:
+                - generic [ref=e426]: SENSÖR
+                - generic [ref=e427]: "4"
+                - generic [ref=e428]: çevrimiçi
+          - generic [ref=e429]:
+            - generic [ref=e430]:
+              - generic [ref=e431]:
+                - img [ref=e433]
+                - generic [ref=e440]:
+                  - heading "Satellite Monitor" [level=3] [ref=e441]:
+                    - text: Satellite
+                    - emphasis [ref=e442]: Monitor
+                  - text: "ORBITAL PATH: SENTINEL-2B active"
+              - generic [ref=e443]:
+                - generic [ref=e444]: LIVE SIGNAL
+                - generic [ref=e445]: "LAT: 39.9200 LON: 32.8500"
+            - generic [ref=e446]:
+              - generic [ref=e447]:
+                - generic [ref=e448]:
+                  - generic:
+                    - generic:
+                      - img
+                - generic [ref=e451]: "NDVI SCAN: 0.58 (NORMAL)"
+              - generic [ref=e452]:
+                - generic [ref=e453]:
+                  - generic [ref=e454]: Bulut Örtüsü
+                  - generic [ref=e455]:
+                    - generic [ref=e456]: "%40"
+                    - generic [ref=e457]: Parçalı
+                - generic [ref=e458]:
+                  - generic [ref=e459]: Toprak Nemi
+                  - generic [ref=e460]:
+                    - generic [ref=e461]: Düşük
+                    - generic [ref=e462]: Kuru
+                - generic [ref=e463]:
+                  - generic [ref=e464]: Termal
+                  - generic [ref=e465]:
+                    - generic [ref=e466]: 15°
+                    - generic [ref=e467]: Canlı
+                - button "MULTI-SPECTRAL" [ref=e468] [cursor=pointer]:
+                  - img [ref=e469]
+                  - text: MULTI-SPECTRAL
+          - generic [ref=e473]:
+            - generic [ref=e474]:
+              - img [ref=e476]
+              - generic [ref=e479]:
+                - generic [ref=e480]: KONUM SEÇİMİ
+                - paragraph [ref=e481]: İklim ve toprak verilerini görmek istediğiniz şehri seçin
+              - button "Malatya" [ref=e482] [cursor=pointer]:
+                - img [ref=e483]
+                - text: Malatya
+                - img [ref=e486]
+            - generic [ref=e488]:
+              - generic [ref=e489]:
+                - img [ref=e490]
+                - 'textbox "Şehir yaz ve uygula (örn: Ankara)" [ref=e493]'
+              - button "Şehri Uygula" [ref=e494] [cursor=pointer]
+          - generic [ref=e495]:
+            - generic [ref=e496]:
+              - generic [ref=e497]:
+                - strong [ref=e498]: İl + ilçe + mahalle kapsamı
+                - text: İklim ve toprak sorgularını ilçe düzeyine indir.
+              - generic [ref=e499]: Malatya
+            - generic [ref=e500]:
+              - generic [ref=e501]:
+                - generic [ref=e502]: Hızlı konum arama
+                - textbox "İlçe veya mahalle yaz" [ref=e503]
+              - generic [ref=e504]:
+                - generic [ref=e505]: İlçe
+                - combobox "İlçe seç" [ref=e506]
+              - generic [ref=e507]:
+                - generic [ref=e508]: Mahalle / mevki
+                - combobox "Mahalle seç" [ref=e509]
+            - generic [ref=e510]:
+              - generic [ref=e512]: Malatya
+              - button "İlçe verisini uygula" [ref=e513] [cursor=pointer]
+          - generic [ref=e514]:
+            - generic [ref=e515]:
+              - img [ref=e517]
+              - generic [ref=e520]:
+                - strong [ref=e521]: Malatya
+                - paragraph [ref=e522]: Guncel veri bekleniyor
+            - button "YENİLE" [ref=e524] [cursor=pointer]:
+              - img [ref=e525]
+              - text: YENİLE
+          - generic [ref=e531]:
+            - img [ref=e533]
+            - generic [ref=e536]:
+              - strong [ref=e537]: "Seçili kapsam: Malatya"
+              - generic [ref=e538]: Hava ve toprak sorgusu ilçe/mahalle kırılımıyla yenilenir.
+          - generic [ref=e539]:
+            - generic [ref=e540]:
+              - img [ref=e542]
+              - generic [ref=e555]:
+                - text: Don Riski
+                - strong [ref=e556]: YOK
+            - generic [ref=e557]:
+              - img [ref=e559]
+              - generic [ref=e561]:
+                - text: Sıcaklık
+                - strong [ref=e562]: 0°C
+                - text: Min -° / Max -°
+            - generic [ref=e563]:
+              - img [ref=e565]
+              - generic [ref=e568]:
+                - text: Nem
+                - strong [ref=e569]: "%0"
+                - text: Stabil
+            - generic [ref=e570]:
+              - img [ref=e572]
+              - generic [ref=e576]:
+                - text: Rüzgar
+                - strong [ref=e577]: 0 km/s
+                - text: "Rafale: 0 km/s"
+          - generic [ref=e578]:
+            - generic [ref=e579]:
+              - generic [ref=e580]:
+                - img [ref=e582]
+                - heading "Uyarı Taraması" [level=3] [ref=e585]:
+                  - text: Uyarı
+                  - emphasis [ref=e586]: Taraması
+              - generic [ref=e589]: TEMİZ
+            - generic [ref=e590]:
+              - img [ref=e592]
+              - generic [ref=e595]:
+                - paragraph [ref=e596]: Riskli hava olayı tespit edilmedi
+                - paragraph [ref=e597]: Tüm meteorolojik değerler güvenli aralıkta.
+          - generic [ref=e599]:
+            - img [ref=e601]
+            - heading "Saatlik Analiz" [level=3] [ref=e604]:
+              - text: Saatlik
+              - emphasis [ref=e605]: Analiz
+          - generic [ref=e607]:
+            - generic [ref=e608]:
+              - img [ref=e610]
+              - heading "Toprak & Konum" [level=3] [ref=e614]:
+                - text: Toprak &
+                - emphasis [ref=e615]: Konum
+            - generic [ref=e616]:
+              - generic [ref=e617]:
+                - generic [ref=e618]:
+                  - generic [ref=e619]: Tarla Tanımı
+                  - 'textbox "Örn: Kuzey Elma Bahçesi" [ref=e620]'
+                - generic [ref=e621]:
+                  - generic [ref=e622]:
+                    - generic [ref=e623]: Koordinat Girişi
+                    - button "KONUMUMU BUL" [ref=e624] [cursor=pointer]:
+                      - img [ref=e625]
+                      - text: KONUMUMU BUL
+                  - textbox "38.35, 38.30" [ref=e628]
+              - generic [ref=e629] [cursor=pointer]:
+                - img "Field Map" [ref=e630]
+                - generic [ref=e632]:
+                  - img [ref=e634]
+                  - paragraph [ref=e636]: HARİTAYI AÇ
+          - generic [ref=e637]:
+            - generic [ref=e638]:
+              - img [ref=e640]
+              - heading "Bildirim Merkezi" [level=3] [ref=e643]:
+                - text: Bildirim
+                - emphasis [ref=e644]: Merkezi
+            - generic [ref=e645]:
+              - generic [ref=e646]:
+                - img [ref=e648]
+                - generic [ref=e661]:
+                  - paragraph [ref=e662]: Don Uyarısı
+                  - paragraph [ref=e663]: Sıcaklık 2°C altına düştüğünde
+                - checkbox [ref=e664]
+              - generic [ref=e665]:
+                - img [ref=e667]
+                - generic [ref=e669]:
+                  - paragraph [ref=e670]: Ani Yağış
+                  - paragraph [ref=e671]: Şiddetli fırtına öncesi
+                - checkbox [ref=e672]
+              - generic [ref=e673]:
+                - img [ref=e675]
+                - generic [ref=e679]:
+                  - paragraph [ref=e680]: Kuvvetli Rüzgar
+                  - paragraph [ref=e681]: Hız 50 km/s üzerine çıktığında
+                - checkbox [ref=e682]
+              - generic [ref=e683]:
+                - img [ref=e685]
+                - generic [ref=e687]:
+                  - paragraph [ref=e688]: Zararlı Uyarısı
+                  - paragraph [ref=e689]: Nem + sıcaklık birleşik risk
+                - checkbox [ref=e690]
+            - button "AYARLARI SENKRONİZE ET" [ref=e691] [cursor=pointer]:
+              - img [ref=e692]
+              - text: AYARLARI SENKRONİZE ET
+          - generic [ref=e696]:
+            - img [ref=e698]
+            - heading "7 Günlük Projeksiyon" [level=3] [ref=e700]:
+              - text: 7 Günlük
+              - emphasis [ref=e701]: Projeksiyon
+        - generic [ref=e702]:
+          - generic [ref=e703]:
+            - generic [ref=e704]:
+              - img [ref=e706]
+              - heading "30 Günlük Prediktif Model" [level=3] [ref=e709]:
+                - text: 30 Günlük
+                - emphasis [ref=e710]: Prediktif Model
+            - generic [ref=e711]:
+              - generic [ref=e712]: Yapay Zeka Destekli
+              - button [ref=e713] [cursor=pointer]:
+                - img [ref=e714]
+          - generic [ref=e718]:
+            - generic [ref=e719]:
+              - generic [ref=e720]:
+                - generic [ref=e721]: Beklenen Ortalama
+                - generic [ref=e722]:
+                  - heading "18°C" [level=4] [ref=e723]
+                  - generic [ref=e724]:
+                    - img [ref=e725]
+                    - text: "%++2.4"
+                - paragraph [ref=e728]: Mevsim normallerinin üzerinde seyredecek.
+              - generic [ref=e729]:
+                - generic [ref=e730]: Aylık Yağış Rejimi
+                - heading "mm" [level=4] [ref=e732]
+                - generic [ref=e733]:
+                  - generic [ref=e735]:
+                    - generic [ref=e736]: Mevsim Normali
+                    - generic [ref=e737]: mm
+                  - generic [ref=e741]:
+                    - generic [ref=e742]: Bu Dönem (Tahmin)
+                    - generic [ref=e743]: mm
+            - generic [ref=e746]:
+              - generic [ref=e747]:
+                - generic [ref=e748]:
+                  - generic [ref=e751]: Sıcaklık (°C)
+                  - generic [ref=e754]: Yağış (mm)
+                - generic [ref=e755]: "R² Confidence: %89.4"
+              - img [ref=e760]
+        - generic [ref=e761]:
+          - generic [ref=e762]:
+            - generic [ref=e763]:
+              - img [ref=e765]
+              - heading "Hackhaton Model Suite" [level=3] [ref=e768]:
+                - text: Hackhaton
+                - emphasis [ref=e769]: Model Suite
+            - generic [ref=e770]: Model suite
+          - generic [ref=e771]:
+            - generic [ref=e772]:
+              - generic [ref=e773]: Başarılı model
+              - strong [ref=e774]: "0"
+            - generic [ref=e775]:
+              - generic [ref=e776]: Seçilen model
+              - strong [ref=e777]: "0"
+            - generic [ref=e778]:
+              - generic [ref=e779]: Rapor kartı
+              - strong [ref=e780]: "0"
+            - generic [ref=e781]:
+              - generic [ref=e782]: Health kontrol
+              - strong [ref=e783]: "0"
+        - generic [ref=e784]:
+          - generic [ref=e785]:
+            - generic [ref=e786]:
+              - img [ref=e788]
+              - generic [ref=e789]:
+                - heading "Hackhaton Dashboard" [level=3] [ref=e790]:
+                  - text: Hackhaton
+                  - emphasis [ref=e791]: Dashboard
+                - generic [ref=e792]: Chart, rapor ve dokuman vitrini
+            - generic [ref=e793]:
+              - generic [ref=e794]: Malatya
+              - generic [ref=e795]: sekmeli okuma modu
+          - generic [ref=e797]:
+            - generic [ref=e799]: Raporlar
+            - generic [ref=e801]: Yorum katmani
+        - generic [ref=e802]:
+          - generic [ref=e803]:
+            - generic [ref=e804]:
+              - img [ref=e806]
+              - heading "Mikroklima Sensör Ağı" [level=3] [ref=e810]:
+                - text: Mikroklima
+                - emphasis [ref=e811]: Sensör Ağı
+            - generic [ref=e812]: 8 Aktif Node
+          - generic [ref=e813]:
+            - generic [ref=e814]:
+              - generic [ref=e816]: Sensör Ağ Bağlantısı Kuruluyor...
+              - generic [ref=e817]:
+                - generic [ref=e818]:
+                  - strong [ref=e821]: SN-N1
+                  - generic [ref=e822]:
+                    - img [ref=e823]
+                    - text: Kuzey Yamaç
+                - generic [ref=e826]:
+                  - generic [ref=e827]:
+                    - generic [ref=e828]:
+                      - img [ref=e829]
+                      - generic [ref=e831]: "-"
+                    - generic [ref=e832]:
+                      - img [ref=e833]
+                      - generic [ref=e836]: "-"
+                  - generic [ref=e837]:
+                    - img [ref=e838]
+                    - generic [ref=e840]: "%92"
+              - generic [ref=e841]:
+                - generic [ref=e842]:
+                  - strong [ref=e845]: SN-N2
+                  - generic [ref=e846]:
+                    - img [ref=e847]
+                    - text: Doğu Vadi
+                - generic [ref=e850]:
+                  - generic [ref=e851]:
+                    - generic [ref=e852]:
+                      - img [ref=e853]
+                      - generic [ref=e855]: "-"
+                    - generic [ref=e856]:
+                      - img [ref=e857]
+                      - generic [ref=e860]: "-"
+                  - generic [ref=e861]:
+                    - img [ref=e862]
+                    - generic [ref=e864]: "%85"
+              - generic [ref=e865]:
+                - generic [ref=e866]:
+                  - strong [ref=e869]: SN-S1
+                  - generic [ref=e870]:
+                    - img [ref=e871]
+                    - text: Güney Plato
+                - generic [ref=e874]:
+                  - generic [ref=e875]:
+                    - generic [ref=e876]:
+                      - img [ref=e877]
+                      - generic [ref=e879]: "-"
+                    - generic [ref=e880]:
+                      - img [ref=e881]
+                      - generic [ref=e884]: "-"
+                  - generic [ref=e885]:
+                    - img [ref=e886]
+                    - generic [ref=e888]: "%100"
+              - generic [ref=e889]:
+                - generic [ref=e890]:
+                  - strong [ref=e893]: SN-S2
+                  - generic [ref=e894]:
+                    - img [ref=e895]
+                    - text: Dere Yatağı
+                - generic [ref=e898]:
+                  - generic [ref=e899]:
+                    - generic [ref=e900]:
+                      - img [ref=e901]
+                      - generic [ref=e903]: "-"
+                    - generic [ref=e904]:
+                      - img [ref=e905]
+                      - generic [ref=e908]: "-"
+                  - generic [ref=e909]:
+                    - img [ref=e910]
+                    - generic [ref=e912]: "%12"
+              - generic [ref=e913]:
+                - generic [ref=e914]:
+                  - strong [ref=e917]: SN-W1
+                  - generic [ref=e918]:
+                    - img [ref=e919]
+                    - text: Batı Sera
+                - generic [ref=e922]:
+                  - generic [ref=e923]:
+                    - generic [ref=e924]:
+                      - img [ref=e925]
+                      - generic [ref=e927]: "-"
+                    - generic [ref=e928]:
+                      - img [ref=e929]
+                      - generic [ref=e932]: "-"
+                  - generic [ref=e933]:
+                    - img [ref=e934]
+                    - generic [ref=e936]: "%45"
+            - generic [ref=e937]:
+              - img "Sensor Map" [ref=e938]
+              - generic [ref=e942]: SN-N1 (-)
+              - generic [ref=e945]: SN-N2 (-)
+              - generic [ref=e948]: SN-S1 (-)
+              - generic [ref=e951]: SN-S2 (-) LOW BAT
+              - generic [ref=e954]: SN-W1 (-)
+              - generic [ref=e955]:
+                - button [ref=e956] [cursor=pointer]:
+                  - img [ref=e957]
+                - button [ref=e962] [cursor=pointer]:
+                  - img [ref=e963]
+              - generic [ref=e967]:
+                - heading "Özet İstatistikler" [level=5] [ref=e968]
+                - generic [ref=e969]:
+                  - generic [ref=e970]:
+                    - generic [ref=e971]: Node Sayısı
+                    - strong [ref=e972]: "5"
+                  - generic [ref=e973]:
+                    - generic [ref=e974]: Bağlantı
+                    - strong [ref=e975]: Güncelleniyor...
+        - generic [ref=e976]:
+          - generic [ref=e977]:
+            - generic [ref=e978]:
+              - img [ref=e980]
+              - heading "Yeraltı Suyu & Hidroloji" [level=3] [ref=e984]:
+                - text: Yeraltı Suyu &
+                - emphasis [ref=e985]: Hidroloji
+            - generic [ref=e986]: Uydu Sensör Entegrasyonu Aktif
+          - generic [ref=e987]:
+            - generic [ref=e992]:
+              - generic [ref=e993]:
+                - generic [ref=e994]: Yeraltı Su Seviyesi
+                - strong [ref=e995]: "-7.0m"
+                - paragraph [ref=e996]: Seviye güvenli aralıkta.
+              - generic [ref=e997]:
+                - generic [ref=e998]: Tahmini Akifer Beslenmesi
+                - strong [ref=e999]: +0.1m/ay
+            - generic [ref=e1000]:
+              - generic [ref=e1001]:
+                - generic [ref=e1002]:
+                  - img [ref=e1003]
+                  - generic [ref=e1008]: Düşük
+                - text: Buharlaşma/Terleme (ETc)
+                - strong [ref=e1009]: 0.5 mm/gün
+              - generic [ref=e1010]:
+                - generic [ref=e1011]:
+                  - img [ref=e1012]
+                  - generic [ref=e1014]: Stresli
+                - text: Toprak Nem Tansiyonu
+                - strong [ref=e1015]: "-65 kPa"
+              - generic [ref=e1016]:
+                - generic [ref=e1017]:
+                  - img [ref=e1018]
+                  - generic [ref=e1020]: Yeterli
+                - text: Sulama İhtiyacı
+                - strong [ref=e1021]: 4 mm
+              - generic [ref=e1022]:
+                - generic [ref=e1023]:
+                  - img [ref=e1024]
+                  - generic [ref=e1028]: Yavaş
+                - text: Drenaj Hızı
+                - strong [ref=e1029]: 0.5 mm/saat
+        - generic [ref=e1030]:
+          - generic [ref=e1031]:
+            - generic [ref=e1032]:
+              - img [ref=e1034]
+              - heading "Erken Uyarı Radarı" [level=3] [ref=e1041]:
+                - text: Erken Uyarı
+                - emphasis [ref=e1042]: Radarı
+            - generic [ref=e1045]: Şu An Risk Düşük
+          - generic [ref=e1054]:
+            - generic [ref=e1055]:
+              - img [ref=e1057]
+              - generic [ref=e1066]:
+                - generic [ref=e1067]:
+                  - strong [ref=e1068]: Kırmızı Örümcek Akarı
+                  - generic [ref=e1069]: Orta
+                - generic [ref=e1070]:
+                  - generic [ref=e1071]:
+                    - img [ref=e1072]
+                    - text: 13 km Kuzeydoğu
+                  - generic [ref=e1075]: "Tahmini Varış: 60 Saat"
+            - generic [ref=e1078]:
+              - img [ref=e1080]
+              - generic [ref=e1089]:
+                - generic [ref=e1090]:
+                  - strong [ref=e1091]: Yaprak Biti Kolonisi
+                  - generic [ref=e1092]: Orta
+                - generic [ref=e1093]:
+                  - generic [ref=e1094]:
+                    - img [ref=e1095]
+                    - text: 41 km Güney
+                  - generic [ref=e1098]: Yayılma Hızı Düşük
+        - generic [ref=e1101]:
+          - generic [ref=e1102]:
+            - generic [ref=e1103]:
+              - img [ref=e1105]
+              - heading "Acil Durum Protokolleri" [level=3] [ref=e1107]:
+                - text: Acil Durum
+                - emphasis [ref=e1108]: Protokolleri
+            - button "Tümünü İşaretle" [ref=e1109] [cursor=pointer]:
+              - img [ref=e1110]
+              - text: Tümünü İşaretle
+          - paragraph [ref=e1113]: Yaklaşan extrem hava olaylarına karşı sistem tarafından otomatik oluşturulmuş savunma mekanizması görevleridir.
+          - generic [ref=e1114]:
+            - generic [ref=e1115]:
+              - generic [ref=e1116]:
+                - generic [ref=e1117]:
+                  - img [ref=e1118]
+                  - generic [ref=e1131]: Don Tehlikesi
+                - generic [ref=e1132]: T-10 Saat
+              - paragraph [ref=e1133]: Rüzgar pervanelerinin otomatik devreye alınmasını onayla.
+              - button "Onayla & Başlat" [ref=e1134] [cursor=pointer]
+            - generic [ref=e1135]:
+              - generic [ref=e1136]:
+                - generic [ref=e1137]:
+                  - img [ref=e1138]
+                  - generic [ref=e1144]: Aşırı Sıcak
+                - generic [ref=e1145]: T-24 Saat
+              - paragraph [ref=e1146]: Gölgeleme sisteminin %50 kapatılmasını planla.
+              - button "Onayla & Başlat" [ref=e1147] [cursor=pointer]
+            - generic [ref=e1148]:
+              - generic [ref=e1149]:
+                - generic [ref=e1150]:
+                  - img [ref=e1151]
+                  - generic [ref=e1155]: Fırtına
+                - generic [ref=e1156]: T-4 Saat
+              - paragraph [ref=e1157]: Sera otomatik havalandırma kapaklarının kilitlenmesi.
+              - button "Onayla & Başlat" [ref=e1158] [cursor=pointer]
+  - navigation "ana gezinti" [ref=e338]:
+    - button "teshis" [ref=e339] [cursor=pointer]:
+      - img [ref=e340]
+      - generic [ref=e342]: teshis
+    - button "arazi" [ref=e343] [cursor=pointer]:
+      - img [ref=e344]
+      - generic [ref=e346]: arazi
+    - button "pazar" [ref=e347] [cursor=pointer]:
+      - img [ref=e348]
+      - generic [ref=e351]: pazar
+    - button "iklim" [active] [ref=e352] [cursor=pointer]:
+      - img [ref=e353]
+      - generic [ref=e359]: iklim
+    - button "demos" [ref=e360] [cursor=pointer]:
+      - img [ref=e361]
+      - generic [ref=e364]: demos
+  - generic [ref=e366]:
+    - generic [ref=e367]:
+      - heading "gelistirici" [level=2] [ref=e368]
+      - paragraph [ref=e369]: mehmet yasin kaya • bogazici bilgisayar
+    - generic [ref=e370]: "e-posta: gs7016903@gmail.com"
+  - button [ref=e372] [cursor=pointer]:
+    - img [ref=e373]
