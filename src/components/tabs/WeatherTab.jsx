@@ -216,7 +216,7 @@ export default function WeatherTab({
   const dashboardLongTermForecast = dashboardLongTerm?.forecast || {};
   const dashboardLongTermHighlights = Array.isArray(dashboardLongTerm?.highlights) ? dashboardLongTerm.highlights : [];
   const isSolarLongTerm = dashboardLongTerm?.kind === 'sunshine_proxy_1911_2025';
-  const longTermTitle = isSolarLongTerm ? '115 yıllık guneslenme + radyasyon panosu' : '115 yıllık iklim + ET0 panosu';
+  const longTermTitle = isSolarLongTerm ? 'Hackathon Çıktıları: Guneslenme + radyasyon panosu' : 'Hackathon Çıktıları: İklim + ET0 panosu';
   const longTermSubtitle = isSolarLongTerm
     ? `${dashboardLongTerm?.periodStart || ''}-${dashboardLongTerm?.periodEnd || ''} guneslenme proxy serisi + lineer tahmin`
     : `${dashboardLongTerm?.periodStart || ''}-${dashboardLongTerm?.periodEnd || ''} arasi gercek seri + lineer tahmin`;
@@ -3361,7 +3361,7 @@ export default function WeatherTab({
                   <div className="bento-card" style={{ padding: '16px', background: 'rgba(255,255,255,0.03)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
                       <strong style={{ fontSize: '16px' }}>Dekad parcasi</strong>
-                      <span style={{ fontSize: '12px', color: 'rgba(245,237,216,0.56)' }}>115 yillik tarihte hangi dekadlar yukleniyor</span>
+                      <span style={{ fontSize: '12px', color: 'rgba(245,237,216,0.56)' }}>Hackathon çıktılarına göre hangi dekadlar yukleniyor</span>
                     </div>
                     <div style={{ display: 'grid', gap: '8px' }}>
                       {climateAnomalyDecadeProfile.length ? climateAnomalyDecadeProfile.map((item) => (
