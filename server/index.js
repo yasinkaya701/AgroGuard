@@ -213,7 +213,8 @@ const SMTP_USER = process.env.SMTP_USER || "";
 const SMTP_PASS = process.env.SMTP_PASS || "";
 const SMTP_FROM = process.env.SMTP_FROM || "AgroGuard <no-reply@agroguard.local>";
 const SMTP_TO = process.env.SMTP_TO || "gs7016903@gmail.com";
-const ALLOW_FALLBACK = process.env.ALLOW_FALLBACK !== "false";
+// Sahte teşhis (fallback) sadece açıkça istenirse: ALLOW_FALLBACK=true
+const ALLOW_FALLBACK = process.env.ALLOW_FALLBACK === "true";
 const MODEL_STRICT_ONLY =
   String(process.env.MODEL_STRICT_ONLY || "true").toLowerCase() !== "false" ||
   !ALLOW_FALLBACK;
@@ -15897,6 +15898,65 @@ app.get("/api/weather", async (req, res) => {
   }
 });
 
+app.get("/api/weather/alerts", async (req, res) => {
+  const city = (req.query.city || "Malatya").toString();
+  const district = (req.query.district || "").toString().trim();
+  const neighborhood = (req.query.neighborhood || "").toString().trim();
+  const coords = (req.query.coords || "").toString();
+  const [lat, lon] = coords.split(",").map((s) => s.trim());
+  let resolved = null;
+  if (lat && lon && !Number.isNaN(Number(lat)) && !Number.isNaN(Number(lon))) {
+    resolved = { lat: Number(lat), lon: Number(lon), name: city, district: district || null, neighborhood: neighborhood || null };
+  } else {
+    try {
+      resolved = await geocodeCity(city, district, neighborhood);
+    } catch (e) {
+      return res.json({ city, locationLabel: city, alerts: [], error: "geocode_failed" });
+    }
+  }
+  if (!resolved) {
+    return res.json({ city, locationLabel: city, alerts: [], error: "geocode_failed" });
+  }
+  let forecastData = null;
+  try {
+    forecastData = await fetchOpenMeteoForecast(resolved.lat, resolved.lon);
+  } catch (e) {
+    return res.json({
+      city: resolved.name || city,
+      locationLabel: buildLocationSearchQuery(resolved.name || city, resolved.district, resolved.neighborhood) || city,
+      alerts: [],
+      error: "forecast_fetch_failed"
+    });
+  }
+  const alerts = [];
+  if (forecastData && forecastData.daily && forecastData.daily.length) {
+    forecastData.daily.forEach((day, idx) => {
+      const min = day.min != null ? day.min : (forecastData.daily[idx] && forecastData.daily[idx].min) ?? null;
+      if (typeof min === "number" && min <= 0) {
+        alerts.push({ type: "frost", severity: "high", day: day.day || `Day ${idx + 1}`, message: "Don riski", tempMin: min });
+      }
+      const precip = day.precipitationMm != null ? day.precipitationMm : (forecastData.daily[idx] && forecastData.daily[idx].precipitationMm);
+      if (typeof precip === "number" && precip >= 30) {
+        alerts.push({ type: "heavy_rain", severity: "medium", day: day.day || `Day ${idx + 1}`, message: "Yoğun yağış bekleniyor", precipitationMm: precip });
+      }
+      const max = day.max != null ? day.max : (forecastData.daily[idx] && forecastData.daily[idx].max) ?? null;
+      if (typeof max === "number" && max >= 38) {
+        alerts.push({ type: "heat", severity: "high", day: day.day || `Day ${idx + 1}`, message: "Aşırı sıcak", tempMax: max });
+      }
+    });
+  }
+  const locationLabel = buildLocationSearchQuery(resolved.name || city, resolved.district || district, resolved.neighborhood || neighborhood) || city;
+  return res.json({
+    city: resolved.name || city,
+    district: resolved.district || null,
+    neighborhood: resolved.neighborhood || null,
+    locationLabel,
+    coords: `${resolved.lat}, ${resolved.lon}`,
+    alerts,
+    source: "openmeteo"
+  });
+});
+
 const marketSources = [
   {
     title: "Bursa Buyuksehir Belediyesi Hal Fiyatlari",
@@ -19431,6 +19491,142 @@ app.get("/api/soil", async (req, res) => {
   );
 });
 
+const CROP_REQUIREMENTS_PATH = path.join(__dirname, "data", "crop_requirements.json");
+const SOIL_PROFILES_PATH = path.join(__dirname, "data", "soil_profiles.json");
+
+function loadCropRequirements() {
+  try {
+    if (fs.existsSync(CROP_REQUIREMENTS_PATH)) {
+      return JSON.parse(fs.readFileSync(CROP_REQUIREMENTS_PATH, "utf8"));
+    }
+  } catch (e) { /* ignore */ }
+  return { crops: [] };
+}
+
+function loadSoilProfiles() {
+  try {
+    if (fs.existsSync(SOIL_PROFILES_PATH)) {
+      return JSON.parse(fs.readFileSync(SOIL_PROFILES_PATH, "utf8"));
+    }
+  } catch (e) { /* ignore */ }
+  return { profiles: [], regions: [] };
+}
+
+app.post("/api/soil/recommend-crops", (req, res) => {
+  const body = req.body || {};
+  const ph = Number(body.ph);
+  const organicPct = body.organic_pct != null ? Number(body.organic_pct) : null;
+  const texture = (body.texture || "").toString().trim().toLowerCase().replace(/\s+/g, "-");
+  const region = (body.region || "").toString().trim().toLowerCase().replace(/\s+/g, "_");
+  const cropData = loadCropRequirements();
+  const crops = cropData.crops || [];
+  const results = [];
+  for (const crop of crops) {
+    let score = 0;
+    let reasons = [];
+    const phOk = Number.isFinite(ph) && ph >= crop.ph_min && ph <= crop.ph_max;
+    if (Number.isFinite(ph)) {
+      if (phOk) { score += 2; reasons.push("pH uygun"); } else { reasons.push(`pH aralık dışı (${crop.ph_min}-${crop.ph_max})`); }
+    }
+    const textureOk = !texture || (crop.texture_ok && crop.texture_ok.some((t) => texture.includes(t) || t.includes(texture)));
+    if (texture) {
+      if (textureOk) { score += 1; reasons.push("Tekstür uygun"); } else { reasons.push("Tekstür sınırlı uyum"); }
+    }
+    const regionOk = !region || (crop.regions_ok && crop.regions_ok.includes(region));
+    if (region) {
+      if (regionOk) { score += 2; reasons.push("Bölge uygun"); } else { reasons.push("Bölge dışı"); }
+    }
+    if (!Number.isFinite(ph) && !texture && !region) {
+      score = 1;
+      reasons.push("Varsayılan öneri");
+    }
+    const suitability = score >= 4 ? "uygun" : score >= 2 ? "sınırlı_uygun" : score >= 1 ? "dikkatli_dene" : "uygunsuz";
+    results.push({
+      id: crop.id,
+      name: crop.name,
+      suitability,
+      score,
+      reasons,
+      ph_min: crop.ph_min,
+      ph_max: crop.ph_max,
+      water_need: crop.water_need,
+      regions_ok: crop.regions_ok
+    });
+  }
+  results.sort((a, b) => b.score - a.score);
+  return res.json({
+    ph: Number.isFinite(ph) ? ph : null,
+    texture: texture || null,
+    region: region || null,
+    recommended: results.filter((r) => r.suitability === "uygun"),
+    limited: results.filter((r) => r.suitability === "sınırlı_uygun"),
+    all: results
+  });
+});
+
+app.post("/api/multispectral/analyze", (req, res) => {
+  const body = req.body || {};
+  const bands = body.bands || {};
+  const ndvi = bands.ndvi != null ? Number(bands.ndvi) : (bands.nir != null && bands.red != null) ? (Number(bands.nir) - Number(bands.red)) / (Number(bands.nir) + Number(bands.red) || 1) : null;
+  const ndre = bands.ndre != null ? Number(bands.ndre) : null;
+  const parcelId = body.parcel_id || body.parcelId || "parcel_1";
+  const zones = [];
+  if (Number.isFinite(ndvi)) {
+    const development = ndvi < 0.2 ? "zayıf" : ndvi < 0.5 ? "orta" : "güçlü";
+    zones.push({ index: "NDVI", value: ndvi, development, parcelId });
+  }
+  if (Number.isFinite(ndre)) {
+    const development = ndre < 0.15 ? "zayıf" : ndre < 0.35 ? "orta" : "güçlü";
+    zones.push({ index: "NDRE", value: ndre, development, parcelId });
+  }
+  if (!zones.length) {
+    zones.push({ index: "NDVI", value: 0.45, development: "orta", parcelId, note: "Demo değer" });
+  }
+  return res.json({
+    parcelId,
+    bands: { ndvi: ndvi ?? null, ndre: ndre ?? null, red: bands.red ?? null, nir: bands.nir ?? null },
+    zones,
+    source: "multispectral_analyzer"
+  });
+});
+
+app.get("/api/yield/estimate", (req, res) => {
+  const crop = (req.query.crop || "domates").toString().toLowerCase();
+  const region = (req.query.region || "ic_anadolu").toString().toLowerCase();
+  const ndviAvg = req.query.ndvi != null ? Number(req.query.ndvi) : null;
+  const lat = req.query.lat != null ? Number(req.query.lat) : null;
+  const lon = req.query.lon != null ? Number(req.query.lon) : null;
+  const areaDa = req.query.areaDa != null ? Number(req.query.areaDa) : null;
+  const useSatellite = Number.isFinite(lat) && Number.isFinite(lon);
+  const ndvi = Number.isFinite(ndviAvg) && ndviAvg >= 0 && ndviAvg <= 1
+    ? ndviAvg
+    : useSatellite
+      ? 0.45 + (Math.sin(lat * 0.02) * 0.1 + Math.cos(lon * 0.02) * 0.08)
+      : 0.5;
+  const baseYield = { domates: 8000, biber: 5000, patates: 3500, bugday: 450, misir: 9000, aycicegi: 2500, pamuk: 450, findik: 1200, uzum: 1500, zeytin: 800, mercimek: 180, arpa: 400 }[crop] || 3000;
+  const regionFactor = { ic_anadolu: 1, marmara: 1.05, ege: 1.08, akdeniz: 1.06, karadeniz: 0.95, guneydogu: 0.98, dogu_anadolu: 0.92 }[region] || 1;
+  const factor = (0.7 + (Number.isFinite(ndvi) ? Math.min(ndvi, 1) * 0.5 : 0.25)) * regionFactor;
+  const low = Math.round(baseYield * factor * 0.85);
+  const high = Math.round(baseYield * factor * 1.15);
+  const mid = Math.round((low + high) / 2);
+  const totalLow = Number.isFinite(areaDa) && areaDa > 0 ? Math.round(low * areaDa) : null;
+  const totalHigh = Number.isFinite(areaDa) && areaDa > 0 ? Math.round(high * areaDa) : null;
+  return res.json({
+    crop,
+    region,
+    ndvi_avg: Number(ndvi.toFixed(3)),
+    coords: useSatellite ? { lat, lon } : null,
+    area_da: Number.isFinite(areaDa) ? areaDa : null,
+    yield_kg_da: { low, mid, high },
+    yield_total_kg: totalLow != null && totalHigh != null ? { low: totalLow, mid: Math.round((totalLow + totalHigh) / 2), high: totalHigh } : null,
+    unit: "kg/da",
+    source: useSatellite ? "uydu_rekolte" : "bolge_tahmin",
+    note: useSatellite
+      ? "Uydu (konum) ve NDVI sinyali ile rekolte tahmini. Kesin veri için Sentinel/NDVI entegrasyonu kullanılacaktır."
+      : "Bölge ve ürün bazlı kaba tahmin (beta). Tarla çizip konum göndererek uydu rekolte tahmini alabilirsiniz."
+  });
+});
+
 app.post("/api/diagnose", upload.single("image"), async (req, res) => {
   markStage(req, "upload");
   if (!req.file) {
@@ -20631,6 +20827,21 @@ ${message}`,
     console.error(err);
     return res.status(500).json({ error: "mail_send_failed" });
   }
+});
+
+app.use((req, res) => {
+  res.status(404).json({ success: false, error: "not_found", code: "NOT_FOUND", message: "Endpoint bulunamadi.", path: req.path });
+});
+
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  console.error("[api] unhandled error", err);
+  res.status(500).json({
+    success: false,
+    error: "internal_error",
+    code: "INTERNAL_ERROR",
+    message: process.env.NODE_ENV === "production" ? "Sunucu hatasi." : (err?.message || "Beklenmeyen hata.")
+  });
 });
 
 loadCacheFromDisk();

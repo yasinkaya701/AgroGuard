@@ -23,9 +23,12 @@ import {
   Crosshair,
   DollarSign,
   ArrowUpRight,
-  Layers
+  Layers,
+  Pencil,
+  Trash2,
+  Check
 } from "lucide-react";
-import { MapContainer, TileLayer, CircleMarker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Polygon, Polyline, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
 const panelTitleStyle = { margin: 0, fontSize: "22px" };
@@ -547,9 +550,18 @@ export default function LandTab({
   landCompareLoading,
   landCompareError,
   landComparableListings,
-  setBottomTab
+  setBottomTab,
+  apiBaseForAssets = ""
 }) {
   const [landWorkspaceTab, setLandWorkspaceTab] = useState("overview");
+  const [soilRecommendResult, setSoilRecommendResult] = useState(null);
+  const [soilRecommendLoading, setSoilRecommendLoading] = useState(false);
+  const [soilRecommendForm, setSoilRecommendForm] = useState({ ph: 6.5, texture: "tın", region: "ic_anadolu" });
+  const [yieldEstimate, setYieldEstimate] = useState(null);
+  const [yieldLoading, setYieldLoading] = useState(false);
+  const [yieldForm, setYieldForm] = useState({ crop: "domates", region: "ic_anadolu" });
+  const [fieldDrawMode, setFieldDrawMode] = useState("point");
+  const [fieldPolygon, setFieldPolygon] = useState([]);
   const profiles = Array.isArray(landProfiles) ? landProfiles : [];
   const matches = Array.isArray(locationSearchMatches) ? locationSearchMatches : [];
   const manualRows = Array.isArray(manualListings) ? manualListings : [];
@@ -613,17 +625,50 @@ export default function LandTab({
       ? Math.round(((Number(landValuationDemo.unitPrice) - neighborhoodMedian) / neighborhoodMedian) * 1000) / 10
       : null;
 
-  // ──── Map Click Handler ────
+  // ──── Map Click Handler (nokta veya tarla çokgeni) ────
   function LocationPicker() {
     useMapEvents({
       click(e) {
-        if (typeof setLandCoords === 'function') {
+        if (fieldDrawMode === 'polygon') {
+          setFieldPolygon((prev) => [...prev, [e.latlng.lat, e.latlng.lng]]);
+        } else if (typeof setLandCoords === 'function') {
           setLandCoords(`${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`);
         }
       },
     });
     return null;
   }
+
+  const closeFieldPolygon = () => {
+    if (fieldPolygon.length < 3) return;
+    const closed = [...fieldPolygon, fieldPolygon[0]];
+    if (typeof setLandDemo === 'function') {
+      setLandDemo((prev) => ({
+        ...prev,
+        fieldGeometry: {
+          type: 'Polygon',
+          coordinates: closed.map(([lat, lng]) => [lng, lat]),
+          positions: closed
+        }
+      }));
+    }
+    setFieldPolygon([]);
+    setFieldDrawMode('point');
+  };
+
+  const clearFieldPolygon = () => {
+    setFieldPolygon([]);
+    if (typeof setLandDemo === 'function') {
+      setLandDemo((prev) => {
+        const next = { ...prev };
+        delete next.fieldGeometry;
+        return next;
+      });
+    }
+  };
+
+  const fieldPositions = fieldPolygon.length >= 3 ? [...fieldPolygon, fieldPolygon[0]] : fieldPolygon;
+  const hasSavedField = landDemo?.fieldGeometry?.type === 'Polygon' && Array.isArray(landDemo?.fieldGeometry?.positions);
 
   // Parse current coordinates for the map
   let mapLat = 38.3552;
@@ -877,6 +922,127 @@ export default function LandTab({
           </div>
         </section>
         ) : null}
+
+        {/* ═══ UYGUN BİTKİ ÖNERİSİ + VERİM TAHMİNİ (API) ═══ */}
+        {landWorkspaceTab === "overview" && apiBaseForAssets && (
+          <section className="panel" style={{ display: "grid", gap: "14px", border: "1px solid var(--ui-border)" }}>
+            <div className="tech-badge" style={{ marginBottom: "4px" }}>TOPRAK + UYDU REKOLTE</div>
+            <h3 className="section-title" style={{ fontSize: "20px", margin: 0 }}>Uygun bitki önerisi & Uydu rekolte tahmini</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "16px" }}>
+              <div style={{ ...metricCardStyle, padding: "14px" }}>
+                <div className="bento-head" style={{ marginBottom: "8px" }}>Toprak parametreleri</div>
+                <div style={{ display: "grid", gap: "8px", marginBottom: "10px" }}>
+                  <div>
+                    <label style={{ fontSize: "11px", color: "var(--ui-muted)" }}>pH</label>
+                    <input type="number" step="0.1" min="4" max="9" className="select-premium" style={{ width: "100%" }} value={soilRecommendForm.ph} onChange={(e) => setSoilRecommendForm((p) => ({ ...p, ph: Number(e.target.value) || 6.5 }))} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: "11px", color: "var(--ui-muted)" }}>Tekstür</label>
+                    <select className="select-premium" style={{ width: "100%" }} value={soilRecommendForm.texture} onChange={(e) => setSoilRecommendForm((p) => ({ ...p, texture: e.target.value }))}>
+                      <option value="tın">Tın</option>
+                      <option value="kumlu-tın">Kumlu tın</option>
+                      <option value="tın-kil">Tın-kil</option>
+                      <option value="killi-tın">Killi tın</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: "11px", color: "var(--ui-muted)" }}>Bölge</label>
+                    <select className="select-premium" style={{ width: "100%" }} value={soilRecommendForm.region} onChange={(e) => setSoilRecommendForm((p) => ({ ...p, region: e.target.value }))}>
+                      <option value="ic_anadolu">İç Anadolu</option>
+                      <option value="akdeniz">Akdeniz</option>
+                      <option value="ege">Ege</option>
+                      <option value="marmara">Marmara</option>
+                      <option value="karadeniz">Karadeniz</option>
+                      <option value="guneydogu">Güneydoğu</option>
+                      <option value="dogu_anadolu">Doğu Anadolu</option>
+                    </select>
+                  </div>
+                </div>
+                <button className="btn-primary" style={{ width: "100%" }} disabled={soilRecommendLoading} onClick={() => { setSoilRecommendLoading(true); setSoilRecommendResult(null); fetch(`${apiBaseForAssets}/api/soil/recommend-crops`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(soilRecommendForm) }).then((r) => r.json()).then((d) => { setSoilRecommendResult(d); setSoilRecommendLoading(false); }).catch(() => { setSoilRecommendLoading(false); }); }}>{soilRecommendLoading ? "Yükleniyor…" : "Öneri getir"}</button>
+                {soilRecommendResult && (
+                  <div style={{ marginTop: "12px", fontSize: "12px", color: "var(--cream)" }}>
+                    <strong>Uygun:</strong> {(soilRecommendResult.recommended || []).slice(0, 5).map((c) => c.name).join(", ")}
+                    {(soilRecommendResult.limited || []).length > 0 && <><br /><strong>Sınırlı:</strong> {(soilRecommendResult.limited || []).slice(0, 3).map((c) => c.name).join(", ")}</>}
+                  </div>
+                )}
+              </div>
+              <div style={{ ...metricCardStyle, padding: "14px" }}>
+                <div className="bento-head" style={{ marginBottom: "4px" }}>Uydu rekolte tahmini</div>
+                <p style={{ fontSize: "11px", color: "var(--ui-muted)", marginBottom: "10px" }}>Ürün ve bölge seçin; isteğe bağlı tarla konumu ile uydu tabanlı tahmin alın.</p>
+                <div style={{ display: "grid", gap: "8px", marginBottom: "10px" }}>
+                  <div>
+                    <label style={{ fontSize: "11px", color: "var(--ui-muted)" }}>Ürün</label>
+                    <select className="select-premium" style={{ width: "100%" }} value={yieldForm.crop} onChange={(e) => setYieldForm((p) => ({ ...p, crop: e.target.value }))}>
+                      <option value="domates">Domates</option>
+                      <option value="biber">Biber</option>
+                      <option value="patates">Patates</option>
+                      <option value="bugday">Buğday</option>
+                      <option value="misir">Mısır</option>
+                      <option value="aycicegi">Ayçiçeği</option>
+                      <option value="pamuk">Pamuk</option>
+                      <option value="uzum">Üzüm</option>
+                      <option value="zeytin">Zeytin</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: "11px", color: "var(--ui-muted)" }}>Bölge</label>
+                    <select className="select-premium" style={{ width: "100%" }} value={yieldForm.region} onChange={(e) => setYieldForm((p) => ({ ...p, region: e.target.value }))}>
+                      <option value="ic_anadolu">İç Anadolu</option>
+                      <option value="akdeniz">Akdeniz</option>
+                      <option value="ege">Ege</option>
+                      <option value="marmara">Marmara</option>
+                      <option value="guneydogu">Güneydoğu</option>
+                      <option value="karadeniz">Karadeniz</option>
+                      <option value="dogu_anadolu">Doğu Anadolu</option>
+                    </select>
+                  </div>
+                  <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", cursor: "pointer" }}>
+                    <input
+                      type="checkbox"
+                      checked={yieldForm.useMyField || false}
+                      onChange={(e) => setYieldForm((p) => ({ ...p, useMyField: e.target.checked }))}
+                    />
+                    Tarlamı kullan (konum + alan)
+                  </label>
+                </div>
+                <button className="btn-primary" style={{ width: "100%" }} disabled={yieldLoading} onClick={() => {
+                  setYieldLoading(true); setYieldEstimate(null);
+                  const params = new URLSearchParams({ crop: yieldForm.crop, region: yieldForm.region });
+                  if (yieldForm.useMyField && coordsValid) {
+                    const [lat, lon] = coordsRaw.split(",").map((s) => parseFloat(s.trim()));
+                    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                      params.set("lat", String(lat));
+                      params.set("lon", String(lon));
+                    }
+                    const area = Number(parcelAreaDa || landDemo?.areaDa || 0);
+                    if (area > 0) params.set("areaDa", String(area));
+                  }
+                  fetch(`${apiBaseForAssets}/api/yield/estimate?${params.toString()}`)
+                    .then((r) => r.json())
+                    .then((d) => { setYieldEstimate(d); setYieldLoading(false); })
+                    .catch(() => { setYieldLoading(false); });
+                }}>{yieldLoading ? "Yükleniyor…" : "Rekolte tahmini al"}</button>
+                {yieldEstimate && yieldEstimate.yield_kg_da && (
+                  <div style={{ marginTop: "12px", fontSize: "13px", color: "var(--sprout)" }}>
+                    <div style={{ fontWeight: 700, marginBottom: "4px" }}>
+                      {yieldEstimate.yield_kg_da.low} – {yieldEstimate.yield_kg_da.high} kg/da
+                      {yieldEstimate.source === "uydu_rekolte" && <span style={{ marginLeft: "6px", fontSize: "10px", color: "var(--sky)" }}>Uydu</span>}
+                    </div>
+                    {yieldEstimate.yield_total_kg && (
+                      <div style={{ fontSize: "12px", opacity: 0.9, marginBottom: "4px" }}>
+                        Toplam (parsel): {yieldEstimate.yield_total_kg.low.toLocaleString("tr-TR")} – {yieldEstimate.yield_total_kg.high.toLocaleString("tr-TR")} kg
+                      </div>
+                    )}
+                    {Number.isFinite(yieldEstimate.ndvi_avg) && (
+                      <div style={{ fontSize: "11px", color: "var(--ui-muted)" }}>NDVI sinyal: {yieldEstimate.ndvi_avg}</div>
+                    )}
+                    <div style={{ fontSize: "11px", color: "var(--ui-muted)", marginTop: "4px" }}>{yieldEstimate.note}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ═══ PREMIUM 3D LAND MODEL ═══ */}
         {landWorkspaceTab === "overview" ? <LandModel3D landDemo={landDemo} /> : null}
@@ -1417,8 +1583,38 @@ export default function LandTab({
               <input className="select-premium" value={landDemo?.neighborhood || ""} onChange={(e) => setField(setLandDemo, "neighborhood", e.target.value)} />
             </div>
             <div style={{ gridColumn: "1 / -1" }}>
-              <label className="bento-head">Uydu Haritasından Konum Seçin</label>
-              <div style={{ height: "260px", width: "100%", borderRadius: "12px", overflow: "hidden", border: "1px solid rgba(143,188,69,0.3)", position: "relative", marginBottom: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px", marginBottom: "8px" }}>
+                <label className="bento-head" style={{ marginBottom: 0 }}>Uydu görüntüsü • Tarla işaretleme</label>
+                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className={fieldDrawMode === 'point' ? 'btn-primary' : 'btn-secondary'}
+                    style={{ padding: "6px 10px", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                    onClick={() => { setFieldDrawMode('point'); setFieldPolygon([]); }}
+                  >
+                    <MapPin size={12} /> Nokta seç
+                  </button>
+                  <button
+                    type="button"
+                    className={fieldDrawMode === 'polygon' ? 'btn-primary' : 'btn-secondary'}
+                    style={{ padding: "6px 10px", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                    onClick={() => setFieldDrawMode('polygon')}
+                  >
+                    <Pencil size={12} /> Tarla çiz
+                  </button>
+                  {fieldDrawMode === 'polygon' && fieldPolygon.length >= 3 && (
+                    <button type="button" className="btn-primary" style={{ padding: "6px 10px", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "4px" }} onClick={closeFieldPolygon}>
+                      <Check size={12} /> Tarlayı kapat
+                    </button>
+                  )}
+                  {(fieldPolygon.length > 0 || hasSavedField) && (
+                    <button type="button" className="btn-secondary" style={{ padding: "6px 10px", fontSize: "11px", display: "inline-flex", alignItems: "center", gap: "4px" }} onClick={clearFieldPolygon}>
+                      <Trash2 size={12} /> Temizle
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div style={{ height: "320px", width: "100%", borderRadius: "12px", overflow: "hidden", border: "1px solid rgba(143,188,69,0.3)", position: "relative", marginBottom: "12px" }}>
                 {typeof window !== 'undefined' && (
                   <MapContainer
                     center={[mapLat, mapLon]}
@@ -1427,24 +1623,49 @@ export default function LandTab({
                   >
                     <TileLayer
                       url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                      maxZoom={18}
-                      attribution="Tiles &copy; Esri"
+                      maxZoom={19}
+                      attribution="&copy; Esri — Uydu görüntüsü"
                     />
                     <LocationPicker />
-                    <CircleMarker
-                      center={[mapLat, mapLon]}
-                      pathOptions={{ color: 'var(--sprout)', fillColor: 'var(--sprout)', fillOpacity: 0.5 }}
-                      radius={8}
-                    />
-                    <CircleMarker
-                      center={[mapLat, mapLon]}
-                      pathOptions={{ color: 'var(--sprout)', fill: false, weight: 2 }}
-                      radius={24}
-                    />
+                    {fieldDrawMode === 'point' && (
+                      <>
+                        <CircleMarker
+                          center={[mapLat, mapLon]}
+                          pathOptions={{ color: 'var(--sprout)', fillColor: 'var(--sprout)', fillOpacity: 0.5 }}
+                          radius={8}
+                        />
+                        <CircleMarker
+                          center={[mapLat, mapLon]}
+                          pathOptions={{ color: 'var(--sprout)', fill: false, weight: 2 }}
+                          radius={24}
+                        />
+                      </>
+                    )}
+                    {fieldDrawMode === 'polygon' && fieldPositions.length >= 2 && (
+                      <Polyline
+                        positions={fieldPositions}
+                        pathOptions={{ color: 'var(--sprout)', weight: 3, opacity: 0.9 }}
+                      />
+                    )}
+                    {fieldDrawMode === 'polygon' && fieldPolygon.length >= 3 && (
+                      <Polygon
+                        positions={[...fieldPolygon, fieldPolygon[0]]}
+                        pathOptions={{ color: 'var(--sprout)', fillColor: 'var(--sprout)', fillOpacity: 0.25, weight: 2 }}
+                      />
+                    )}
+                    {hasSavedField && fieldDrawMode === 'point' && landDemo?.fieldGeometry?.positions?.length >= 3 && (
+                      <Polygon
+                        positions={landDemo.fieldGeometry.positions}
+                        pathOptions={{ color: '#00ff9d', fillColor: 'var(--sprout)', fillOpacity: 0.2, weight: 2 }}
+                      />
+                    )}
                   </MapContainer>
                 )}
-                <div style={{ position: "absolute", bottom: "10px", left: "10px", background: "rgba(0,0,0,0.7)", padding: "4px 8px", borderRadius: "6px", fontSize: "11px", color: "var(--sprout)", zIndex: 1000, backdropFilter: "blur(4px)" }}>
-                  Haritaya tıklayarak tarlanızı seçin
+                <div style={{ position: "absolute", bottom: "10px", left: "10px", background: "rgba(0,0,0,0.75)", padding: "6px 10px", borderRadius: "6px", fontSize: "11px", color: "var(--sprout)", zIndex: 1000, backdropFilter: "blur(4px)" }}>
+                  {fieldDrawMode === 'point' ? 'Haritaya tıklayarak merkez nokta seçin' : `Tarla sınırı: ${fieldPolygon.length} nokta (en az 3, sonra "Tarlayı kapat")`}
+                </div>
+                <div style={{ position: "absolute", top: "10px", right: "10px", background: "rgba(0,0,0,0.6)", padding: "4px 8px", borderRadius: "6px", fontSize: "10px", color: "rgba(245,237,216,0.8)", zIndex: 1000 }}>
+                  Gerçek uydu (Esri)
                 </div>
               </div>
             </div>

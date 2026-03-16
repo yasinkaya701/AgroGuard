@@ -1,0 +1,148 @@
+{
+  "crops": [
+    {
+      "id": "domates",
+      "name": "Domates",
+      "ph_min": 5.5,
+      "ph_max": 7.0,
+      "organic_preferred": "orta",
+      "water_need": "yüksek",
+      "temp_min_c": 10,
+      "temp_max_c": 35,
+      "texture_ok": ["tın", "kumlu-tın", "tın-kil"],
+      "regions_ok": ["akdeniz", "ege", "marmara", "ic_anadolu", "guneydogu"]
+    },
+    {
+      "id": "biber",
+      "name": "Biber",
+      "ph_min": 5.5,
+      "ph_max": 7.0,
+      "organic_preferred": "orta",
+      "water_need": "yüksek",
+      "temp_min_c": 15,
+      "temp_max_c": 32,
+      "texture_ok": ["tın", "kumlu-tın", "tın-kil"],
+      "regions_ok": ["akdeniz", "ege", "marmara", "ic_anadolu", "guneydogu"]
+    },
+    {
+      "id": "patates",
+      "name": "Patates",
+      "ph_min": 5.0,
+      "ph_max": 6.5,
+      "organic_preferred": "orta",
+      "water_need": "orta",
+      "temp_min_c": 7,
+      "temp_max_c": 28,
+      "texture_ok": ["tın", "kumlu-tın", "tın-kil"],
+      "regions_ok": ["ic_anadolu", "karadeniz", "marmara", "dogu_anadolu"]
+    },
+    {
+      "id": "bugday",
+      "name": "Buğday",
+      "ph_min": 5.5,
+      "ph_max": 7.5,
+      "organic_preferred": "düşük-orta",
+      "water_need": "düşük-orta",
+      "temp_min_c": 0,
+      "temp_max_c": 30,
+      "texture_ok": ["tın", "killi-tın", "kumlu-tın"],
+      "regions_ok": ["ic_anadolu", "guneydogu", "marmara", "dogu_anadolu", "ege"]
+    },
+    {
+      "id": "misir",
+      "name": "Mısır",
+      "ph_min": 5.5,
+      "ph_max": 7.5,
+      "organic_preferred": "orta",
+      "water_need": "yüksek",
+      "temp_min_c": 10,
+      "temp_max_c": 35,
+      "texture_ok": ["tın", "kumlu-tın", "tın-kil"],
+      "regions_ok": ["akdeniz", "ic_anadolu", "karadeniz", "marmara", "guneydogu"]
+    },
+    {
+      "id": "aycicegi",
+      "name": "Ayçiçeği",
+      "ph_min": 6.0,
+      "ph_max": 7.5,
+      "organic_preferred": "orta",
+      "water_need": "orta",
+      "temp_min_c": 8,
+      "temp_max_c": 32,
+      "texture_ok": ["tın", "killi-tın", "kumlu-tın"],
+      "regions_ok": ["ic_anadolu", "marmara", "guneydogu", "trakya"]
+    },
+    {
+      "id": "pamuk",
+      "name": "Pamuk",
+      "ph_min": 5.5,
+      "ph_max": 8.0,
+      "organic_preferred": "düşük-orta",
+      "water_need": "yüksek",
+      "temp_min_c": 18,
+      "temp_max_c": 38,
+      "texture_ok": ["tın", "killi-tın", "kumlu-tın"],
+      "regions_ok": ["guneydogu", "akdeniz", "ege"]
+    },
+    {
+      "id": "findik",
+      "name": "Fındık",
+      "ph_min": 5.0,
+      "ph_max": 7.0,
+      "organic_preferred": "yüksek",
+      "water_need": "yüksek",
+      "temp_min_c": 0,
+      "temp_max_c": 28,
+      "texture_ok": ["tın", "tın-kil"],
+      "regions_ok": ["karadeniz", "marmara"]
+    },
+    {
+      "id": "uzum",
+      "name": "Üzüm",
+      "ph_min": 5.5,
+      "ph_max": 7.5,
+      "organic_preferred": "düşük-orta",
+      "water_need": "düşük-orta",
+      "temp_min_c": 5,
+      "temp_max_c": 35,
+      "texture_ok": ["tın", "kumlu-tın", "killi-tın"],
+      "regions_ok": ["akdeniz", "ege", "ic_anadolu", "guneydogu", "marmara"]
+    },
+    {
+      "id": "zeytin",
+      "name": "Zeytin",
+      "ph_min": 5.5,
+      "ph_max": 8.0,
+      "organic_preferred": "düşük",
+      "water_need": "düşük-orta",
+      "temp_min_c": -5,
+      "temp_max_c": 38,
+      "texture_ok": ["tın", "kumlu-tın", "killi-tın"],
+      "regions_ok": ["ege", "akdeniz", "marmara", "guneydogu"]
+    },
+    {
+      "id": "mercimek",
+      "name": "Mercimek",
+      "ph_min": 5.5,
+      "ph_max": 7.5,
+      "organic_preferred": "düşük",
+      "water_need": "düşük",
+      "temp_min_c": 5,
+      "temp_max_c": 28,
+      "texture_ok": ["tın", "killi-tın"],
+      "regions_ok": ["ic_anadolu", "guneydogu", "dogu_anadolu"]
+    },
+    {
+      "id": "arpa",
+      "name": "Arpa",
+      "ph_min": 5.5,
+      "ph_max": 8.0,
+      "organic_preferred": "düşük-orta",
+      "water_need": "düşük-orta",
+      "temp_min_c": 0,
+      "temp_max_c": 28,
+      "texture_ok": ["tın", "killi-tın", "kumlu-tın"],
+      "regions_ok": ["ic_anadolu", "dogu_anadolu", "guneydogu", "marmara"]
+    }
+  ]
+}

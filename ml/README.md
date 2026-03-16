@@ -206,6 +206,18 @@ Export edilen modeli buraya kopyala:
 ```
 server/model/model.onnx
 server/model/labels.json
+server/model/labels_meta.json
+server/model/model_meta.json
 ```
 
-`labels.json` icinde sinif isimleri ve bakim adimlari bulunur.
+- `labels.json`: Sinif isimleri listesi (model cikti indeksiyle ayni sirada olmali).
+- `labels_meta.json`: Sinif bazli Turkce aciklama, severity, actions (bakim adimlari).
+- `model_meta.json`: img_size, norm_mean, norm_std, bitki/esik ayarlari (min_confidence, min_margin).
+
+### Uretim modeli senkronu
+
+Tek bir “production” artifact klasoru kullanip backend’i oradan beslemek onerilir:
+
+1. Egitim sonrasi: `ml/artifacts/<run_id>/` altinda `model.onnx`, `labels.json`, `labels_meta.json`, `run_config.json`, `metrics.json` uretilir.
+2. Uretim icin secilen run’in bu dosyalarini `server/model/` klasorune kopyalayin (elle veya `scripts/deploy_model.sh` ile).
+3. `server/model/labels.json` ile `ml/artifacts` icindeki secili run’in `labels.json` icerigi birebir ayni olmali; aksi halde tahmin indeksleri yanlis eslesir.

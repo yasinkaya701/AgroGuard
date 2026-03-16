@@ -501,6 +501,37 @@ const mockApiResponse = (path, options = {}) => {
       ]
     });
   }
+  if (pathname === "/api/weather/alerts") {
+    return mockJsonResponse({
+      city: city || "Malatya",
+      locationLabel: locationLabel || city,
+      coords: null,
+      alerts: [],
+      source: "frontend-mock"
+    });
+  }
+  if (pathname === "/api/soil/recommend-crops" && (options?.method || "GET").toUpperCase() === "POST") {
+    const body = options?.body ? (typeof options.body === "string" ? JSON.parse(options.body) : options.body) : {};
+    return mockJsonResponse({
+      ph: body.ph ?? 6.5,
+      texture: body.texture || null,
+      region: body.region || null,
+      recommended: [{ id: "domates", name: "Domates", suitability: "uygun", score: 4, reasons: ["pH uygun", "Bölge uygun"] }, { id: "biber", name: "Biber", suitability: "uygun", score: 4, reasons: ["pH uygun", "Tekstür uygun"] }],
+      limited: [{ id: "patates", name: "Patates", suitability: "sınırlı_uygun", score: 2, reasons: ["Bölge uygun"] }],
+      all: []
+    });
+  }
+  if (pathname === "/api/yield/estimate") {
+    const crop = params.get("crop") || "domates";
+    return mockJsonResponse({
+      crop,
+      region: params.get("region") || "ic_anadolu",
+      ndvi_avg: null,
+      yield_kg_da: { low: 6400, mid: 7200, high: 8000 },
+      unit: "kg/da",
+      note: "Tahmin indeks ve bölge parametreleriyle hesaplanan kaba tahmin (beta)."
+    });
+  }
   if (pathname === "/api/land-price") {
     const smartPrice = getSmartLandPrice(city);
     return mockJsonResponse({
@@ -8719,7 +8750,7 @@ ${contactForm.message}`;
     if (warnHighFailureRate) reasons.push(`hata oranı %${Math.round(Number(diag.failureRate || 0) * 100)}`);
     return {
       code: "model_consistency_warning",
-      messağe: `Model tutarlılık riski: ${reasons.join(" • ")}. Sonuclari ek cekimle dogrulayin.`,
+      message: `Model tutarlılık riski: ${reasons.join(" • ")}. Sonuclari ek cekimle dogrulayin.`,
       stdPct,
       reasons
     };
@@ -10228,7 +10259,7 @@ ${contactForm.message}`;
         ? {
           ...data,
           warnings: Array.from(
-            new Set([...(Array.isArray(data?.warnings) ? data.warnings : []), modelConsistencyAlert.messağe])
+            new Set([...(Array.isArray(data?.warnings) ? data.warnings : []), modelConsistencyAlert.message])
           ),
           retrySuggested: true,
           decision: {
@@ -10291,11 +10322,11 @@ ${contactForm.message}`;
         ].slice(0, 6)
       );
     } catch (err) {
-      const messağe =
-        err?.messağe?.includes("Failed to fetch") || err?.messağe?.includes("NetworkError")
+      const msg =
+        err?.message?.includes("Failed to fetch") || err?.message?.includes("NetworkError")
           ? "Sunucuya baglanti kurulamadi. Backend açık mi kontrol edin."
-          : err?.messağe || "Analiz sırasında bir hata oluştu. Lütfen tekrar deneyin.";
-      setError(messağe);
+          : err?.message || "Analiz sırasında bir hata oluştu. Lütfen tekrar deneyin.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -11743,6 +11774,11 @@ ${contactForm.message}`;
         <div className="app-progress" aria-hidden="true">
           <span style={{ width: `${scrollProgress}%` }} />
         </div>
+        {isFrontendOnlyMode && (
+          <div className="demo-mode-banner" role="alert">
+            Demo modu — Canlı veri yok. Teşhis ve canlı veriler için API sunucusunu çalıştırın (örn. <code>npm run server</code>).
+          </div>
+        )}
         <datalist id="location-city-suggestions">
           {locationCitySuggestions.map((option) => (
             <option key={`city-option-${normalizeKey(option)}`} value={option} />
@@ -12022,6 +12058,7 @@ ${contactForm.message}`;
               landCompareLoading={landCompareLoading}
               landCompareError={landCompareError}
               setBottomTab={setBottomTab}
+              apiBaseForAssets={apiBaseForAssets}
             />
           )}
 

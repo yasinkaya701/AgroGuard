@@ -1,0 +1,65 @@
+{
+  "profiles": [
+    {
+      "id": "profile_akdeniz_1",
+      "name": "Akdeniz kıyı tipik",
+      "region": "akdeniz",
+      "ph_min": 7.0,
+      "ph_max": 8.2,
+      "organic_pct_min": 0.5,
+      "organic_pct_max": 2.5,
+      "texture": "kumlu-tın",
+      "water_holding": "orta",
+      "description": "Kıyı bölgesi, kireçli, organik madde orta"
+    },
+    {
+      "id": "profile_icanadolu_1",
+      "name": "İç Anadolu step",
+      "region": "ic_anadolu",
+      "ph_min": 6.5,
+      "ph_max": 8.0,
+      "organic_pct_min": 1.0,
+      "organic_pct_max": 3.0,
+      "texture": "tın",
+      "water_holding": "orta-yüksek",
+      "description": "Step toprağı, tınlı, tarıma uygun"
+    },
+    {
+      "id": "profile_karadeniz_1",
+      "name": "Karadeniz nemli",
+      "region": "karadeniz",
+      "ph_min": 5.5,
+      "ph_max": 7.2,
+      "organic_pct_min": 2.0,
+      "organic_pct_max": 5.0,
+      "texture": "tın-kil",
+      "water_holding": "yüksek",
+      "description": "Nemli bölge, organik madde yüksek"
+    },
+    {
+      "id": "profile_guneydogu_1",
+      "name": "Güneydoğu kurak",
+      "region": "guneydogu",
+      "ph_min": 7.2,
+      "ph_max": 8.5,
+      "organic_pct_min": 0.3,
+      "organic_pct_max": 1.5,
+      "texture": "killi-tın",
+      "water_holding": "düşük-orta",
+      "description": "Kurak bölge, kireçli, sulama gerekebilir"
+    },
+    {
+      "id": "profile_marmara_1",
+      "name": "Marmara verimli",
+      "region": "marmara",
+      "ph_min": 6.0,
+      "ph_max": 7.8,
+      "organic_pct_min": 1.5,
+      "organic_pct_max": 4.0,
+      "texture": "tın",
+      "water_holding": "yüksek",
+      "description": "Verimli tarla toprağı"
+    }
+  ],
+  "regions": ["akdeniz", "ic_anadolu", "karadeniz", "guneydogu", "marmara", "ege", "dogu_anadolu"]
+}

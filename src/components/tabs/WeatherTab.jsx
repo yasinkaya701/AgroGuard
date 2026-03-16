@@ -283,6 +283,8 @@ export default function WeatherTab({
   const [anomalyIntel, setAnomalyIntel] = useState(null);
   const [anomalyLoading, setAnomalyLoading] = useState(false);
   const [anomalyError, setAnomalyError] = useState('');
+  const [weatherAlertsApi, setWeatherAlertsApi] = useState(null);
+  const [weatherAlertsApiLoading, setWeatherAlertsApiLoading] = useState(false);
   const assetBase = String(apiBaseForAssets || '').replace(/\/$/, '');
   const resolveHackhatonAssetUrl = (asset) => {
     const rawUrl = String(asset?.url || asset?.asset?.url || '').trim();
@@ -575,9 +577,27 @@ export default function WeatherTab({
     assetBase,
     city,
     irrigationRequest,
-    resolvedCoords?.raw,
-    selectedDistrict,
-    selectedNeighborhood
+  ]);
+
+  useEffect(() => {
+    if (!assetBase || !city) return;
+    const controller = new AbortController();
+    setWeatherAlertsApiLoading(true);
+    const params = new URLSearchParams({ city: city || 'Malatya' });
+    if (resolvedCoords?.raw) params.set('coords', resolvedCoords.raw);
+    fetch(`${assetBase}/api/weather/alerts?${params.toString()}`, { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && Array.isArray(data.alerts)) setWeatherAlertsApi(data);
+        else setWeatherAlertsApi(null);
+      })
+      .catch(() => setWeatherAlertsApi(null))
+      .finally(() => setWeatherAlertsApiLoading(false));
+    return () => controller.abort();
+  }, [
+    assetBase,
+    city,
+    resolvedCoords?.raw
   ]);
 
   useEffect(() => {
@@ -1273,7 +1293,7 @@ export default function WeatherTab({
                 >
                   <TileLayer
                     url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                    maxZoom={18}
+                    maxZoom={19}
                   />
                   <CircleMarker
                     center={[mikroMapCenter.lat, mikroMapCenter.lon]}
@@ -1290,7 +1310,7 @@ export default function WeatherTab({
               )}
               <div style={{ position: 'absolute', inset: 0, border: '2px solid rgba(143,188,69,0.2)', pointerEvents: 'none', zIndex: 1000 }} />
               <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '4px', fontSize: '9px', fontFamily: 'JetBrains Mono', borderLeft: '3px solid var(--sprout)', zIndex: 1000 }}>
-                CANLI GOZLEM • {observationData.liveSourceCount}/2 kaynak
+                GERÇEK UYDU GÖRÜNTÜSÜ (ESRI) • CANLI GOZLEM {observationData.liveSourceCount}/2
               </div>
             </div>
 
@@ -1646,6 +1666,30 @@ export default function WeatherTab({
           ))}
         </div>
 
+        {/* ═══ WEATHER ALERTS API (don / yağış / sıcak) ═══ */}
+        {(weatherAlertsApiLoading || (weatherAlertsApi && weatherAlertsApi.alerts && weatherAlertsApi.alerts.length > 0)) && (
+          <div className="panel" style={{ borderLeft: '4px solid var(--sky)', background: 'rgba(88,143,180,0.04)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+              <IconBox icon={AlertOctagon} size={16} color="var(--sky)" />
+              <span className="section-title" style={{ fontSize: '14px' }}>Aktif risk uyarıları (7 gün)</span>
+              {weatherAlertsApiLoading && <span style={{ fontSize: '11px', color: 'rgba(245,237,216,0.5)' }}>Yükleniyor…</span>}
+            </div>
+            {!weatherAlertsApiLoading && weatherAlertsApi?.alerts?.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {weatherAlertsApi.alerts.slice(0, 6).map((a, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', background: a.severity === 'high' ? 'rgba(224,112,112,0.08)' : 'rgba(212,168,67,0.06)', border: `1px solid ${a.severity === 'high' ? 'rgba(224,112,112,0.2)' : 'rgba(212,168,67,0.15)'}` }}>
+                    <span style={{ fontSize: '11px', color: 'rgba(245,237,216,0.6)' }}>{a.day}</span>
+                    <span style={{ fontSize: '13px', color: 'rgba(245,237,216,0.9)' }}>{a.message}</span>
+                    {a.tempMin != null && <span style={{ fontSize: '11px', color: 'var(--sky)' }}>Min {a.tempMin}°C</span>}
+                    {a.tempMax != null && <span style={{ fontSize: '11px', color: '#E07070' }}>Max {a.tempMax}°C</span>}
+                    {a.precipitationMm != null && <span style={{ fontSize: '11px', color: 'var(--sky)' }}>{a.precipitationMm} mm</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ═══ ALERTS ═══ */}
         <div id="climate-risk" className="panel" style={{ borderLeft: allAlerts.length > 0 ? '4px solid #E07070' : '4px solid var(--sprout)', background: allAlerts.length > 0 ? 'rgba(224,112,112,0.03)' : 'rgba(143,188,69,0.03)', scrollMarginTop: '110px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
@@ -1773,8 +1817,8 @@ export default function WeatherTab({
               >
                 <TileLayer
                   url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                  maxZoom={18}
-                  attribution="Tiles © Esri"
+                  maxZoom={19}
+                  attribution="&copy; Esri — Gerçek uydu görüntüsü"
                 />
                 {resolvedCoords ? (
                   <CircleMarker
@@ -1784,6 +1828,9 @@ export default function WeatherTab({
                   />
                 ) : null}
               </MapContainer>
+              <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: '6px', fontSize: '10px', color: 'var(--sprout)', zIndex: 1000 }}>
+                Gerçek uydu (Esri)
+              </div>
               <button
                 type="button"
                 onClick={selectSoilMapPoint}
