@@ -1,142 +1,101 @@
-# AgroGuard: Yapay Zekâ Destekli Dijital Tarım Destek Sistemi
+# 🌱 AgroGuard: Yapay Zekâ Destekli Dijital Tarım Sistemi
 
-AgroGuard, **bitki hastalık teşhisi**, **multispektral (drone + uydu) analiz** ve **iklim/market/arsa verisi** katmanlarını birleştiren, modüler bir **dijital tarım destek sistemi**dir.
+Merhaba! **AgroGuard** projesine hoş geldin. Bu proje, bilgisayarların bitkilerdeki hastalıkları fotoğraflara bakarak anlamasını sağlayan, aynı zamanda çiftçilerin ürünlerini alıp satabileceği dijital bir pazar sunan akıllı bir sistemdir.
 
-Bu proje, TEKNOFEST kapsamında geliştirilen **web + mobil (Capacitor)** uygulama, **Node/Express backend** ve **PyTorch/ONNX tabanlı ML eğitim ve çıkarım pipeline’ını** içermektedir.
-
----
-
-## 🚀 Özellikler
-
-### 🌿 Bitki Hastalık Teşhisi (CNN + ONNX)
-- Mobil veya web arayüzünden yaprak/gövde fotoğrafı yükleyerek teşhis yapabilme.
-- Hem sunucu hem de cihaz üzerinde çalışabilen **ONNX** modeli ile hızlı ve isabetli sınıflandırma.
-- Her hastalık için **güven skoru**, önleyici tedbir önerileri ve Türkçe özet teşhis sonuçları.
-
-### 🌤 İklim ve Risk İzleme
-- Open-Meteo verileri ile don riski, ani sıcaklık değişimleri gibi durumlara karşı **kısa vadeli tahmini uyarılar**.
-- Bölgesel mikroklima analizi ve toprak nemi / sıcaklığı entegrasyonu.
-
-### 💼 Dijital Pazar & Land Terminal (Ticaret Ağı)
-- Çiftçiler ve tedarikçiler arası pazar: **İlan oluşturma**, **teklif sunma** ve **sipariş takip** akışları.
-- Arsa değerleme, fiyat tahminleri ve pazar derinliği/trend göstergeleri.
-
-### 📈 Planlanan/Geliştirilen Diğer Modüller
-- **Drone & Multispektral Analiz:** NDVI, NDRE, NIR indeksleriyle parsel bazlı bitki gelişim haritaları.
-- **Toprak & Mahsul Uygunluk Önerileri:** Toprak analizi (pH, organik madde) ile bölgesel mahsul projeksiyonları.
-- **Verim Tahmini:** İklim ve spektral verilere dayalı sezon sonu verim tahmin modeli.
+Eğer hayatınızda daha önce hiç kod yazmadıysanız veya bilgisayarınıza böyle bir program kurmadıysanız, hiç endişelenmeyin! Bu rehber size **adım adım, en basit haliyle** bu sistemi bilgisayarınızda nasıl çalıştıracağınızı anlatacak.
 
 ---
 
-## 🛠 Mimari Genel Bakış
+## 🛠️ Bölüm 1: Bilgisayarımızı Hazırlayalım (Gereksinimler)
 
-### 1. Frontend (İstemci)
-- **React** tabanlı dinamik tek sayfalık uygulama (SPA).
-- **Capacitor** entegrasyonu sayesinde kod tabanını iOS ve Android native mobil uygulamalara kolayca dönüştürme imkanı.
-- Beş ana sekme: `Ana Sayfa`, `Arsa (Land)`, `Pazar (Market)`, `Hava Durumu (Weather)`, ve `Demolar`.
+Bu projenin çalışabilmesi için bilgisayarımıza iki tane küçük program (araç) kurmamız gerekiyor. Bu programlar tamamen ücretsiz ve güvenilirdir.
 
-### 2. Backend (Sunucu)
-- **Node.js & Express.js** API sunucusu.
-- Rest API uçlarıyla görüntü işleme (ONNX çıkarım), hava, toprak ve pazar verilerini sağlama.
-- Geliştirme kolaylığı için harici bağlantı gerektirmeyen gömülü `JSON` tabanlı depo sistemi (`server/data/*.json`).
+### 1. Node.js (Bilgisayarın Kodları Anlama Motoru)
+Node.js, bilgisayarınızın bizim yazdığımız özellikleri çalıştırabilmesini sağlayan bir motordur.
+*   **Nasıl Kurulur?** [Buraya tıklayarak Node.js resmi sitesine gidin (https://nodejs.org)](https://nodejs.org/). Karşınıza çıkan yeşil renkli düğmelerden **"LTS" (Uzun Süreli Destek - Önerilen)** yazan butona tıklayıp indirin.
+*   İndirdiğiniz dosyayı normal bir program kurar gibi (`İleri -> İleri -> Kabul Ediyorum -> Kur`) diyerek bilgisayarınıza kurun.
 
-### 3. Machine Learning (ML Pipeline)
-- **PyTorch** kullanılarak geliştirilmiş eğitim scriptleri (`ml/train.py`, `ml/model_factory.py`).
-- Eğitilen modellerin sisteme **ONNX formatında** dönüştürülüp entegre edilmesi (`server/model/`).
+### 2. Git (Dosyaları Bilgisayarımıza İndirme Aracı)
+Git, internetteki (GitHub üzerindeki) bu projenin dosyalarını sizin bilgisayarınıza kolayca çekip getirmemizi (klonlamamızı) sağlar.
+*   **Nasıl Kurulur?** [Buraya tıklayarak Git resmi sitesine gidin (https://git-scm.com/downloads)](https://git-scm.com/downloads). "Download for Windows" veya "Download for Mac" butonuna basarak indirin.
+*   Normal bir program gibi hep "İleri" (Next) diyerek kurulumu tamamlayın, hiçbir ayarı değiştirmenize gerek yok.
 
----
-
-## ⚙️ Detaylı Kurulum & Çalıştırma Rehberi
-
-Aşağıdaki adımlar, projeyi ilk defa ayağa kaldıracak bir geliştirici için detaylıca hazırlanmıştır.
-
-### 📌 Adım 1: Sistem Gereksinimlerini Sağlayın
-Projenin bilgisayarınızda sorunsuz çalışması için temel yazılımlara ihtiyaç vardır:
-1. **[Node.js (LTS Sürümü)](https://nodejs.org/tr/):** V8 JavaScript motorudur (Front-End & Back-End). Komut isteminde `node -v` çalıştırarak kurulu olduğundan emin olun (Önerilen: 18.x veya üzeri).
-2. **Paket Yöneticisi:** Node.js kurduğunuzda **npm** otomatik kurulur (`npm -v` ile kontrol edin).
-3. **[Git](https://git-scm.com/):** Versiyon kontrol sistemi.
-4. *(Opsiyonel)* **[Python 3.x](https://www.python.org/):** Makine öğrenmesi modellerini (`/ml` dizinindeki eğitim dosyalarını) kullanmak isterseniz yüklemelisiniz. 
+*Harika! Artık bilgisayarınız hazır, hadi projemizi çalıştıralım.* 🎉
 
 ---
 
-### 📥 Adım 2: Projeyi Bilgisayarınıza Klonlayın
+## 📥 Bölüm 2: Projeyi Bilgisayarımıza İndirmek
 
-Aşağıdaki komutları herhangi bir terminal veya komut isteminde (CMD/PowerShell) çalıştırın:
-```bash
-# Projeyi GitHub üzerinden klonlayın
-git clone https://github.com/yasinkaya701/AgroGuard.git
+Artık siyah bir "Komut Ekranı" kullanacağız. Bilgisayara komutlar vererek işlemleri çok daha hızlı yapacağız.
 
-# Projenin oluşturulduğu ana dizine geçin
-cd AgroGuard
-```
+1.  **Terminal (Komut İstemi) Açmak:**
+    *   **Windows Kullanıyorsanız:** Klavyenizden `Windows (Başlat)` tuşuna basın, arama yerine `cmd` veya `Terminal` yazın ve "Komut İstemi" uygulamasını açın. Siyah bir kutu açılacak.
+    *   **Mac Kullanıyorsanız:** Klavyenizdeki `Command (⌘) + Boşluk (Space)` tuşlarına aynı anda basın. Açılan arama çubuğuna `Terminal` yazın ve `Enter`'a basın.
 
----
+2.  Siyah ekrana şu cümleyi kopyalayıp yapıştırın (veya yazın) ve **Enter** tuşuna basın:
+    ```bash
+    git clone https://github.com/yasinkaya701/AgroGuard.git
+    ```
+    *Bu komut, AgroGuard dosyalarını internetten bilgisayarınıza indirecektir. Yüzde dolana kadar birkaç saniye bekleyin.*
 
-### 📦 Adım 3: Gerekli Paketleri (Bağımlılıkları) Yükleyin
-
-Proje hem React tabanlı ön yüzü hem de Node/Express arka yüzü aynı klasör içinde barındırır. Bütün eklentileri yüklemek için:
-```bash
-# AgroGuard dizini altındayken bu komutu çalıştırın
-npm install
-```
-*Not: Bu işlem internet hızınıza bağlı olarak birkaç dakika sürebilir. Dosyalar `node_modules` isimli klasöre indirilecektir.*
+3.  Şimdi indirdiğimiz klasörün içine (odasına) girmeliyiz. Şu komutu yazıp **Enter**'a basın:
+    ```bash
+    cd AgroGuard
+    ```
+    *Tebrikler, artık projenin içindesiniz!* 👏
 
 ---
 
-### 🚀 Adım 4: Geliştirme Ortamını (Dev Server) Başlatın
+## ⚙️ Bölüm 3: Gerekli Malzemelerin Yüklenmesi
 
-Proje `concurrently` paketini kullandığı için **ön yüz (React)** ve **arka yüz (Express.js)** aynı anda tek komutla başlatılır.
+Projenin içinde sayfaların tasarımları, haritalar, tuşlar gibi önceden hazırlanmış birçok parça kullanıyoruz. Bu parçaları tek bir komutla fabrikasından getirmemiz lazım.
 
-Terminalde şu komutu çalıştırın:
-```bash
-npm start
-```
-
-**Ne beklemeliyim?**
-- Komutu çalıştırdıktan sonra terminal **iki farklı renkte log basmaya başlar.** (Genelde biri API, diğeri WEB loglarıdır).
-- **Backend (Arka Yüz)** `http://localhost:5051` (veya uygun görülen ilk port) üzerinde aktif olur.
-- **Frontend (Ön Yüz)** terminalde başarılı bir şekilde derlendikten sonra tarayıcınız otomatik olarak açılacak ve **http://localhost:3000** sekmesinde `AgroGuard` arayüzü belirecektir.
-
-*(Port dolu uyarısı alırsanız sistem otomatik olarak port numarasını 3001 gibi artırarak React'ı başlatacaktır.)*
+1. Aynı siyah ekranda (Terminal'de) şu komutu yazın ve **Enter**'a basın:
+    ```bash
+    npm install
+    ```
+    *(Buradaki npm, "Bana gerekli malzemeleri getir" demektir).*
+2.  Bu işlem bilgisayarınızın ve internetinizin hızına bağlı olarak **1-3 dakika** sürebilir. Ekranda harflerin / çubukların dolduğunu göreceksiniz. Sabırla bitmesini ve tekrar o siyah ekrandaki imlecin yanıp sönmesini bekleyin.
 
 ---
 
-### 🌍 (Opsiyonel) Çevre Değişkenleri ve Konfigürasyon
-Projeyi denemek için harici bir veritabanı veya API anahtarına ihtiyacınız **yoktur**. Tüm pazar ve arazi verileri `server/data/` altındaki `JSON` dosyalarından okunur. 
+## 🚀 Bölüm 4: Sistemi Çalıştıralım! Hazırız!
 
-Ancak gelişmiş kargo (Shipping) ve arsa fiyatı (Land Price) senaryoları tasarlamayı düşünüyorsanız `.env` dosyası oluşturabilirsiniz:
-1. Proje ana dizininde (AgroGuard) yeni bir `.env` (başı noktalı) dosyası oluşturun.
-2. Özel parametrelerinizi tanımlayın (Örn: `API_PORT=5051`, `LAND_DISCOVERY_ENABLED=true`).
+Her şey kuruldu, odanın içine girdik, eşyaları da yerleştirdik. Şimdi tek yapmamız gereken motorun düğmesine basmak.
+
+1. Tekrar aynı siyah ekrana şu son büyülü kelimeyi yazın ve **Enter**'a basın:
+    ```bash
+    npm start
+    ```
+2.  **Lütfen siyah ekranı kapatmayın!** Arka planda çalışmaya devam edecek. 
+3.  Bilgisayarınız biraz çalışacak, ardından Google Chrome, Safari veya kullandığınız internet tarayıcısı **kendi kendine açılacak** ve karşınıza **http://localhost:3000** adresinde AgroGuard sitesi gelecektir!
+
+**(Eğer kendi kendine açılmazsa:** Siyah ekranda `Compiled successfully!` yazısını gördükten sonra, tarayıcınızın (Chrome vb.) en üstündeki arama yerine `localhost:3000` yazıp Enter tuşuna basmanız yeterlidir.)
+
+---
+Aramıza Hoş Geldiniz! Artık sistemi kurcalayabilir, hastalığını merak ettiğiniz yaprak fotoğraflarını yükleyebilir ve Market sekmesindeki dijital arsa pazarını gezebilirsiniz. 😊🚜🌿
 
 ---
 
-### 🏗 Adım 5: Üretim (Production) Sürümünü Hazırlama
-Eğer bilgisayarınızda bir ürün sunucusu yapılandıracak veya Vercel/Netlify/Firebase gibi yerlere dosyaları atacaksanız:
-```bash
-npm run build
-```
-Bu adım, `src/` içindeki React kodunu küçültür (minify) ve statik dosyaları `build/` klasöründe yayınlamaya hazır hale getirir.
-
 ---
 
-## 🔗 Temel API Uçları (Endpoints)
+> 👇 **BİLİŞİM UZMANLARI VE GELİŞTİRİCİLER İÇİN TEKNİK DETAYLAR** 👇
 
-Eğer sadece Backend servislerini Postman veya benzeri bir araçla test etmek isterseniz (Proje çalışırken):
+*(Aşağıdaki bölümler yalnızca projeyi kodlamak, kendi veritabanını kurmak veya Makine Öğrenmesi (ML) modelini eğitmek isteyen geliştiriciler (developer) içindir).*
 
-* **🩺 Bitki Teşhisi:** `POST http://localhost:5051/api/diagnose` - Fotoğraf yükleyerek tahmin alma servisidir. Gövdeden "image" parametresi gönderilir.
-* **⛅️ Hava Durumu:** `GET http://localhost:5051/api/weather?lat=39.9&lon=32.8` - Koordinat bazlı iklim raporu.
-* **🌱 Toprak Analizi:** `GET http://localhost:5051/api/soil?lat=39.9&lon=32.8` - Koordinatlara bağlı toprak sağlığı parametreleri.
-* **💹 Pazar Listesi:** `GET http://localhost:5051/api/trade/listings` - Pazaryerine eklenmiş güncel mahsul veya arsa ilanları.
+## 🧩 Sistem Özellikleri (Teknik)
+- **Frontend:** React SPA, Lucide-React, Capacitor (Hybrid Mobil hazırlığı).
+- **Backend:** Node.js, Express, Multer, Göreceli JSON veri yapısı (`server/data`).
+- **Makine Öğrenmesi (ML):** PyTorch ile eğitilmiş, ONNX formatına dönüştürülmüş model altyapısı (`/ml` dizini altından yönetilir).
 
----
+## 📡 Backend API Uçları (Geliştirici)
+Geliştirme portu varsayılan olarak `5051` (veya `.env` dosyasındaki değer) olarak ayarlanır (`npm start` iki portu da paralel ayağa kaldırır).
+- `POST /api/diagnose`: Gövdede form-data içerisinde `image` bekleyen ONNX çıkarım ucu.
+- `GET /api/weather`: İklim ve Open-Meteo tahmini don riski modeli.
+- `GET /api/trade/listings`: Pazar / İlan GET uçları.
 
 ## ⚖️ Lisans
-Bu proje **MIT Lisansı** altında açık kaynak olarak dağıtılmaktadır. Detaylar için ana dizindeki `LICENSE` dosyasına göz atabilirsiniz.
-
----
+Bu proje geliştirici dostu **MIT Lisansı** ile sunulmaktadır. Daha fazla bilgi için `LICENSE` dosyasına bakınız.
 
 ## 🎓 TEKNOFEST Bağlamı
-Yapay Zekâ ve Görüntü İşleme Sistemleri odağıyla hazırlanan bu yazılım, "AGROGUARD: Yapay Zekâ Destekli Multispektral Görüntü Analizi ve Dijital Tarım Destek Sistemi" vizyonunu temsil etmektedir. Çalışmanın akademik yayın çerçevesindeki kurallara tabi olarak hazırlandığı kabul edilmiştir.
-
----
-**AgroGuard** ile Dijital ve Bilinçli Tarım! 🚜🌾
+Yapay Zekâ ve Görüntü İşleme Sistemleri yarışması için yayınlanmış olan *"AGROGUARD: Yapay Zekâ Destekli Multispektral Görüntü Analizi ve Dijital Tarım Destek Sistemi"* prototipidir. Herhangi bir akademik ihlali bulunmamakta olup, modüler ve geliştirilebilir bir yapı üzerine tasarlanmıştır.
