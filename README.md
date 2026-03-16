@@ -38,6 +38,7 @@ Bu proje, TEKNOFEST kapsamında geliştirilen **web + mobil (Capacitor)** uygula
 ### 2. Backend (Sunucu)
 - **Node.js & Express.js** API sunucusu.
 - Rest API uçlarıyla görüntü işleme (ONNX çıkarım), hava, toprak ve pazar verilerini sağlama.
+- Geliştirme kolaylığı için harici bağlantı gerektirmeyen gömülü `JSON` tabanlı depo sistemi (`server/data/*.json`).
 
 ### 3. Machine Learning (ML Pipeline)
 - **PyTorch** kullanılarak geliştirilmiş eğitim scriptleri (`ml/train.py`, `ml/model_factory.py`).
@@ -45,62 +46,92 @@ Bu proje, TEKNOFEST kapsamında geliştirilen **web + mobil (Capacitor)** uygula
 
 ---
 
-## ⚙️ Kurulum & Çalıştırma
+## ⚙️ Detaylı Kurulum & Çalıştırma Rehberi
 
-### 📌 Gereksinimler
-Projenin sisteminizde sorunsuz çalışabilmesi için aşağıdakilerin yüklü olması gerekir:
-- [Node.js](https://nodejs.org/) (Önerilen: LTS sürümü)
-- [npm](https://www.npmjs.com/) veya [Yarn](https://yarnpkg.com/)
-- [Python 3.x](https://www.python.org/) (Makine öğrenmesi modellerini kendiniz eğitmek isterseniz önerilir, standart kullanım için zorunlu değildir)
-- [Git](https://git-scm.com/)
+Aşağıdaki adımlar, projeyi ilk defa ayağa kaldıracak bir geliştirici için detaylıca hazırlanmıştır.
 
-### 📥 Kurulum Adımları
-Aşağıdaki adımları sırasıyla uygulayarak projeyi yerel bilgisayarınıza kurabilirsiniz:
+### 📌 Adım 1: Sistem Gereksinimlerini Sağlayın
+Projenin bilgisayarınızda sorunsuz çalışması için temel yazılımlara ihtiyaç vardır:
+1. **[Node.js (LTS Sürümü)](https://nodejs.org/tr/):** V8 JavaScript motorudur (Front-End & Back-End). Komut isteminde `node -v` çalıştırarak kurulu olduğundan emin olun (Önerilen: 18.x veya üzeri).
+2. **Paket Yöneticisi:** Node.js kurduğunuzda **npm** otomatik kurulur (`npm -v` ile kontrol edin).
+3. **[Git](https://git-scm.com/):** Versiyon kontrol sistemi.
+4. *(Opsiyonel)* **[Python 3.x](https://www.python.org/):** Makine öğrenmesi modellerini (`/ml` dizinindeki eğitim dosyalarını) kullanmak isterseniz yüklemelisiniz. 
 
-1. **Projeyi Klonlayın:**
+---
+
+### 📥 Adım 2: Projeyi Bilgisayarınıza Klonlayın
+
+Aşağıdaki komutları herhangi bir terminal veya komut isteminde (CMD/PowerShell) çalıştırın:
 ```bash
+# Projeyi GitHub üzerinden klonlayın
 git clone https://github.com/yasinkaya701/AgroGuard.git
-cd AgroGuard
-```
 
-2. **Bağımlılıkları Yükleyin:**
-Projeyi çalıştırmak için gerekli olan Node paketlerini kurun:
-```bash
-npm install
+# Projenin oluşturulduğu ana dizine geçin
+cd AgroGuard
 ```
 
 ---
 
-## 🚀 Çalıştırma
+### 📦 Adım 3: Gerekli Paketleri (Bağımlılıkları) Yükleyin
 
-### Geliştirme Ortamı (Development)
-Proje aynı anda hem Frontend hem de Backend servislerini başlatacak şekilde yapılandırılmıştır. Terminal ekranında aşağıdaki komutu çalıştırmanız yeterlidir:
+Proje hem React tabanlı ön yüzü hem de Node/Express arka yüzü aynı klasör içinde barındırır. Bütün eklentileri yüklemek için:
+```bash
+# AgroGuard dizini altındayken bu komutu çalıştırın
+npm install
+```
+*Not: Bu işlem internet hızınıza bağlı olarak birkaç dakika sürebilir. Dosyalar `node_modules` isimli klasöre indirilecektir.*
 
+---
+
+### 🚀 Adım 4: Geliştirme Ortamını (Dev Server) Başlatın
+
+Proje `concurrently` paketini kullandığı için **ön yüz (React)** ve **arka yüz (Express.js)** aynı anda tek komutla başlatılır.
+
+Terminalde şu komutu çalıştırın:
 ```bash
 npm start
 ```
-Bu komut, uygulamanızı **http://localhost:3000** portunda (Arayüz), Backend servisini ise varsayılan olarak **http://localhost:5051** portunda ayağa kaldırır.
 
-### Üretim Ortamı (Production Build)
-Uygulamayı bir sunucu ortamında (Vercel, Netlify, Nginx vb.) yayınlamak üzere optimize edilmiş statik dosyalar oluşturmak isterseniz:
+**Ne beklemeliyim?**
+- Komutu çalıştırdıktan sonra terminal **iki farklı renkte log basmaya başlar.** (Genelde biri API, diğeri WEB loglarıdır).
+- **Backend (Arka Yüz)** `http://localhost:5051` (veya uygun görülen ilk port) üzerinde aktif olur.
+- **Frontend (Ön Yüz)** terminalde başarılı bir şekilde derlendikten sonra tarayıcınız otomatik olarak açılacak ve **http://localhost:3000** sekmesinde `AgroGuard` arayüzü belirecektir.
 
+*(Port dolu uyarısı alırsanız sistem otomatik olarak port numarasını 3001 gibi artırarak React'ı başlatacaktır.)*
+
+---
+
+### 🌍 (Opsiyonel) Çevre Değişkenleri ve Konfigürasyon
+Projeyi denemek için harici bir veritabanı veya API anahtarına ihtiyacınız **yoktur**. Tüm pazar ve arazi verileri `server/data/` altındaki `JSON` dosyalarından okunur. 
+
+Ancak gelişmiş kargo (Shipping) ve arsa fiyatı (Land Price) senaryoları tasarlamayı düşünüyorsanız `.env` dosyası oluşturabilirsiniz:
+1. Proje ana dizininde (AgroGuard) yeni bir `.env` (başı noktalı) dosyası oluşturun.
+2. Özel parametrelerinizi tanımlayın (Örn: `API_PORT=5051`, `LAND_DISCOVERY_ENABLED=true`).
+
+---
+
+### 🏗 Adım 5: Üretim (Production) Sürümünü Hazırlama
+Eğer bilgisayarınızda bir ürün sunucusu yapılandıracak veya Vercel/Netlify/Firebase gibi yerlere dosyaları atacaksanız:
 ```bash
 npm run build
 ```
-Bu işlem sonunda Frontend çıktılarınız `build/` dizini altında oluşturulacaktır.
+Bu adım, `src/` içindeki React kodunu küçültür (minify) ve statik dosyaları `build/` klasöründe yayınlamaya hazır hale getirir.
 
 ---
 
 ## 🔗 Temel API Uçları (Endpoints)
 
-Hızlı entegrasyon ve kontrol için Backend üzerinde bulunan en temel HTTP servisleri şu şekildedir:
+Eğer sadece Backend servislerini Postman veya benzeri bir araçla test etmek isterseniz (Proje çalışırken):
 
-* **🩺 Bitki Teşhisi:** `POST /api/diagnose` - Fotoğraf analizi ile hastalık tespiti.
-* **⛅️ Hava Durumu:** `GET /api/weather` - Bölgesel, mikroklima hava verisi.
-* **🌱 Toprak Analizi:** `GET /api/soil` - Koordinatlara bağlı toprak sağlığı parametreleri.
-* **💹 Pazar İşlemleri:** `GET /api/trade/listings`, `POST /api/trade/listings` - İlan arama ve ilan oluşturma servisleri.
+* **🩺 Bitki Teşhisi:** `POST http://localhost:5051/api/diagnose` - Fotoğraf yükleyerek tahmin alma servisidir. Gövdeden "image" parametresi gönderilir.
+* **⛅️ Hava Durumu:** `GET http://localhost:5051/api/weather?lat=39.9&lon=32.8` - Koordinat bazlı iklim raporu.
+* **🌱 Toprak Analizi:** `GET http://localhost:5051/api/soil?lat=39.9&lon=32.8` - Koordinatlara bağlı toprak sağlığı parametreleri.
+* **💹 Pazar Listesi:** `GET http://localhost:5051/api/trade/listings` - Pazaryerine eklenmiş güncel mahsul veya arsa ilanları.
 
-Daha kapsamlı arsa fiyatlandırma ve kargo sağlayıcısı (shipping adapter) yapılandırmaları için çevre değişkenleri (ENV Variables) kullanılmaktadır.
+---
+
+## ⚖️ Lisans
+Bu proje **MIT Lisansı** altında açık kaynak olarak dağıtılmaktadır. Detaylar için ana dizindeki `LICENSE` dosyasına göz atabilirsiniz.
 
 ---
 
