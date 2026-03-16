@@ -1,84 +1,78 @@
-# AgroGuard: Dijital Tarım Komuta Merkezi
+<div align="center">
+  <h1>🌱 AgroGuard</h1>
+  <p><strong>Yapay Zeka Destekli Dijital Tarım Komuta Merkezi</strong></p>
 
-AgroGuard, sıradan bir bitki hastalık teşhis uygulamasının ötesinde, tarımsal riskleri yönetmek, finansal öngörüler oluşturmak ve iklim belirsizliklerine karşı proaktif aksiyonlar almak üzere tasarlanmış kapsamlı bir **Dijital Tarım Komuta Merkezi**'dir.
-
-Bitki hastalık teşhisi, 3 Boyutlu Dijital Arazi İkizi (Digital Twin), Makine Öğrenmesi destekli arsa değerleme modeli, Arbitraj Radarı ve Hackathon Çıktılarına dayalı derin iklim analizleri sunar.
-
-## Temel Özellikler (Komuta Merkezi Katmanları)
-
-### 1. Akıllı Teşhis & AgroBot (AI Danışman)
-- **Hızlı Teşhis:** Kameradan veya galeriden yüklenen yaprak fotoğraflarıyla anında hastalık teşhisi.
-- **AgroBot AI:** Doğal dilde tarımsal soruları yanıtlayan, teşhis sonuçlarına göre çözüm üreten yapay zeka asistanı.
-- **Entegre Bilgi Bankası:** Yüzlerce hastalık, zararlı ve tedavi yöntemini içeren geniş offline/online veri havuzu.
-
-### 2. Parsel Dijital İkiz (Digital Twin) & Değerleme
-- **3D Arazi Simülasyonu:** Arazinizin toprak sağlığı, nem oranı ve ph değeri gibi sensör benzeri verilerinin 3 boyutlu görselleştirilmesi.
-- **ML Tabanlı Değerleme:** Emsal ilanlar, toprak kalitesi ve lojistik faktörlere dayanarak arazinizin güncel makine öğrenmesi destekli fiyat tahmini.
-- **Yatırım Getirisi (ROI) Hesaplayıcı:** Arazinin yıllık maliyet-gelir analizini yaparak geri dönüş süresini tahmin etme.
-
-### 3. Market Terminali & Arbitraj Radarı
-- **Canlı Borsa Akışı:** Ürün fiyatlarındaki anlık değişimleri gösteren terminal ekranı.
-- **Akıllı Fiyatlama (Smart Sell):** ML tahminlerine dayalı optimum satış fiyatı ve zamanlaması tavsiyesi.
-- **Bölgesel Arbitraj Radarı:** Farklı illerdeki (Hal/Market) fiyat makaslarını (Arbitraj fırsatlarını) analiz ederek en kârlı pazar yerini bulma.
-
-### 4. İklim Zekâsı & Kuraklık Önleme (Hackathon Çıktıları)
-- **Derin İklim Geçmişi:** Hackathon yarışma çıktılarına ve açık veri setlerine dayalı kapsamlı iklim ve kuraklık analizleri.
-- **Mikroklima Modellemeleri:** Özel gridasyon yöntemleriyle arazinize en yakın hiper-yerel iklim tahminleri.
-- **Sulama ve Evapotranspirasyon (ET0):** Bitkinin günlük su tüketimine dayalı, ürün bazlı dinamik sulama takvimleri oluşturma.
+  <p>
+    <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+    <img src="https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js" />
+    <img src="https://img.shields.io/badge/Machine%20Learning-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white" alt="ML" />
+    <img src="https://img.shields.io/badge/Tailwind_Concepts-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="CSS" />
+    <img src="https://img.shields.io/badge/License-Proprietary-red.svg?style=for-the-badge" alt="License" />
+  </p>
+</div>
 
 ---
 
-## 🚀 Başlangıç ve Basit Kurulum
+## 📖 Proje Vizyonu
+AgroGuard, sıradan bir bitki hastalık teşhis uygulamasını yıkarak yerini **Dijital Tarım Komuta Merkezi**'ne bırakan devasa bir vizyon projesidir. Tarımsal risk yönetimi, proaktif finansal çözümler ve pazar istihbaratını tek bir platformda sunar. İklim belirsizliklerine karşı *"Hackathon Çıktıları"* entegrasyonuyla geleceğin tarımını şekillendirir.
 
-Projeyi bilgisayarınızda kendi başınıza çalıştırmak çok kolaydır. Aşağıdaki 4 adımı izleyerek uygulamayı hemen kullanmaya başlayabilirsiniz.
+## ✨ Eşsiz Özellikler & Katmanlar
 
-### Bölüm 1: Gerekli Programların Kurulması
+### 🤖 1. Akıllı Teşhis & AgroBot (Yapay Zeka Danışman)
+- **Hızlı ve İsabetli Teşhis:** Makine öğrenmesi algoritmaları ile yaprakların damar izlerini inceleyerek anında lokal hastalık teşhisi yapar.
+- **Diyalog Kurabilen AgroBot Asistan:** Hastalık çözümlerini veya genel hasat sorularınızı sanki karşınızda bir Ziraat Mühendisi varmış gibi diyalog halinde cevaplar.
+- **Yüklü Çevrimdışı Bilgi Bankası:** İnternetin çekmediği arazilerde dahi erişilebilen hastalık ve tedavi dokümanları.
 
-Uygulamanın çalışması için bilgisayarınızda **Node.js** adında bir programın yüklü olması gerekir.
+### 🌐 2. Parsel Dijital İkiz (Digital Twin) & Değerleme Modeli
+- **3D Arazi Simülasyonu:** Tarlanızın topografi ve sensör datasını okuyarak siber 3 boyutlu "Digital Twin" ağını oluşturur.
+- **Gerçek Zamanlı ML Arazi Değerlemesi:** Bölgedeki emsal satış verilerini analiz ederek tarlanın "Makine Öğrenmesi ile Pazar Değerini" belirler.
+- **Sofistike ROI (Yatırım Getirisi) Asistanı:** Arsaya ekilecek ürüne göre tahmini rekolteyi hesaplayarak net bir yıllık kârlılık takvimi çizer.
 
-1. **[Node.js İndirme Sayfasına](https://nodejs.org/)** gidin.
-2. Karşınıza çıkan ekrandan **"LTS"** (Recommended for Most Users - Çoğu Kullanıcı İçin Önerilen) yazan yeşil butona tıklayın.
-3. İnen dosyayı açın ve hep "İleri" (Next) diyerek standart kurulumu tamamlayın. *(Özel bir ayar yapmanıza gerek yoktur).*
+### 📈 3. Market Terminali (Agro-Borsa) & Akıllı Arbitraj
+- **Kripto-Borsa Tarzı Canlı Fiyat İzleme Ekranı:** Ürün fiyatlarındaki artış-düşüşü okuyan ileri düzey gerçek zamanlı borsa paneli.
+- **Akıllı Satış Fiyatlama (Smart Sell):** ML projeksiyonlarıyla satış döngünüzü hesaplayarak ürününüzü en tepe fiyatta satmanızı önerir.
+- **Bölgesel Arbitraj Radarı:** Farklı bölgelerdeki hal/pazar fiyatlarını kıyaslar, aradaki fiyat farkını bulup ürün rota haritasını yaratır.
 
-### Bölüm 2: Proje Dosyalarını İndirmek
+### 🌦 4. İklim Zekâsı, Kuraklık Risk Ekranı (Hackathon Çıktıları)
+- **Derin Analiz & Çıktılar:** Çok özel açık veri ve **Hackathon yarışma çıktıları** kullanılarak oluşturulan zengin iklim göstergeleri.
+- **Tarlaya Özel Mikroklima Ağı:** Çevrenizdeki yeryüzü etkisini hesaba katan "Sadece o parsele özel" lokal anomali öngörü arayüzü.
+- **Dinamik ET0 Sulama Takvimleri:** Evapotranspirasyon parametreleri işlenerek oluşturulmuş interaktif sulama zamanlayıcısı.
 
-Bu projenin kodlarını bilgisayarınıza almanız gerekiyor.
+---
 
-1. Sayfanın en üstünde yer alan yeşil renkli **"Code"** butonuna tıklayın.
-2. Açılan küçük pencerede **"Download ZIP"** seçeneğine tıklayın.
-3. İnen ZIP dosyasını bilgisayarınızda bulmak istediğiniz bir klasöre (Örneğin: Masaüstü) çıkartın.
+## 🚀 Hızlı Başlangıç (Kurulum)
 
-### Bölüm 3: Projeyi Bilgisayarda Açmak ve Hazırlamak
+Projeyi kendi bilgisayarınızda çalıştırmak için aşağıdaki adımları izleyin:
 
-Projeyi çalıştırmak için bir Terminal (Komut İstemcisi) kullanacağız. Gözünüz korkmasın, sadece iki basit komut yazacağız.
+### 1️⃣ Gereksinimler
+Uygulamanın çalışması için bilgisayarınızda **Node.js** yüklü olmalıdır. Yüklü değilse [Node.js](https://nodejs.org/tr/) adresinden **LTS** sürümünü indirip kurabilirsiniz.
 
-1. ZIP'ten çıkardığınız proje klasörünü açın.
-2. Klasörün tam içindeyken:
-   - **Windows kullanıyorsanız:** Klasör içindeyken üstteki adres çubuğuna tıklayın, oradaki yazıyı silip `cmd` yazın ve `Enter`'a basın. Siyah bir ekran açılacak.
-   - **Mac kullanıyorsanız:** Klasördeyken alt menüden veya sağ tıklayarak "Terminal'de Aç" (New Terminal at Folder) seçeneğini seçin.
-3. Açılan o siyah (veya beyaz) ekrana şu komutu yazın ve klavyenizdeki `Enter` tuşuna basın:
-   ```bash
-   npm install
-   ```
-   *Not: Bu işlem uygulamanın ihtiyaç duyduğu ek paketleri internetten indirecektir. İnternet hızınıza göre 1-2 dakika sürebilir. Yazıların akmasını bekleyin.*
+### 2️⃣ Kurulum
+Terminali (Komut İstemcisi) açın ve proje klasörünün içindeyken aşağıdaki komutu çalıştırın:
+```bash
+npm install
+```
 
-### Bölüm 4: Projeyi Çalıştırmak
-
-Kurulum bittikten sonra, yine aynı siyah ekrana şu komutu yazıp `Enter`'a basın:
-
+### 3️⃣ Çalıştırma
+Kurulum tamamlandıktan sonra projeyi başlatmak için:
 ```bash
 npm start
 ```
-
-- Biraz bekledikten sonra uygulamanız hazır hale gelecek ve bilgisayarınızın internet tarayıcısında (Google Chrome vb.) otomatik olarak **`http://localhost:3000`** adresinde açılacaktır.
-- Artık AgroGuard Dijital Tarım Komuta Merkezi'ni kullanmaya başlayabilirsiniz! 🎉
-
-> **İpucu:** Uygulamayı kapatmak isterseniz, o siyah ekrana gelip klavyenizden `Ctrl + C` (Mac için `Control + C`) tuşlarına aynı anda basabilirsiniz.
+Tarayıcınız otomatik olarak **`http://localhost:3000`** adresinde açılacaktır.
 
 ---
 
-## 🛠 Kullanılan Teknolojiler
+## 🛠 Mimari & Altyapı
+- **Core Engine:** React.js, JSX ve State Management
+- **Stil Konsepti:** Özel "Glassmorphism" yapılı CSS panelleri, Lucide Icons
+- **Coğrafi Bilgi Sistemi (GIS):** `React-Leaflet`
+- **Makine Öğrenimi:** TensorFlow.js destekli tarayıcı içi modeller
+- **Veri Analiz Motoru:** Dinamik API modellemeleri ve Hackathon Zekasına dayanan servis akışları
 
-- **Arayüz (Frontend):** React.js, Tailwind CSS konseptli özel Vanilla CSS, Lucide Icons, React-Leaflet
-- **Makine Öğrenmesi (ML Katmanı):** TensorFlow.js (İstemci taraflı bitki hastalık modellemesi)
-- **Simülasyon Verisi:** Proje içi statik JSON veri setleri ve dinamik JavaScript modelleri (Borsa, İklim, Hackathon veri setleri)
+## 📜 Lisans & Telif Hakkı (ÖNEMLİ)
+**Copyright (c) 2026 Yasin Kaya - Tüm Hakları Saklıdır (All Rights Reserved).**
+
+Bu proje **açık kaynaklı (open source) DEĞİLDİR.** Kapalı kaynaklı ve tescilli bir projedir. Kodların tamamı veya bir kısmı izinsiz kopyalanamaz, dağıtılamaz, değiştirilemez veya ticari/bireysel amaçlarla kullanılamaz. Sistem sadece geliştiricisinin (Yasin Kaya) belirlediği kapalı çevre ve izinli kullanımlar içindir. Detaylar için `LICENSE` dosyasına bakınız.
+
+<br/>
+<p align="center">🌱 <b>AgroGuard</b> — Gelecek Tarımını Bugünden Yönetenlerin Seçimi!</p>
