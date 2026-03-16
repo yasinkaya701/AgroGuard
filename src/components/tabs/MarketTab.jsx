@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import {
   Activity,
   CheckCircle2,
-  MessağeSquare, Plus,
+  MessageSquare, Plus,
   RefreshCcw, Shield,
   ShoppingCart, Star,
   Tag, X,
@@ -346,7 +346,7 @@ export default function MarketTab({
     { id: "analytics", label: "Analitik", icon: PieChart, description: "Trend, arbitraj ve fiyat matrisi ile karar katmanlarını oku." },
     { id: "sell", label: "İlan Ver", icon: Plus, description: "Mahsul veya arazi için satış akışını eksiksiz doldur." },
     { id: "mine", label: "İlanlarım", icon: Tag, description: "Aktif ilanlarını, durumlarını ve düzenleme ihtiyaçlarını yönet." },
-    { id: "offers", label: "Teklifler", icon: MessağeSquare, description: "Gelen teklifleri ve pazarlık adımlarını tek ekranda topla." },
+    { id: "offers", label: "Teklifler", icon: MessageSquare, description: "Gelen teklifleri ve pazarlık adımlarını tek ekranda topla." },
     { id: "orders", label: "Siparişler", icon: Briefcase, description: "Tamamlanan işlemleri, escrow ve sevkiyat geçmişini izle." }
   ];
   const activeWorkspace = workspaceTabs.find((tab) => tab.id === tradeWorkspaceTab) || workspaceTabs[0];
@@ -1605,7 +1605,7 @@ export default function MarketTab({
                 ))}
                 {(!tradeOffers || tradeOffers.length === 0) && (
                   <div style={{ padding: "60px 20px", textAlign: "center", opacity: 0.4 }}>
-                    <MessağeSquare size={48} style={{ marginBottom: "16px", opacity: 0.3 }} />
+                    <MessageSquare size={48} style={{ marginBottom: "16px", opacity: 0.3 }} />
                     <p style={{ fontSize: "15px", fontWeight: "600" }}>Bekleyen teklifiniz bulunmuyor.</p>
                   </div>
                 )}
